@@ -50,13 +50,15 @@ export function gridColors(palette: DarkPalette | undefined): GridColors {
   }
   const mix = (amount: number) =>
     formatCssColor(blend(palette.background, palette.foreground, amount));
+  // High-contrast themes keep lines and header text clearly visible on their black page.
+  const strong = palette.highContrast;
   return {
     sheet: formatCssColor(palette.background),
     text: formatCssColor(palette.foreground),
-    gridLine: mix(0.13),
-    headerBackground: mix(0.06),
-    headerText: mix(0.75),
-    headerLine: mix(0.2),
+    gridLine: mix(strong ? 0.3 : 0.13),
+    headerBackground: mix(strong ? 0.1 : 0.06),
+    headerText: mix(strong ? 1 : 0.75),
+    headerLine: mix(strong ? 0.5 : 0.2),
   };
 }
 

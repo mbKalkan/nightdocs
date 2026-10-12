@@ -47,7 +47,7 @@ const lowestTextContrast = (page: Page) =>
     return lowest;
   });
 
-for (const theme of ['dark', 'light'] as ThemeName[]) {
+for (const theme of ['dark', 'light', 'hcDark', 'hcLight'] as ThemeName[]) {
   test.describe(`${theme} theme`, () => {
     test('renders a Word document', async ({ page }) => {
       const viewer = await openViewer(page, theme);
@@ -86,6 +86,20 @@ test('shows documents with dark colors in dark themes', async ({ page }) => {
   expect(await page.locator('img').getAttribute('style')).not.toMatch(/color|filter/);
   expect(await page.locator('img').evaluate((el) => getComputedStyle(el).filter)).toBe(
     'brightness(0.8)',
+  );
+});
+
+test('asks for AAA text contrast in the dark high-contrast theme', async ({ page }) => {
+  const viewer = await openViewer(page, 'hcDark');
+  await viewer.load('sample.docx');
+
+  expect(await pageBackground(page)).toBe('rgb(0, 0, 0)');
+  expect(await lowestTextContrast(page)).toBeGreaterThanOrEqual(7);
+  // The pressed colors toggle has no background here, so it shows a border instead.
+  const toggle = page.locator('[data-action="colors"]');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await toggle.evaluate((el) => getComputedStyle(el).boxShadow)).toContain(
+    'rgb(111, 195, 223)',
   );
 });
 

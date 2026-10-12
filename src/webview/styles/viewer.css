@@ -111,6 +111,9 @@ body {
 .ov-icon-button:hover:not(:disabled),
 .ov-zoom-label:hover:not(:disabled) {
   background: var(--vscode-toolbar-hoverBackground);
+  /* High-contrast themes mark hover with a dashed outline instead of a background. */
+  outline: 1px dashed var(--vscode-toolbar-hoverOutline, transparent);
+  outline-offset: -1px;
 }
 
 .ov-icon-button:active:not(:disabled),
@@ -121,6 +124,7 @@ body {
 .ov-icon-button[aria-pressed='true'] {
   color: var(--vscode-inputOption-activeForeground, var(--vscode-foreground));
   background: var(--vscode-inputOption-activeBackground, var(--vscode-toolbar-activeBackground));
+  box-shadow: inset 0 0 0 1px var(--vscode-inputOption-activeBorder, transparent);
 }
 
 .ov-icon-button:disabled,
@@ -716,4 +720,6 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
 .ng-found {
   box-shadow: inset 0 0 0 999px
     var(--vscode-editor-findMatchHighlightBackground, rgb(234 92 0 / 0.33));
+  outline: 1px dotted var(--vscode-editor-findMatchHighlightBorder, transparent);
+  outline-offset: -1px;
 }

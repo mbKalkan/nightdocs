@@ -20,9 +20,12 @@ export interface DarkPalette {
   background: Rgb;
   /** What black text becomes, usually the editor foreground. */
   foreground: Rgb;
+  /** High-contrast themes ask for AAA text contrast instead of AA. */
+  highContrast?: boolean;
 }
 
 const MIN_TEXT_CONTRAST = 4.5;
+const MIN_TEXT_CONTRAST_HIGH = 7;
 /** Below this OKLab chroma a color counts as gray and takes the theme's tint instead. */
 const NEUTRAL_CHROMA = 0.01;
 /**
@@ -91,7 +94,10 @@ export function adaptBackground(color: Rgb, palette: DarkPalette): Rgb {
   return fromLabInGamut(withHue(lab, page, l, t), color.a);
 }
 
-/** Dark text becomes light text of the same hue, with at least AA contrast on `background`. */
+/**
+ * Dark text becomes light text of the same hue, with at least AA contrast on `background`
+ * (AAA in high-contrast themes).
+ */
 export function adaptForeground(color: Rgb, background: Rgb, palette: DarkPalette): Rgb {
   const lab = toLab(color);
   let adapted = color;
@@ -101,7 +107,11 @@ export function adaptForeground(color: Rgb, background: Rgb, palette: DarkPalett
     const t = clamp(lab.l / 0.5, 0, 1);
     adapted = fromLabInGamut(withHue(lab, text, text.l + t * (0.5 - text.l), t), color.a);
   }
-  return ensureContrast(adapted, background, MIN_TEXT_CONTRAST);
+  return ensureContrast(
+    adapted,
+    background,
+    palette.highContrast ? MIN_TEXT_CONTRAST_HIGH : MIN_TEXT_CONTRAST,
+  );
 }
 
 /** Like text, but settles between the page and text lightness. */

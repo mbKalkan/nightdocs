@@ -105,6 +105,19 @@ describe('adaptForeground', () => {
     }
   });
 
+  it('reaches AAA contrast in high-contrast themes', () => {
+    const highContrast: DarkPalette = {
+      background: hex('#000000'),
+      foreground: hex('#ffffff'),
+      highContrast: true,
+    };
+    const page = adaptBackground(hex('#ffffff'), highContrast);
+    for (const text of ['#7f7f7f', '#c00000', '#0563c1', '#2f5496']) {
+      const adapted = adaptForeground(hex(text), page, highContrast);
+      expect(contrastRatio(adapted, page), text).toBeGreaterThanOrEqual(7);
+    }
+  });
+
   it('keeps white text on dark fills', () => {
     const header = hex('#1f4e79');
     expect(toHex(adaptForeground(hex('#ffffff'), header, palette))).toBe('#ffffff');
