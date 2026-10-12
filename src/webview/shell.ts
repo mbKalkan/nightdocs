@@ -131,6 +131,21 @@ export class Shell {
     }
   }
 
+  /**
+   * A placeholder in the shape of the document, for the first load. It fades in only if
+   * loading takes a moment (see viewer.css), and the document or an error replaces it.
+   */
+  showSkeleton(format: DocumentFormat): void {
+    const skeleton = document.createElement('div');
+    skeleton.className = `ov-skeleton ov-skeleton-${format === 'xlsx' ? 'grid' : 'page'}`;
+    skeleton.setAttribute('aria-hidden', 'true');
+    if (format !== 'xlsx') {
+      skeleton.innerHTML = '<span></span>'.repeat(12);
+    }
+    this.content.style.zoom = '';
+    this.content.replaceChildren(skeleton);
+  }
+
   setBusy(busy: boolean): void {
     this.progress.hidden = !busy;
     this.viewport.setAttribute('aria-busy', String(busy));

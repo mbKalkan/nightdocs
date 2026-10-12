@@ -147,6 +147,29 @@ test('follows a theme change while open', async ({ page }) => {
   await expect.poll(() => pageBackground(page)).toBe('rgb(255, 255, 255)');
 });
 
+for (const [fixture, chunk, selector] of [
+  ['sample.docx', 'docx', '.docx-wrapper'],
+  ['sample.xlsx', 'xlsx', '.ng-canvas'],
+] as const) {
+  test(`shows a placeholder while a slow ${chunk} file loads`, async ({ page }) => {
+    const viewer = await openViewer(page, 'dark');
+    // Hold back the renderer so loading takes a while.
+    await page.route(`**/dist/webview/chunks/${chunk}-*.js`, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await route.fallback();
+    });
+    const loading = viewer.load(fixture);
+
+    const skeleton = page.locator('.ov-skeleton');
+    await expect.poll(() => skeleton.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    await page.screenshot({ path: `${SCREENS}/skeleton-${chunk}.png` });
+    await loading;
+    await expect(page.locator(selector)).toBeVisible();
+    await expect(skeleton).toHaveCount(0);
+    expect(viewer.problems).toEqual([]);
+  });
+}
+
 test('reports damaged files', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('damaged.docx');

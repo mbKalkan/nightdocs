@@ -132,6 +132,7 @@ async function show(message: LoadMessage): Promise<void> {
   const palette = darkTheme && message.colorMode === 'dark' ? readPalette() : undefined;
 
   shell.setBusy(true);
+  if (!hasContent) shell.showSkeleton(message.format);
   // Render off-screen first so a reload swaps content in one step instead of flashing.
   const stage = document.createElement('div');
   stage.className = 'ov-content ov-stage';
