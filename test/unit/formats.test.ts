@@ -7,6 +7,13 @@ describe('formatForPath', () => {
     expect(formatForPath('C:\\Docs\\REPORT.DOCX')?.format).toBe('docx');
   });
 
+  it('recognizes Excel and PowerPoint files, macro-enabled ones included', () => {
+    expect(formatForPath('/data/budget.xlsm')).toEqual({ format: 'xlsx', appName: 'Excel' });
+    expect(formatForPath('/talks/Review.PPTX')).toEqual({ format: 'pptx', appName: 'PowerPoint' });
+    expect(formatForPath('/talks/review.pptm')?.format).toBe('pptx');
+    expect(formatForPath('/talks/review.ppsx')?.format).toBe('pptx');
+  });
+
   it('ignores unsupported and extensionless paths', () => {
     expect(formatForPath('/docs/report.pdf')).toBeUndefined();
     expect(formatForPath('/docs/report')).toBeUndefined();

@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- View PowerPoint presentations (`.pptx`, `.pptm`, `.ppsx`): text, bullets, tables, shapes,
+  pictures, SmartArt and charts, with **Open in PowerPoint** to edit them.
+- In dark themes slides take the editor colors like documents do. Chart text and gridlines adapt
+  while data keeps its colors, so the legend still matches. Slides designed dark, or drawn on a
+  picture, keep their look.
+- The status bar shows the current slide, and <kbd>Page Down</kbd> / <kbd>Page Up</kbd> step from
+  slide to slide. Links to other slides scroll to them.
+- Hidden slides are shown dimmed with a "Hidden slide" label.
+
 ## [0.1.0] - 2026-10-12
 
 First preview release.

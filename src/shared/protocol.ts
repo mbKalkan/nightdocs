@@ -1,6 +1,6 @@
 // Messages exchanged between the extension host and the webview.
 
-export type DocumentFormat = 'docx' | 'xlsx';
+export type DocumentFormat = 'docx' | 'xlsx' | 'pptx';
 
 /** `dark` adapts document colors to dark themes; `original` shows them as authored. */
 export type ColorMode = 'dark' | 'original';
@@ -36,6 +36,11 @@ export interface ViewerStrings {
   chartHint: string;
   /** Accessible name of the sheet tab list. */
   sheets: string;
+  /** `Slide {0}`, the accessible name of a slide. */
+  slide: string;
+  /** `Slide {0} of {1}`, shown in the status bar of presentations. */
+  slidePosition: string;
+  hiddenSlide: string;
 }
 
 export interface LoadMessage {

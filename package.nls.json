@@ -1,6 +1,6 @@
 {
   "displayName": "Nightdocs",
-  "description": "A lightweight, dark-first, view-only viewer for Word and Excel files.",
+  "description": "A lightweight, dark-first, view-only viewer for Word, Excel and PowerPoint files.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Open in Office",

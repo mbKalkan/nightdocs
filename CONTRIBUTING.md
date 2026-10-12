@@ -32,6 +32,7 @@ with **Extensions: Install from VSIX…**.
 | `src/webview/`           | The viewer UI that runs in the webview                                       |
 | `src/webview/renderers/` | One renderer per format, loaded on demand                                    |
 | `src/webview/xlsx/`      | Workbook parsing (in a web worker) and the virtualized grid                  |
+| `src/webview/pptx/`      | Slide navigation and chart colors around the PowerPoint renderer             |
 | `src/shared/`            | Code used on both sides: the message protocol, colors, zoom                  |
 | `test/unit/`             | Unit tests (Vitest)                                                          |
 | `test/visual/`           | Browser tests of the viewer UI (Playwright)                                  |
@@ -58,7 +59,8 @@ npm run test:smoke   # end-to-end tests in a downloaded copy of VS Code
 Other useful scripts:
 
 - `npm run fixtures` regenerates the sample documents in `test/fixtures` from code.
-- `npm run fixtures:large` writes a 100,000-row workbook for the performance test.
+- `npm run fixtures:large` writes a 100,000-row workbook and a 200-slide deck for performance
+  checks.
 - `npm run screenshots` regenerates the images in `docs/images`.
 - `npm run icon` renders `assets/icon.png` from `assets/icon.svg`.
 

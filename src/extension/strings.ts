@@ -35,5 +35,8 @@ export function viewerStrings(appName: string): ViewerStrings {
     chart: vscode.l10n.t('Chart'),
     chartHint: vscode.l10n.t('Open in {0} to see this chart', appName),
     sheets: vscode.l10n.t('Sheets'),
+    slide: vscode.l10n.t('Slide {0}'),
+    slidePosition: vscode.l10n.t('Slide {0} of {1}'),
+    hiddenSlide: vscode.l10n.t('Hidden slide'),
   };
 }

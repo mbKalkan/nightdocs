@@ -1,0 +1,147 @@
+import {
+  buildPresentation,
+  parseZip,
+  RECOMMENDED_ZIP_LIMITS,
+  renderSlide,
+  type SlideHandle,
+  type SlideRendererOptions,
+} from '@aiden0z/pptx-renderer';
+import type { DarkPalette } from '../../shared/color';
+import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
+import { adaptChartOption, type Chart } from '../pptx/chartColors';
+import { SlideNavigator } from '../pptx/navigator';
+import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
+
+/** Space around the slides; matches the padding of `.pptx-deck` in viewer.css. */
+const DECK_GUTTER = 2 * 32;
+
+const MB = 1024 * 1024;
+
+/**
+ * The library's recommended limits guard against ZIP bombs but turn away ordinary decks with an
+ * embedded screen recording (32 MB per entry). These still stop a bomb well before the webview
+ * runs out of memory.
+ */
+const ZIP_LIMITS = {
+  ...RECOMMENDED_ZIP_LIMITS,
+  maxEntryUncompressedBytes: 256 * MB,
+  maxTotalUncompressedBytes: 512 * MB,
+  maxMediaBytes: 512 * MB,
+};
+
+export const pptxRenderer: Renderer = {
+  async render(
+    data: Uint8Array,
+    target: HTMLElement,
+    options: RenderOptions,
+  ): Promise<RenderedDocument> {
+    const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    const presentation = buildPresentation(await parseZip(buffer as ArrayBuffer, ZIP_LIMITS));
+    const { strings } = options;
+
+    const deck = document.createElement('div');
+    deck.className = 'pptx-deck';
+    target.append(deck);
+
+    const charts: NonNullable<SlideRendererOptions['chartInstances']> = new Set();
+    const mediaUrls = new Map<string, string>();
+    const handles: SlideHandle[] = [];
+    const frames: HTMLElement[] = [];
+    let navigator: SlideNavigator | undefined;
+
+    for (const slide of presentation.slides) {
+      const number = slide.index + 1;
+      const frame = document.createElement('section');
+      frame.className = 'pptx-slide';
+      frame.style.width = `${presentation.width}px`;
+      frame.style.height = `${presentation.height}px`;
+      const label = strings.slide.replace('{0}', String(number));
+      frame.setAttribute('aria-label', slide.hidden ? `${label}, ${strings.hiddenSlide}` : label);
+      if (slide.hidden) frame.dataset.hidden = strings.hiddenSlide;
+      const handle = renderSlide(presentation, slide, {
+        chartInstances: charts,
+        mediaUrlCache: mediaUrls,
+        // PDF previews inside EMF pictures need pdf.js and a worker; they show as placeholders.
+        pdfjs: false,
+        onNavigate: (link) => {
+          if (link.slideIndex !== undefined) navigator?.goTo(link.slideIndex);
+          else if (link.url) followLink(link.url);
+        },
+      });
+      frame.append(handle.element);
+      deck.append(frame);
+      handles.push(handle);
+      frames.push(frame);
+    }
+
+    await Promise.all(handles.map((handle) => handle.ready));
+    await document.fonts.ready;
+
+    const { palette } = options;
+    const adapted = new Set<HTMLElement>();
+    if (palette) {
+      // Charts keep their data colors, so their legend keys must too.
+      for (const key of deck.querySelectorAll('.pptx-chart-custom-legend svg')) {
+        key.setAttribute(KEEP_COLORS_ATTRIBUTE, '');
+      }
+      for (const frame of frames) {
+        if (hasPictureBackground(frame)) frame.dataset.colors = 'original';
+        else adapted.add(frame);
+      }
+      adaptDocumentColors([...adapted], palette);
+    }
+    for (const chart of charts) {
+      const frame = chart.getDom().closest<HTMLElement>('.pptx-slide');
+      settleChart(chart, frame && adapted.has(frame) ? palette : undefined);
+    }
+
+    return {
+      naturalWidth: presentation.width + DECK_GUTTER,
+      activate(context: RenderContext) {
+        navigator = new SlideNavigator(context, frames, strings);
+      },
+      dispose() {
+        navigator?.dispose();
+        for (const handle of handles) handle.dispose();
+        for (const chart of charts) if (!chart.isDisposed()) chart.dispose();
+        for (const url of mediaUrls.values()) URL.revokeObjectURL(url);
+      },
+    };
+  },
+};
+
+/**
+ * Draws a chart once more without its opening animation, which only delays reading it,
+ * and with colors for a dark theme when `palette` is given. Series data is replaced rather
+ * than merged by `setOption`, so the whole option goes back.
+ */
+function settleChart(chart: Chart, palette: DarkPalette | undefined): void {
+  const option = chart.getOption();
+  const next = palette ? adaptChartOption(option, palette) : { ...option };
+  chart.setOption({ ...next, animation: false }, { notMerge: true });
+}
+
+/**
+ * Slides drawn on a picture or gradient keep their original colors, like pictures do: their
+ * text was chosen for that background, which the color pass can't adapt.
+ */
+function hasPictureBackground(frame: HTMLElement): boolean {
+  const slide = frame.firstElementChild;
+  // The background is the slide itself or a full-size layer at the bottom of it.
+  const layers = [slide, slide?.firstElementChild, slide?.firstElementChild?.firstElementChild];
+  return layers.some(
+    (layer) =>
+      layer instanceof HTMLElement &&
+      layer.offsetWidth >= frame.offsetWidth &&
+      layer.offsetHeight >= frame.offsetHeight &&
+      getComputedStyle(layer).backgroundImage !== 'none',
+  );
+}
+
+/** Hands a link to VS Code the way a click on a document link would, so it asks first. */
+function followLink(url: string): void {
+  if (!/^(https?|mailto):/i.test(url)) return;
+  const link = document.createElement('a');
+  link.href = url;
+  link.click();
+}

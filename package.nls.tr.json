@@ -1,6 +1,6 @@
 {
   "displayName": "Nightdocs",
-  "description": "Word ve Excel dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici.",
+  "description": "Word, Excel ve PowerPoint dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Office'te Aç",

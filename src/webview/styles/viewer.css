@@ -225,6 +225,20 @@ body {
   margin-bottom: 14px;
 }
 
+.ov-skeleton-slides {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px;
+}
+
+.ov-skeleton-slides > span {
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  background: color-mix(in srgb, var(--vscode-foreground) 3%, transparent);
+}
+
 .ov-skeleton-grid {
   height: 100%;
   min-height: calc(100vh - var(--ov-toolbar-height));
@@ -294,7 +308,8 @@ body {
   background: color-mix(in srgb, var(--vscode-editor-background), black 32%);
 }
 
-.ov-shell[data-colors='dark'] .ov-content .docx-wrapper > section.docx {
+.ov-shell[data-colors='dark'] .ov-content .docx-wrapper > section.docx,
+.ov-shell[data-colors='dark'] .ov-content .pptx-slide {
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.06),
     0 6px 24px rgb(0 0 0 / 0.45);
@@ -344,9 +359,58 @@ body.vscode-light .ov-viewport {
 }
 
 body.vscode-high-contrast .ov-shell .ov-content .docx-wrapper > section.docx,
-body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.docx {
+body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.docx,
+body.vscode-high-contrast .ov-shell .ov-content .pptx-slide,
+body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   box-shadow: none;
   outline: 1px solid var(--vscode-contrastBorder);
+}
+
+/* Presentations (rendered by pptx-renderer) */
+
+.ov-content .pptx-deck {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  gap: 24px;
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 100%;
+  padding: 32px;
+}
+
+.ov-content .pptx-slide {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  box-shadow: var(--ov-page-shadow);
+}
+
+/* Slides on a picture keep their colors in dark mode and are dimmed like pictures. */
+.ov-shell[data-colors='dark'] .ov-content .pptx-slide[data-colors='original'] > :first-child {
+  filter: brightness(0.8);
+}
+
+.ov-shell[data-colors='dark'] .ov-content .pptx-slide[data-colors='original'] img {
+  filter: none;
+}
+
+/* Hidden slides stay in the deck, like in PowerPoint's slide list, but step back. */
+.ov-content .pptx-slide[data-hidden] > :first-child {
+  opacity: 0.5;
+}
+
+.ov-content .pptx-slide[data-hidden]::after {
+  content: attr(data-hidden);
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
 }
 
 /* Error state */

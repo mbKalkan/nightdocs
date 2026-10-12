@@ -5,11 +5,11 @@
 [![CI](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml/badge.svg)](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Read Word and Excel files in VS Code, in your dark theme.**
+**Read Word, Excel and PowerPoint files in VS Code, in your dark theme.**
 
-Nightdocs is a lightweight, view-only viewer for `.docx` and `.xlsx` files. Documents take on your
-editor's colors so a white page doesn't light up a dark room, and when you need to edit, one click
-opens the file in Word or Excel.
+Nightdocs is a lightweight, view-only viewer for `.docx`, `.xlsx` and `.pptx` files. Documents take
+on your editor's colors so a white page doesn't light up a dark room, and when you need to edit, one
+click opens the file in Word, Excel or PowerPoint.
 
 > **Status:** preview. Feedback is very welcome.
 
@@ -22,8 +22,8 @@ opens the file in Word or Excel.
   ◐ shows the original colors.
 - **Fast and view-only.** Files open in about a second, and sheets with 100,000 rows scroll
   smoothly. Nothing can be changed by accident.
-- **Edit in Office when you need to.** **Open in Word** / **Open in Excel** hands the file to its
-  desktop app. The view refreshes when the file is saved.
+- **Edit in Office when you need to.** **Open in Word**, **Open in Excel** or **Open in
+  PowerPoint** hands the file to its desktop app. The view refreshes when the file is saved.
 - **Private.** No telemetry and no network access. Your files never leave your machine.
 
 ## Features
@@ -47,6 +47,18 @@ opens the file in Word or Excel.
 
 ![An Excel workbook in Nightdocs with conditional formatting and a selection summed in the status bar](docs/images/excel-dark.png)
 
+### PowerPoint (`.pptx`, `.pptm`, `.ppsx`)
+
+- Slides with text, bullets, tables, shapes, pictures, SmartArt and charts
+- Charts follow your theme too: text and gridlines adapt, data keeps its colors
+- Slides designed dark, or drawn on a picture, keep their look
+- Hidden slides are shown dimmed and marked
+- The status bar shows the current slide; <kbd>Page Down</kbd> and <kbd>Page Up</kbd> step from
+  slide to slide, and links between slides work
+- Find with <kbd>Ctrl</kbd>+<kbd>F</kbd>
+
+![A PowerPoint presentation in Nightdocs with charts adapted to a dark theme](docs/images/powerpoint-dark.png)
+
 ### Everywhere
 
 - Zoom with the toolbar, the keyboard, <kbd>Ctrl</kbd>+mouse wheel or pinch
@@ -60,7 +72,8 @@ opens the file in Word or Excel.
 1. Install **Nightdocs** from the
    [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs),
    or search for "Nightdocs" in the Extensions view.
-2. Open a `.docx`, `.xlsx` or `.xlsm` file. Nightdocs is the default viewer for these files.
+2. Open a `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.pptm` or `.ppsx` file. Nightdocs is the default
+   viewer for these files.
 
 If another extension also opens these files, right-click the file and choose
 **Open With… › Nightdocs**, then **Configure default editor**. Or add this to your settings:
@@ -69,7 +82,8 @@ If another extension also opens these files, right-click the file and choose
 "workbench.editorAssociations": {
   "*.docx": "nightdocs.viewer",
   "*.xlsx": "nightdocs.viewer",
-  "*.xlsm": "nightdocs.viewer"
+  "*.xlsm": "nightdocs.viewer",
+  "*.pptx": "nightdocs.viewer"
 }
 ```
 
@@ -82,13 +96,16 @@ If another extension also opens these files, right-click the file and choose
 | Find                  | <kbd>Ctrl</kbd>+<kbd>F</kbd>                                     | <kbd>Cmd</kbd>+<kbd>F</kbd>                                     |
 | Next / previous sheet | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> | <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
 | Copy selected cells   | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                     | <kbd>Cmd</kbd>+<kbd>C</kbd>                                     |
+| Next / previous slide | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                                | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                               |
 
 ## Limitations
 
-- PowerPoint (`.pptx`) and the older binary formats (`.doc`, `.xls`) aren't supported yet.
+- The older binary formats (`.doc`, `.xls`, `.ppt`) aren't supported yet.
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
-- Charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
+- Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
+- PowerPoint animations, transitions, speaker notes and media playback aren't shown. Some pasted
+  vector pictures (EMF/WMF) appear as placeholders.
 
 ## Contributing
 

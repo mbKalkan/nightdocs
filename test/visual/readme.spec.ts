@@ -41,3 +41,14 @@ test('Excel workbook in a dark theme', async ({ page }) => {
   await expect(page.locator('.ov-status')).toContainText('Sum');
   await page.screenshot({ path: `${OUT}/excel-dark.png` });
 });
+
+test('PowerPoint presentation in a dark theme', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.pptx');
+  // The chart slide shows the most: adapted text, kept data colors and the slide counter.
+  await page.locator('.ov-viewport').focus();
+  for (let i = 0; i < 3; i++) await page.keyboard.press('PageDown');
+  await expect(page.locator('.ov-status')).toHaveText('Slide 4 of 8');
+  await page.locator('.ov-viewport').blur();
+  await page.screenshot({ path: `${OUT}/powerpoint-dark.png` });
+});

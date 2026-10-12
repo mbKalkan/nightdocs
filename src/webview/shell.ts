@@ -2,6 +2,8 @@ import type { DocumentFormat, ViewerStrings } from '../shared/protocol';
 import { formatZoom } from '../shared/zoom';
 import { icons } from './icons';
 
+const SKELETONS: Record<DocumentFormat, string> = { docx: 'page', xlsx: 'grid', pptx: 'slides' };
+
 export interface ShellHandlers {
   onZoomIn(): void;
   onZoomOut(): void;
@@ -137,10 +139,12 @@ export class Shell {
    */
   showSkeleton(format: DocumentFormat): void {
     const skeleton = document.createElement('div');
-    skeleton.className = `ov-skeleton ov-skeleton-${format === 'xlsx' ? 'grid' : 'page'}`;
+    skeleton.className = `ov-skeleton ov-skeleton-${SKELETONS[format]}`;
     skeleton.setAttribute('aria-hidden', 'true');
-    if (format !== 'xlsx') {
+    if (format === 'docx') {
       skeleton.innerHTML = '<span></span>'.repeat(12);
+    } else if (format === 'pptx') {
+      skeleton.innerHTML = '<span></span>'.repeat(3);
     }
     this.content.style.zoom = '';
     this.content.replaceChildren(skeleton);

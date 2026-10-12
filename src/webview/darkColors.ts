@@ -13,6 +13,9 @@ const SIDES = ['top', 'right', 'bottom', 'left'] as const;
 /** Pictures keep their original colors; style elements have nothing to adapt. */
 const SKIPPED_TAGS = new Set(['img', 'image', 'style', 'script']);
 
+/** Marks content that must keep its colors, such as chart legend keys matching the chart. */
+export const KEEP_COLORS_ATTRIBUTE = 'data-keep-colors';
+
 /** True when VS Code uses a dark or dark high-contrast theme. */
 export function isDarkTheme(): boolean {
   const kind = document.body.dataset.vscodeThemeKind;
@@ -53,15 +56,21 @@ interface ColorRead {
 }
 
 /**
- * Rewrites the colors of rendered document content for a dark theme: light backgrounds
- * become dark, dark text becomes light, hues are kept and text keeps AA contrast.
- * Images are left untouched. Reads all computed styles first, then writes, so the
- * browser recalculates styles once.
+ * Rewrites the colors of rendered document content (the descendants of `roots`) for a dark
+ * theme: light backgrounds become dark, dark text becomes light, hues are kept and text
+ * keeps AA contrast. Images are left untouched. Reads all computed styles first, then
+ * writes, so the browser recalculates styles once.
  */
-export function adaptDocumentColors(root: HTMLElement, palette: DarkPalette): void {
-  const elements = Array.from(root.querySelectorAll<HTMLElement | SVGElement>('*')).filter(
-    (el) => !SKIPPED_TAGS.has(el.tagName.toLowerCase()),
-  );
+export function adaptDocumentColors(
+  roots: HTMLElement | readonly HTMLElement[],
+  palette: DarkPalette,
+): void {
+  const elements = (roots instanceof HTMLElement ? [roots] : roots)
+    .flatMap((root) => Array.from(root.querySelectorAll<HTMLElement | SVGElement>('*')))
+    .filter(
+      (el) =>
+        !SKIPPED_TAGS.has(el.tagName.toLowerCase()) && !el.closest(`[${KEEP_COLORS_ATTRIBUTE}]`),
+    );
   const reads: ColorRead[] = elements.map((el) => {
     const style = getComputedStyle(el);
     return {
