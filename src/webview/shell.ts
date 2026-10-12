@@ -14,6 +14,7 @@ export interface ShellHandlers {
 export class Shell {
   readonly viewport: HTMLElement;
   readonly content: HTMLElement;
+  readonly footer: HTMLElement;
   private readonly root: HTMLElement;
   private readonly fileName: HTMLElement;
   private readonly fileIcon: HTMLElement;
@@ -51,6 +52,7 @@ export class Shell {
         <main class="ov-viewport" tabindex="0">
           <div class="ov-content"></div>
         </main>
+        <footer class="ov-footer" hidden></footer>
       </div>`;
 
     const find = <T extends HTMLElement>(selector: string) =>
@@ -69,6 +71,7 @@ export class Shell {
     this.progress = find('.ov-progress');
     this.viewport = find('.ov-viewport');
     this.content = find('.ov-content');
+    this.footer = find('.ov-footer');
 
     this.zoomOut.addEventListener('click', handlers.onZoomOut);
     this.zoomIn.addEventListener('click', handlers.onZoomIn);

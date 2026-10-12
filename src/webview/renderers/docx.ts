@@ -1,11 +1,16 @@
 import { renderAsync } from 'docx-preview';
-import type { RenderedDocument, Renderer } from './types';
+import { adaptDocumentColors } from '../darkColors';
+import type { RenderedDocument, RenderOptions, Renderer } from './types';
 
 /** Horizontal space around pages; matches the padding of `.docx-wrapper` in viewer.css. */
 const PAGE_GUTTER = 2 * 32;
 
 export const docxRenderer: Renderer = {
-  async render(data: Uint8Array, target: HTMLElement): Promise<RenderedDocument> {
+  async render(
+    data: Uint8Array,
+    target: HTMLElement,
+    options: RenderOptions,
+  ): Promise<RenderedDocument> {
     await renderAsync(data, target, undefined, {
       className: 'docx',
       inWrapper: true,
@@ -23,6 +28,10 @@ export const docxRenderer: Renderer = {
       useBase64URL: false,
       experimental: true,
     });
+
+    if (options.palette) {
+      adaptDocumentColors(target, options.palette);
+    }
 
     const pages = target.querySelectorAll<HTMLElement>('.docx-wrapper > section.docx');
     const widest = Math.max(0, ...Array.from(pages, (page) => page.offsetWidth));

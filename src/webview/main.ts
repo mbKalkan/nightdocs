@@ -2,8 +2,9 @@ import './styles/viewer.css';
 import { formatCssColor } from '../shared/color';
 import { detectContainer } from '../shared/formats';
 import type { HostToWebviewMessage, LoadMessage, ReadErrorMessage } from '../shared/protocol';
-import { adaptDocumentColors, isDarkTheme, readPalette } from './darkColors';
+import { isDarkTheme, readPalette } from './darkColors';
 import { loadRenderer } from './renderers';
+import type { RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
 import { vscode, type ViewState } from './vscodeApi';
 import { ZoomController } from './zoomController';
@@ -14,6 +15,8 @@ let hasContent = false;
 let renderId = 0;
 /** The last document received, kept to re-render when colors or the theme change. */
 let lastLoad: LoadMessage | undefined;
+/** The document currently on screen. */
+let current: RenderedDocument | undefined;
 let themeKey = currentThemeKey();
 
 const shell = new Shell(document.getElementById('app') as HTMLElement, {
@@ -32,6 +35,7 @@ const zoom = new ZoomController(
     onChange: (value, fixed) => {
       fixedZoom = fixed;
       shell.setZoom(value);
+      current?.refresh?.();
       saveState();
     },
   },
@@ -53,6 +57,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
         else if (message.action === 'out') zoom.zoomOut();
         else zoom.reset();
       }
+      break;
+    case 'command':
+      current?.command?.(message.command);
       break;
   }
 });
@@ -126,20 +133,30 @@ async function show(message: LoadMessage): Promise<void> {
   document.body.append(stage);
   try {
     const renderer = await loadRenderer(message.format);
-    const rendered = await renderer.render(message.data, stage);
+    const rendered = await renderer.render(message.data, stage, {
+      palette,
+      locale: message.locale,
+      strings: message.strings,
+      previous: current?.state?.(),
+    });
     if (id !== renderId) {
+      rendered.dispose?.();
       return;
     }
-    if (palette) {
-      adaptDocumentColors(stage, palette);
-    }
     const scrollRatio = hasContent ? currentScrollRatio() : saved.scrollRatio;
+    replaceCurrent(rendered);
     shell.content.replaceChildren(...stage.childNodes);
     hasContent = true;
     shell.setColors(darkTheme, message.colorMode === 'dark', message.strings);
     shell.setZoomEnabled(true);
     zoom.setNaturalWidth(rendered.naturalWidth);
     restoreScroll(scrollRatio);
+    rendered.activate?.({
+      viewport: shell.viewport,
+      footer: shell.footer,
+      getZoom: () => zoom.zoom,
+      setBusy: (busy) => shell.setBusy(busy),
+    });
   } catch (error) {
     console.error(error);
     if (id === renderId && !keepOnFailure) {
@@ -177,11 +194,20 @@ function showReadError(message: ReadErrorMessage): void {
 
 function showError(message: LoadMessage | ReadErrorMessage, reason: string): void {
   hasContent = false;
+  replaceCurrent(undefined);
   shell.showError(
     message.strings.errorTitle,
     reason,
     message.canOpenInOffice ? message.strings.openInOffice : undefined,
   );
+}
+
+/** Releases the previous document (its workers, listeners and footer) before showing another. */
+function replaceCurrent(next: RenderedDocument | undefined): void {
+  current?.dispose?.();
+  current = next;
+  shell.footer.replaceChildren();
+  shell.footer.hidden = true;
 }
 
 function currentThemeKey(): string {

@@ -5,10 +5,10 @@
 A lightweight, dark-first, **view-only** viewer for Word (`.docx`) and Excel (`.xlsx`) files inside VS Code.
 Need to edit? One click opens the file in your desktop Office app.
 
-## Planned features
+## Features
 
 - **Word (.docx)** — page layout, images, tables, headers and footers
-- **Excel (.xlsx)** — sheet tabs, merged cells, number formats, frozen panes, smooth scrolling for large sheets
+- **Excel (.xlsx, .xlsm)** — sheet tabs, cell styles, number and date formats, merged cells, frozen panes, selection with Sum/Count/Average, smooth scrolling for 100,000+ rows
 - **Dark-first** — documents adapt to your VS Code theme, with a one-click *Original view*
 - **Open in Office** — hand the file to Word or Excel when you need to edit
 - **Live reload** — the view refreshes when the file changes on disk

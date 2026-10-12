@@ -21,5 +21,9 @@ export function viewerStrings(appName: string): ViewerStrings {
     ),
     errorRender: vscode.l10n.t('Something went wrong while rendering this document.'),
     errorRead: vscode.l10n.t("The file couldn't be read."),
+    // Templates: the webview fills in {0}.
+    statusCount: vscode.l10n.t('Count: {0}'),
+    statusSum: vscode.l10n.t('Sum: {0}'),
+    statusAverage: vscode.l10n.t('Average: {0}'),
   };
 }

@@ -8,6 +8,8 @@ export interface FormatInfo {
 
 const FORMATS: Readonly<Record<string, FormatInfo>> = {
   '.docx': { format: 'docx', appName: 'Word' },
+  '.xlsx': { format: 'xlsx', appName: 'Excel' },
+  '.xlsm': { format: 'xlsx', appName: 'Excel' },
 };
 
 export function formatForPath(path: string): FormatInfo | undefined {

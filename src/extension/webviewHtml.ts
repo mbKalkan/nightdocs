@@ -23,6 +23,8 @@ export function buildContentSecurityPolicy(cspSource: string, nonce: string): st
     `style-src ${cspSource} 'unsafe-inline'`,
     // Lazily loaded renderer chunks are served from the extension's dist folder.
     `script-src 'nonce-${nonce}' ${cspSource}`,
+    // Spreadsheets are parsed in a worker started from a blob URL.
+    'worker-src blob:',
   ].join('; ');
 }
 

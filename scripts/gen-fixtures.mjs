@@ -22,8 +22,11 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
+import { writeXlsx } from './xlsx-writer.mjs';
 
 const OUT = 'test/fixtures';
+/** `--large` only writes the big generated workbook used for performance tests. */
+const LARGE_ONLY = process.argv.includes('--large');
 mkdirSync(OUT, { recursive: true });
 
 // --- Tiny PNG encoder, enough for a generated chart image -----------------------------------
@@ -308,15 +311,227 @@ async function write(name, document) {
   console.log(`wrote ${OUT}/${name}`);
 }
 
-await write('sample.docx', sampleDocument());
-await write('long.docx', longDocument());
+if (!LARGE_ONLY) {
+  await write('sample.docx', sampleDocument());
+  await write('long.docx', longDocument());
+}
 
-// Not a ZIP archive at all.
-writeFileSync(`${OUT}/damaged.docx`, 'This is not a Word document.\n');
-console.log(`wrote ${OUT}/damaged.docx`);
+if (!LARGE_ONLY) {
+  // Not a ZIP archive at all.
+  writeFileSync(`${OUT}/damaged.docx`, 'This is not a Word document.\n');
+  console.log(`wrote ${OUT}/damaged.docx`);
 
-// Compound File Binary header, as used by password-protected OOXML and legacy .doc files.
-const cfb = Buffer.alloc(512);
-Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(cfb);
-writeFileSync(`${OUT}/protected.docx`, cfb);
-console.log(`wrote ${OUT}/protected.docx`);
+  // Compound File Binary header, as used by password-protected OOXML and legacy .doc files.
+  const cfb = Buffer.alloc(512);
+  Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(cfb);
+  writeFileSync(`${OUT}/protected.docx`, cfb);
+  console.log(`wrote ${OUT}/protected.docx`);
+}
+
+// --- Workbooks -------------------------------------------------------------------------------
+
+const BASE_STYLES = {
+  numFmts: [
+    '<numFmt numFmtId="164" formatCode="0.0%;[Red]-0.0%"/>',
+    '<numFmt numFmtId="165" formatCode="&quot;$&quot;#,##0.00"/>',
+    '<numFmt numFmtId="166" formatCode="yyyy-mm-dd"/>',
+  ],
+  fonts: [
+    '<font><sz val="11"/><color theme="1"/><name val="Calibri"/></font>',
+    '<font><b/><sz val="11"/><color theme="1"/><name val="Calibri"/></font>',
+    '<font><b/><sz val="14"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>',
+    '<font><i/><sz val="11"/><color rgb="FF7F7F7F"/><name val="Calibri"/></font>',
+    '<font><u/><sz val="11"/><color rgb="FF0563C1"/><name val="Calibri"/></font>',
+    '<font><sz val="11"/><color rgb="FFC00000"/><name val="Calibri"/></font>',
+  ],
+  fills: [
+    '<fill><patternFill patternType="none"/></fill>',
+    '<fill><patternFill patternType="gray125"/></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1F4E79"/><bgColor indexed="64"/></patternFill></fill>',
+    '<fill><patternFill patternType="solid"><fgColor theme="4" tint="0.79998168889431442"/><bgColor indexed="64"/></patternFill></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFE2EFDA"/><bgColor indexed="64"/></patternFill></fill>',
+  ],
+  borders: [
+    '<border><left/><right/><top/><bottom/><diagonal/></border>',
+    '<border><left/><right/><top/><bottom style="medium"><color auto="1"/></bottom><diagonal/></border>',
+    '<border><left/><right/><top style="thin"><color auto="1"/></top><bottom style="double"><color auto="1"/></bottom><diagonal/></border>',
+    '<border><left style="thin"><color rgb="FFA6A6A6"/></left><right style="thin"><color rgb="FFA6A6A6"/></right><top style="thin"><color rgb="FFA6A6A6"/></top><bottom style="thin"><color rgb="FFA6A6A6"/></bottom><diagonal/></border>',
+  ],
+  cellXfs: [
+    /* 0 default */ '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 1 title */ '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>',
+    /* 2 header */ '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0"/>',
+    /* 3 header, right */ '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>',
+    /* 4 thousands */ '<xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 5 percent, red negatives */ '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 6 currency */ '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 7 short date (locale) */ '<xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 8 wrapped note */ '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>',
+    /* 9 total label */ '<xf numFmtId="0" fontId="1" fillId="0" borderId="2" xfId="0"/>',
+    /* 10 total number */ '<xf numFmtId="3" fontId="1" fillId="0" borderId="2" xfId="0"/>',
+    /* 11 highlight */ '<xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0"/>',
+    /* 12 red text */ '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0"/>',
+    /* 13 boxed */ '<xf numFmtId="0" fontId="0" fillId="5" borderId="3" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>',
+    /* 14 iso date */ '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    /* 15 link */ '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0"/>',
+  ],
+};
+
+function budgetSheet() {
+  const regions = [
+    ['North', 1240, 1385, 'Strong retail season', 45580],
+    ['South', 980, 1012, 'New office opened in the second half of the quarter after delays', 45581],
+    ['East', 1105, 1060, 'Price pressure', 45582],
+    ['West', 1430, 1598, '', 45583],
+    ['Central', 760, 802, 'Stable', 45584],
+    ['Online', 2210, 2650, 'Campaign', 45585],
+  ];
+  const cells = [
+    { ref: 'A1', value: 'Q3 Budget Overview', style: 1 },
+    { ref: 'A2', value: 'Region', style: 2 },
+    { ref: 'B2', value: 'Q2', style: 3 },
+    { ref: 'C2', value: 'Q3', style: 3 },
+    { ref: 'D2', value: 'Change', style: 3 },
+    { ref: 'E2', value: 'Notes', style: 2 },
+    { ref: 'F2', value: 'Updated', style: 3 },
+  ];
+  regions.forEach(([name, q2, q3, note, date], i) => {
+    const r = i + 3;
+    cells.push(
+      { ref: `A${r}`, value: name },
+      { ref: `B${r}`, value: q2, style: 4 },
+      { ref: `C${r}`, value: q3, style: 4 },
+      {
+        ref: `D${r}`,
+        value: Math.round(((q3 - q2) / q2) * 1000) / 1000,
+        style: 5,
+        formula: `C${r}/B${r}-1`,
+      },
+      { ref: `F${r}`, value: date, style: 7 },
+    );
+    if (note) cells.push({ ref: `E${r}`, value: note, style: r === 4 ? 8 : 0 });
+  });
+  const q2 = regions.reduce((sum, row) => sum + row[1], 0);
+  const q3 = regions.reduce((sum, row) => sum + row[2], 0);
+  cells.push(
+    { ref: 'A9', value: 'Total', style: 9 },
+    { ref: 'B9', value: q2, style: 10, formula: 'SUM(B3:B8)' },
+    { ref: 'C9', value: q3, style: 10, formula: 'SUM(C3:C8)' },
+    { ref: 'D9', value: Math.round(((q3 - q2) / q2) * 1000) / 1000, style: 5 },
+    { ref: 'E9', value: null, style: 9 },
+    { ref: 'F9', value: null, style: 9 },
+    { ref: 'A10', value: 'Note:', style: 0 },
+    {
+      ref: 'B10',
+      value: 'Figures are in thousands of US dollars and exclude one-off items.',
+      style: 0,
+    },
+    { ref: 'A11', value: 'Approved' },
+    { ref: 'B11', value: true },
+    { ref: 'C11', value: 'Ratio' },
+    { ref: 'D11', value: '#DIV/0!', error: true },
+    { ref: 'A12', value: 'Highlighted', style: 11 },
+    { ref: 'B12', value: 'Red text', style: 12 },
+    { ref: 'C12', value: 'Boxed', style: 13 },
+    { ref: 'D12', value: 'Link style', style: 15 },
+    { ref: 'A13', value: 1234.5, style: 6 },
+    { ref: 'B13', value: 45600, style: 14 },
+    { ref: 'B14', value: 12345678901, style: 4 },
+  );
+  return {
+    name: 'Budget',
+    tabColor: '70AD47',
+    frozen: { rows: 2, cols: 1 },
+    cols: [
+      { min: 1, max: 1, width: 22 },
+      { min: 2, max: 3, width: 12 },
+      { min: 4, max: 4, width: 10 },
+      { min: 5, max: 5, width: 30 },
+      { min: 6, max: 6, width: 12 },
+    ],
+    rowHeights: { 1: 28, 4: 45 },
+    merges: ['A1:F1'],
+    cells,
+  };
+}
+
+function dataSheet(rows) {
+  const random = makeRandom(11);
+  const headers = ['ID', 'Region', 'Product', 'Units', 'Price', 'Revenue', 'Margin', 'Date'];
+  const regions = ['North', 'South', 'East', 'West'];
+  const products = ['Basic', 'Plus', 'Pro', 'Enterprise'];
+  const cells = headers.map((value, i) => ({
+    ref: `${String.fromCharCode(65 + i)}1`,
+    value,
+    style: 2,
+  }));
+  for (let r = 2; r <= rows + 1; r++) {
+    const units = 1 + Math.floor(random() * 500);
+    const price = Math.round((10 + random() * 90) * 100) / 100;
+    cells.push(
+      { ref: `A${r}`, value: r - 1 },
+      { ref: `B${r}`, value: regions[r % 4] },
+      { ref: `C${r}`, value: products[Math.floor(random() * 4)] },
+      { ref: `D${r}`, value: units, style: 4 },
+      { ref: `E${r}`, value: price, style: 6 },
+      { ref: `F${r}`, value: Math.round(units * price * 100) / 100, style: 6 },
+      { ref: `G${r}`, value: Math.round((random() * 0.6 - 0.1) * 1000) / 1000, style: 5 },
+      { ref: `H${r}`, value: 45200 + (r % 365), style: 14 },
+    );
+  }
+  return {
+    name: 'Data',
+    frozen: { rows: 1, cols: 0 },
+    cols: [
+      { min: 1, max: 1, width: 8 },
+      { min: 2, max: 3, width: 12 },
+      { min: 4, max: 7, width: 12 },
+      { min: 8, max: 8, width: 12 },
+    ],
+    cells,
+  };
+}
+
+function sampleWorkbook(dataRows) {
+  return {
+    styles: BASE_STYLES,
+    sheets: [
+      budgetSheet(),
+      dataSheet(dataRows),
+      {
+        name: 'Hidden',
+        hidden: true,
+        cells: [{ ref: 'A1', value: 'You should not see this tab' }],
+      },
+      {
+        name: 'No Grid',
+        showGridLines: false,
+        cells: [
+          { ref: 'B2', value: 'A sheet without grid lines', style: 1 },
+          { ref: 'B4', value: 'Contact', style: 2 },
+          { ref: 'C4', value: 'support@example.com', style: 15 },
+        ],
+        merges: ['B2:D2'],
+        cols: [{ min: 2, max: 4, width: 20 }],
+      },
+    ],
+  };
+}
+
+if (!LARGE_ONLY) {
+  writeFileSync(`${OUT}/sample.xlsx`, await writeXlsx(sampleWorkbook(2000)));
+  console.log(`wrote ${OUT}/sample.xlsx`);
+}
+
+// 100k rows for performance checks; large, so it isn't committed.
+mkdirSync(`${OUT}/generated`, { recursive: true });
+writeFileSync(`${OUT}/generated/large.xlsx`, await writeXlsx(sampleWorkbook(100_000)));
+console.log(`wrote ${OUT}/generated/large.xlsx`);
+
+if (!LARGE_ONLY) {
+  const cfbWorkbook = Buffer.alloc(512);
+  Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(cfbWorkbook);
+  writeFileSync(`${OUT}/protected.xlsx`, cfbWorkbook);
+  console.log(`wrote ${OUT}/protected.xlsx`);
+}

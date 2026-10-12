@@ -20,4 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   but are slightly dimmed so they don't glare.
   A toolbar toggle switches to the original colors; the choice is remembered.
 - Clear messages for damaged, password-protected and legacy-format files.
+- View Excel workbooks (`.xlsx`, `.xlsm`): cell styles, number and date formats (short dates
+  follow your locale), merged cells, frozen panes, column widths and row heights, hidden rows,
+  columns and sheets, and text that spills into empty neighboring cells.
+- Sheet tabs with tab colors; switch sheets with <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgUp</kbd> /
+  <kbd>PgDn</kbd>.
+- Select cells with the mouse or keyboard (arrows, <kbd>Shift</kbd>, <kbd>Ctrl</kbd>+arrows,
+  <kbd>PgUp</kbd>/<kbd>PgDn</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>), copy them as tab-separated text,
+  and see Sum, Count and Average in the status bar.
+- Large sheets stay smooth: workbooks are parsed in a background worker and only visible cells
+  are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
