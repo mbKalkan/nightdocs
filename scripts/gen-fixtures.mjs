@@ -375,6 +375,11 @@ const BASE_STYLES = {
     /* 13 boxed */ '<xf numFmtId="0" fontId="0" fillId="5" borderId="3" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>',
     /* 14 iso date */ '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0"/>',
     /* 15 link */ '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0"/>',
+    /* 16 right */ '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>',
+    /* 17 center */ '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>',
+    /* 18 center across */ '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="centerContinuous"/></xf>',
+    /* 19 blue band */ '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0"/>',
+    /* 20 green band */ '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0"/>',
   ],
   // Formats for conditional rules, as Excel's presets write them.
   dxfs: [
@@ -599,9 +604,20 @@ function sampleWorkbook(dataRows) {
           { ref: 'B2', value: 'A sheet without grid lines', style: 1 },
           { ref: 'B4', value: 'Contact', style: 2 },
           { ref: 'C4', value: 'support@example.com', style: 15 },
+          // Text that doesn't fit spills by alignment.
+          { ref: 'F6', value: 'Right-aligned text spills left', style: 16 },
+          { ref: 'C8', value: 'Centered text spills to both sides', style: 17 },
+          { ref: 'B10', value: 'Centered across B to D', style: 18 },
+          { ref: 'C10', value: null, style: 18 },
+          { ref: 'D10', value: null, style: 18 },
+          { ref: 'B12', value: 'A row style fills the whole row', style: 19 },
         ],
         merges: ['B2:D2'],
-        cols: [{ min: 2, max: 4, width: 20 }],
+        cols: [
+          { min: 2, max: 4, width: 20 },
+          { min: 8, max: 8, width: 12, style: 20 },
+        ],
+        rowStyles: { 12: 19 },
       },
       chartsSheet(),
     ],

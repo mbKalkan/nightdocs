@@ -6,8 +6,9 @@ import JSZip from 'jszip';
 /**
  * @typedef {{ ref: string, value: string | number | boolean | null, style?: number, error?: boolean, formula?: string }} Cell
  * @typedef {{ name: string, hidden?: boolean, tabColor?: string, frozen?: { rows: number, cols: number },
- *   showGridLines?: boolean, cols?: { min: number, max: number, width: number, hidden?: boolean }[],
- *   rowHeights?: Record<number, number>, hiddenRows?: number[], merges?: string[], cells: Cell[],
+ *   showGridLines?: boolean, cols?: { min: number, max: number, width: number, hidden?: boolean, style?: number }[],
+ *   rowHeights?: Record<number, number>, rowStyles?: Record<number, number>, hiddenRows?: number[],
+ *   merges?: string[], cells: Cell[],
  *   conditionalFormats?: string[], drawings?: Drawing[] }} Sheet
  * @typedef {{ numFmts?: string[], fonts: string[], fills: string[], borders: string[], cellXfs: string[], dxfs?: string[] }} Styles
  * @typedef {{ col: number, row: number }} Point 0-based
@@ -69,7 +70,8 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
       rows.get(r).push(cell);
     }
     for (const r of sheet.hiddenRows ?? []) if (!rows.has(r)) rows.set(r, []);
-    for (const r of Object.keys(sheet.rowHeights ?? {})) if (!rows.has(+r)) rows.set(+r, []);
+    for (const r of Object.keys({ ...sheet.rowHeights, ...sheet.rowStyles }))
+      if (!rows.has(+r)) rows.set(+r, []);
 
     const rowXml = [...rows.keys()]
       .sort((a, b) => a - b)
@@ -95,6 +97,7 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
           `r="${r}"`,
           height ? `ht="${height}" customHeight="1"` : '',
           sheet.hiddenRows?.includes(r) ? 'hidden="1"' : '',
+          sheet.rowStyles?.[r] ? `s="${sheet.rowStyles[r]}" customFormat="1"` : '',
         ]
           .filter(Boolean)
           .join(' ');
@@ -110,7 +113,7 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
       ? `<cols>${sheet.cols
           .map(
             (col) =>
-              `<col min="${col.min}" max="${col.max}" width="${col.width}" customWidth="1"${col.hidden ? ' hidden="1"' : ''}/>`,
+              `<col min="${col.min}" max="${col.max}" width="${col.width}" customWidth="1"${col.hidden ? ' hidden="1"' : ''}${col.style ? ` style="${col.style}"` : ''}/>`,
           )
           .join('')}</cols>`
       : '';

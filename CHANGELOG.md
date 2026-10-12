@@ -22,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clear messages for damaged, password-protected and legacy-format files.
 - View Excel workbooks (`.xlsx`, `.xlsm`): cell styles, number and date formats (short dates
   follow your locale), merged cells, frozen panes, column widths and row heights, hidden rows,
-  columns and sheets, and text that spills into empty neighboring cells.
+  columns and sheets, whole-row and whole-column fills, and text that spills into empty
+  neighboring cells the way it is aligned (including center across selection).
 - Sheet tabs with tab colors; switch sheets with <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgUp</kbd> /
   <kbd>PgDn</kbd>.
 - Select cells with the mouse or keyboard (arrows, <kbd>Shift</kbd>, <kbd>Ctrl</kbd>+arrows,

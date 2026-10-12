@@ -343,6 +343,8 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   const numbers: number[] = [];
   const colors: number[] = [];
   const rowHeightOverrides = new Map<number, number>();
+  const rowStyles = new Map<number, number>();
+  const colStyles: SheetData['colStyles'] = [];
 
   const dataStart = xml.search(/<(?:[\w.-]+:)?sheetData[\s>]/);
   const dataEnd = xml.search(/<\/(?:[\w.-]+:)?sheetData>/);
@@ -356,6 +358,10 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
       rowHeightOverrides.set(rowNumber, 0);
     } else if (row.attrs.ht) {
       rowHeightOverrides.set(rowNumber, Math.round(parseFloat(row.attrs.ht) * POINTS_TO_PIXELS));
+    }
+    const rowStyle = parseInt(row.attrs.s ?? '0', 10) || 0;
+    if (isTrue(row.attrs.customFormat) && rowStyle > 0 && rowStyle < context.styles.length) {
+      rowStyles.set(rowNumber, rowStyle);
     }
     let colNumber = -1;
     for (const cell of elements(row.body, 'c')) {
@@ -442,6 +448,10 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     for (let c = min; c <= max; c++) {
       colWidths[c] = hidden ? 0 : width;
     }
+    const style = parseInt(col.attrs.style ?? '0', 10) || 0;
+    if (style > 0 && style < context.styles.length) {
+      colStyles.push({ min, max: parseInt(col.attrs.max ?? `${min + 1}`, 10) - 1, style });
+    }
   }
 
   return {
@@ -465,7 +475,13 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     showGridLines: view?.attrs.showGridLines !== '0' && view?.attrs.showGridLines !== 'false',
     drawings: [],
     conditional: new Map(),
+    rowStyles,
+    colStyles,
   };
+}
+
+function isTrue(value: string | undefined): boolean {
+  return value === '1' || value === 'true';
 }
 
 /** Excel's conversion from stored column width (characters) to pixels. */

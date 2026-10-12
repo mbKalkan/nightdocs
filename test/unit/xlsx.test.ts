@@ -113,6 +113,13 @@ describe('openWorkbook', () => {
     expect(noGrid.showGridLines).toBe(false);
   });
 
+  it('reads default styles of whole rows and columns', async () => {
+    const workbook = await openWorkbook(bytes, 'en-US');
+    const sheet = await workbook.readSheet(3);
+    expect([...sheet.rowStyles]).toEqual([[11, 19]]);
+    expect(sheet.colStyles).toEqual([{ min: 7, max: 7, style: 20 }]);
+  });
+
   it('reads pictures, chart titles and text boxes', async () => {
     const workbook = await openWorkbook(bytes, 'en-US');
     const sheet = await workbook.readSheet(4);

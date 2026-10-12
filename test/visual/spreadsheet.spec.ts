@@ -97,6 +97,34 @@ test('grows a sheet to show drawings past its data', async ({ page }) => {
   await expect(page.locator('.ng-main .ng-pic')).toBeInViewport();
 });
 
+test('spills text by alignment and fills styled rows and columns', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  await page.locator('.ov-sheet-tab', { hasText: 'No Grid' }).click();
+
+  const box = async (text: string) =>
+    (await page.locator('.ng-main .ng-c', { hasText: text }).boundingBox())!;
+  const column = async (name: string) =>
+    (await page.locator('.ng-hc', { hasText: new RegExp(`^${name}$`) }).boundingBox())!;
+  const [b, c, d, f] = await Promise.all(['B', 'C', 'D', 'F'].map(column));
+
+  // Right-aligned text grows to the left; centered text grows evenly around its cell.
+  const right = await box('Right-aligned text spills left');
+  expect(right.x).toBeLessThan(f.x);
+  expect(right.x + right.width).toBeCloseTo(f.x + f.width, 0);
+  const centered = await box('Centered text spills to both sides');
+  expect(centered.x).toBeLessThan(c.x);
+  expect(centered.x).toBeGreaterThanOrEqual(b.x - 1);
+  expect(c.x - centered.x).toBeCloseTo(centered.x + centered.width - (c.x + c.width), 0);
+  const across = await box('Centered across B to D');
+  expect(across.x).toBeCloseTo(b.x, 0);
+  expect(across.x + across.width).toBeCloseTo(d.x + d.width, 0);
+
+  // A styled row and a styled column paint cells the file doesn't list.
+  await expect(page.locator('.ng-main .ng-band')).toHaveCount(2);
+  await page.screenshot({ path: `${SCREENS}/xlsx-layout.png` });
+});
+
 test('shows the original workbook colors on request', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx', false, 'original');
