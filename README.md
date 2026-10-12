@@ -1,4 +1,4 @@
-# Office Viewer for VS Code *(working title)*
+# Nightdocs
 
 > **Status:** early development — not yet published on the Marketplace.
 

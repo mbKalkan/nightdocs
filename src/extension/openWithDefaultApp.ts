@@ -6,7 +6,7 @@ export interface OpenCommand {
   options: SpawnOptions;
 }
 
-const PATH_VARIABLE = 'OFFICE_VIEWER_FILE';
+const PATH_VARIABLE = 'NIGHTDOCS_FILE';
 
 /**
  * Builds the platform command that opens a file with its default desktop app.
