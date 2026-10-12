@@ -5,7 +5,7 @@ import type {
   HostToWebviewMessage,
   ScrollAnchor,
 } from '../shared/protocol';
-import { DIFF_LABEL_SEPARATOR, orderSides } from './diffSides';
+import { DIFF_LABEL_SEPARATOR, orderSides, type DiffCandidate } from './diffSides';
 
 /** The two viewers of a comparison are created together; a lone one stops waiting after this. */
 const PAIRING_WINDOW_MS = 5000;
@@ -48,13 +48,7 @@ export class DiffPairs {
       this.waiting.delete(column);
     }
     if (waiting && waiting.label === tab.label) {
-      const name = (m: DiffMember) => m.uri.path.slice(m.uri.path.lastIndexOf('/') + 1);
-      const [original, modified] = orderSides(
-        waiting.member,
-        member,
-        (m) => ({ name: name(m), scheme: m.uri.scheme }),
-        tab.label,
-      );
+      const [original, modified] = orderSides(waiting.member, member, describe, tab.label);
       this.pair(original, modified);
     } else {
       const timer = setTimeout(() => this.waiting.delete(column), PAIRING_WINDOW_MS);
@@ -109,5 +103,23 @@ export class DiffPairs {
     void member.post({ type: 'diff', side: member.side });
     const summary = member.peer?.summary;
     if (summary) void member.post({ type: 'peerSummary', summary });
+  }
+}
+
+function describe({ uri }: DiffMember): DiffCandidate {
+  return {
+    name: uri.path.slice(uri.path.lastIndexOf('/') + 1),
+    scheme: uri.scheme,
+    gitRef: uri.scheme === 'git' ? gitRef(uri) : undefined,
+  };
+}
+
+/** The version a URI from VS Code's Git extension points at, kept in its query as JSON. */
+function gitRef(uri: vscode.Uri): string | undefined {
+  try {
+    const { ref } = JSON.parse(uri.query) as { ref?: unknown };
+    return typeof ref === 'string' ? ref : undefined;
+  } catch {
+    return undefined;
   }
 }
