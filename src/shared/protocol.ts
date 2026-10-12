@@ -20,6 +20,7 @@ export interface ViewerStrings {
   errorProtectedOrLegacy: string;
   errorRender: string;
   errorRead: string;
+  errorEmpty: string;
   /** Status bar templates for spreadsheet selections; `{0}` is the value. */
   statusCount: string;
   statusSum: string;

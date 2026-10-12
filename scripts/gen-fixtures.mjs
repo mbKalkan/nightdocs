@@ -639,4 +639,8 @@ if (!LARGE_ONLY) {
   Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(cfbWorkbook);
   writeFileSync(`${OUT}/protected.xlsx`, cfbWorkbook);
   console.log(`wrote ${OUT}/protected.xlsx`);
+
+  // What VS Code's "New File..." creates for a .xlsx name.
+  writeFileSync(`${OUT}/empty.xlsx`, Buffer.alloc(0));
+  console.log(`wrote ${OUT}/empty.xlsx`);
 }

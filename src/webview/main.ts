@@ -116,8 +116,13 @@ async function show(message: LoadMessage): Promise<void> {
   const container = detectContainer(message.data);
   if (container !== 'zip') {
     if (!keepOnFailure) {
+      // An empty file is common: VS Code's "New File…" with a .docx or .xlsx name makes one.
       const reason =
-        container === 'cfb' ? message.strings.errorProtectedOrLegacy : message.strings.errorDamaged;
+        message.data.length === 0
+          ? message.strings.errorEmpty
+          : container === 'cfb'
+            ? message.strings.errorProtectedOrLegacy
+            : message.strings.errorDamaged;
       showError(message, reason);
     }
     return;
