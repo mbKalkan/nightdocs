@@ -2,11 +2,16 @@
 
 export type DocumentFormat = 'docx';
 
+/** `dark` adapts document colors to dark themes; `original` shows them as authored. */
+export type ColorMode = 'dark' | 'original';
+
 /** UI strings localized by the extension host and handed to the webview. */
 export interface ViewerStrings {
   zoomIn: string;
   zoomOut: string;
   resetZoom: string;
+  showOriginalColors: string;
+  showDarkColors: string;
   openInOffice: string;
   openInOfficeTooltip: string;
   loading: string;
@@ -25,6 +30,7 @@ export interface LoadMessage {
   /** True when the file changed on disk and the view should keep its position. */
   reload: boolean;
   canOpenInOffice: boolean;
+  colorMode: ColorMode;
   strings: ViewerStrings;
 }
 
@@ -45,4 +51,5 @@ export type ZoomAction = 'in' | 'out' | 'reset';
 
 export type HostToWebviewMessage = LoadMessage | ReadErrorMessage | ZoomMessage;
 
-export type WebviewToHostMessage = { type: 'ready' } | { type: 'openInOffice' };
+export type WebviewToHostMessage =
+  { type: 'ready' } | { type: 'openInOffice' } | { type: 'setColorMode'; mode: ColorMode };

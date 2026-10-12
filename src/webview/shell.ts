@@ -7,6 +7,7 @@ export interface ShellHandlers {
   onZoomOut(): void;
   onResetZoom(): void;
   onOpenInOffice(): void;
+  onToggleColors(): void;
 }
 
 /** The static frame around a document: toolbar, scrollable viewport and status overlays. */
@@ -16,6 +17,8 @@ export class Shell {
   private readonly root: HTMLElement;
   private readonly fileName: HTMLElement;
   private readonly fileIcon: HTMLElement;
+  private readonly colorsButton: HTMLButtonElement;
+  private readonly colorsSeparator: HTMLElement;
   private readonly zoomOut: HTMLButtonElement;
   private readonly zoomLabel: HTMLButtonElement;
   private readonly zoomIn: HTMLButtonElement;
@@ -33,10 +36,12 @@ export class Shell {
             <span class="ov-file-name"></span>
           </div>
           <div class="ov-actions">
+            <button class="ov-icon-button" data-action="colors" type="button" hidden>${icons.colors}</button>
+            <span class="ov-separator" data-separator="colors" role="separator" hidden></span>
             <button class="ov-icon-button" data-action="zoom-out" type="button">${icons.zoomOut}</button>
             <button class="ov-zoom-label" data-action="reset-zoom" type="button">100%</button>
             <button class="ov-icon-button" data-action="zoom-in" type="button">${icons.zoomIn}</button>
-            <span class="ov-separator" role="separator"></span>
+            <span class="ov-separator" data-separator="open" role="separator"></span>
             <button class="ov-button" data-action="open" type="button" hidden>
               ${icons.openExternal}<span class="ov-button-label"></span>
             </button>
@@ -53,12 +58,14 @@ export class Shell {
     this.root = find('.ov-shell');
     this.fileName = find('.ov-file-name');
     this.fileIcon = find('.ov-file-icon');
+    this.colorsButton = find('[data-action="colors"]');
+    this.colorsSeparator = find('[data-separator="colors"]');
     this.zoomOut = find('[data-action="zoom-out"]');
     this.zoomLabel = find('[data-action="reset-zoom"]');
     this.zoomIn = find('[data-action="zoom-in"]');
     this.openButton = find('[data-action="open"]');
     this.openLabel = find('.ov-button-label');
-    this.separator = find('.ov-separator');
+    this.separator = find('[data-separator="open"]');
     this.progress = find('.ov-progress');
     this.viewport = find('.ov-viewport');
     this.content = find('.ov-content');
@@ -67,6 +74,20 @@ export class Shell {
     this.zoomIn.addEventListener('click', handlers.onZoomIn);
     this.zoomLabel.addEventListener('click', handlers.onResetZoom);
     this.openButton.addEventListener('click', handlers.onOpenInOffice);
+    this.colorsButton.addEventListener('click', handlers.onToggleColors);
+  }
+
+  /**
+   * Shows the dark/original colors toggle (only useful in dark themes) and marks whether
+   * the document is currently shown with adapted colors.
+   */
+  setColors(available: boolean, dark: boolean, strings: ViewerStrings): void {
+    this.colorsButton.hidden = !available;
+    this.colorsSeparator.hidden = !available;
+    this.colorsButton.setAttribute('aria-pressed', String(dark));
+    this.colorsButton.setAttribute('aria-label', strings.showDarkColors);
+    this.colorsButton.title = dark ? strings.showOriginalColors : strings.showDarkColors;
+    this.root.dataset.colors = available && dark ? 'dark' : 'original';
   }
 
   setDocument(
@@ -108,6 +129,9 @@ export class Shell {
 
   showError(title: string, message: string, actionLabel: string | undefined): void {
     this.setZoomEnabled(false);
+    this.colorsButton.hidden = true;
+    this.colorsSeparator.hidden = true;
+    this.root.dataset.colors = 'original';
     this.content.style.zoom = '';
     this.content.innerHTML = `
       <div class="ov-error" role="alert">

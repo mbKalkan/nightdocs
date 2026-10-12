@@ -1,6 +1,8 @@
 import './styles/viewer.css';
+import { formatCssColor } from '../shared/color';
 import { detectContainer } from '../shared/formats';
 import type { HostToWebviewMessage, LoadMessage, ReadErrorMessage } from '../shared/protocol';
+import { adaptDocumentColors, isDarkTheme, readPalette } from './darkColors';
 import { loadRenderer } from './renderers';
 import { Shell } from './shell';
 import { vscode, type ViewState } from './vscodeApi';
@@ -10,12 +12,16 @@ const saved: ViewState = vscode.getState() ?? { zoom: null, scrollRatio: 0 };
 let fixedZoom = saved.zoom;
 let hasContent = false;
 let renderId = 0;
+/** The last document received, kept to re-render when colors or the theme change. */
+let lastLoad: LoadMessage | undefined;
+let themeKey = currentThemeKey();
 
 const shell = new Shell(document.getElementById('app') as HTMLElement, {
   onZoomIn: () => zoom.zoomIn(),
   onZoomOut: () => zoom.zoomOut(),
   onResetZoom: () => zoom.reset(),
   onOpenInOffice: () => vscode.postMessage({ type: 'openInOffice' }),
+  onToggleColors: toggleColors,
 });
 shell.setZoomEnabled(false);
 
@@ -73,10 +79,29 @@ shell.viewport.addEventListener('scroll', () => {
   scrollFrame = requestAnimationFrame(saveState);
 });
 
+// VS Code swaps body classes and CSS variables when the color theme changes.
+let themeTimer: ReturnType<typeof setTimeout> | undefined;
+const themeObserver = new MutationObserver(() => {
+  clearTimeout(themeTimer);
+  themeTimer = setTimeout(() => {
+    const key = currentThemeKey();
+    if (key !== themeKey) {
+      themeKey = key;
+      rerender();
+    }
+  }, 50);
+});
+themeObserver.observe(document.body, {
+  attributes: true,
+  attributeFilter: ['class', 'data-vscode-theme-kind'],
+});
+themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+
 vscode.postMessage({ type: 'ready' });
 
 async function show(message: LoadMessage): Promise<void> {
   const id = ++renderId;
+  lastLoad = message;
   // A file caught mid-save can be incomplete; keep showing the last good render in that case.
   const keepOnFailure = message.reload && hasContent;
   shell.setDocument(message.fileName, message.format, message.canOpenInOffice, message.strings);
@@ -91,6 +116,9 @@ async function show(message: LoadMessage): Promise<void> {
     return;
   }
 
+  const darkTheme = isDarkTheme();
+  const palette = darkTheme && message.colorMode === 'dark' ? readPalette() : undefined;
+
   shell.setBusy(true);
   // Render off-screen first so a reload swaps content in one step instead of flashing.
   const stage = document.createElement('div');
@@ -102,9 +130,13 @@ async function show(message: LoadMessage): Promise<void> {
     if (id !== renderId) {
       return;
     }
+    if (palette) {
+      adaptDocumentColors(stage, palette);
+    }
     const scrollRatio = hasContent ? currentScrollRatio() : saved.scrollRatio;
     shell.content.replaceChildren(...stage.childNodes);
     hasContent = true;
+    shell.setColors(darkTheme, message.colorMode === 'dark', message.strings);
     shell.setZoomEnabled(true);
     zoom.setNaturalWidth(rendered.naturalWidth);
     restoreScroll(scrollRatio);
@@ -121,6 +153,23 @@ async function show(message: LoadMessage): Promise<void> {
   }
 }
 
+function toggleColors(): void {
+  if (!lastLoad) {
+    return;
+  }
+  const mode = lastLoad.colorMode === 'dark' ? 'original' : 'dark';
+  lastLoad = { ...lastLoad, colorMode: mode };
+  vscode.postMessage({ type: 'setColorMode', mode });
+  rerender();
+}
+
+/** Renders the current document again in place, keeping zoom and scroll position. */
+function rerender(): void {
+  if (lastLoad && hasContent) {
+    void show({ ...lastLoad, reload: true });
+  }
+}
+
 function showReadError(message: ReadErrorMessage): void {
   shell.setDocument(message.fileName, message.format, message.canOpenInOffice, message.strings);
   showError(message, message.strings.errorRead);
@@ -133,6 +182,14 @@ function showError(message: LoadMessage | ReadErrorMessage, reason: string): voi
     reason,
     message.canOpenInOffice ? message.strings.openInOffice : undefined,
   );
+}
+
+function currentThemeKey(): string {
+  const palette = readPalette();
+  const colors = palette
+    ? `${formatCssColor(palette.background)} ${formatCssColor(palette.foreground)}`
+    : '';
+  return `${isDarkTheme()} ${colors}`;
 }
 
 function currentScrollRatio(): number {
