@@ -6,5 +6,7 @@
   "command.openInOffice": "Office'te Aç",
   "command.zoomIn": "Yakınlaştır",
   "command.zoomOut": "Uzaklaştır",
-  "command.resetZoom": "Yakınlaştırmayı Sıfırla"
+  "command.resetZoom": "Yakınlaştırmayı Sıfırla",
+  "command.nextSheet": "Sonraki Sayfa",
+  "command.previousSheet": "Önceki Sayfa"
 }

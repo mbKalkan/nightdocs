@@ -28,6 +28,9 @@ export const strings: ViewerStrings = {
     "The file is password-protected or uses an older binary format that isn't supported yet.",
   errorRender: 'Something went wrong while rendering this document.',
   errorRead: "The file couldn't be read.",
+  statusCount: 'Count: {0}',
+  statusSum: 'Sum: {0}',
+  statusAverage: 'Average: {0}',
 };
 
 /**
@@ -113,14 +116,17 @@ export async function openViewer(page: Page, theme: ThemeName) {
       await this.post({
         type: 'load',
         fileName: fixture,
-        format: 'docx',
+        format: fixture.endsWith('.xlsx') ? 'xlsx' : 'docx',
         data: readFileSync(join('test/fixtures', fixture)),
         reload,
         canOpenInOffice: true,
         colorMode,
-        strings,
+        locale: 'en-US',
+        strings: fixture.endsWith('.xlsx')
+          ? { ...strings, openInOffice: 'Open in Excel' }
+          : strings,
       });
-      await page.waitForSelector('.docx-wrapper, .ov-error');
+      await page.waitForSelector('.docx-wrapper, .ng-canvas, .ov-error');
       await page.waitForSelector('.ov-progress', { state: 'hidden' });
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */

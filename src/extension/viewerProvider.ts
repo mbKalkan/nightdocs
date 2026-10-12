@@ -3,6 +3,7 @@ import { formatForPath, type FormatInfo } from '../shared/formats';
 import type {
   ColorMode,
   HostToWebviewMessage,
+  ViewerCommand,
   WebviewToHostMessage,
   ZoomAction,
 } from '../shared/protocol';
@@ -37,6 +38,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       vscode.commands.registerCommand('nightdocs.zoomIn', () => provider.zoomActive('in')),
       vscode.commands.registerCommand('nightdocs.zoomOut', () => provider.zoomActive('out')),
       vscode.commands.registerCommand('nightdocs.resetZoom', () => provider.zoomActive('reset')),
+      vscode.commands.registerCommand('nightdocs.nextSheet', () =>
+        provider.sendCommand('nextSheet'),
+      ),
+      vscode.commands.registerCommand('nightdocs.previousSheet', () =>
+        provider.sendCommand('previousSheet'),
+      ),
     );
   }
 
@@ -126,6 +133,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       data: new Uint8Array(data),
       reload,
       colorMode: this.state.get<ColorMode>(ViewerProvider.colorModeKey, 'dark'),
+      locale: Intl.DateTimeFormat().resolvedOptions().locale,
       ...common,
     });
   }
@@ -161,6 +169,13 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     const active = this.activePanel;
     const info = active && formatForPath(active.uri.path);
     return active && info ? this.openInOffice(active.uri, info) : undefined;
+  }
+
+  private sendCommand(command: ViewerCommand): void {
+    void this.activePanel?.panel.webview.postMessage({
+      type: 'command',
+      command,
+    } satisfies HostToWebviewMessage);
   }
 
   private zoomActive(action: ZoomAction): void {

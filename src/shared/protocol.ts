@@ -1,6 +1,6 @@
 // Messages exchanged between the extension host and the webview.
 
-export type DocumentFormat = 'docx';
+export type DocumentFormat = 'docx' | 'xlsx';
 
 /** `dark` adapts document colors to dark themes; `original` shows them as authored. */
 export type ColorMode = 'dark' | 'original';
@@ -20,6 +20,10 @@ export interface ViewerStrings {
   errorProtectedOrLegacy: string;
   errorRender: string;
   errorRead: string;
+  /** Status bar templates for spreadsheet selections; `{0}` is the value. */
+  statusCount: string;
+  statusSum: string;
+  statusAverage: string;
 }
 
 export interface LoadMessage {
@@ -31,6 +35,8 @@ export interface LoadMessage {
   reload: boolean;
   canOpenInOffice: boolean;
   colorMode: ColorMode;
+  /** The user's locale, for dates and numbers shown the way their Office would. */
+  locale: string;
   strings: ViewerStrings;
 }
 
@@ -49,7 +55,14 @@ export interface ZoomMessage {
 
 export type ZoomAction = 'in' | 'out' | 'reset';
 
-export type HostToWebviewMessage = LoadMessage | ReadErrorMessage | ZoomMessage;
+export type ViewerCommand = 'nextSheet' | 'previousSheet';
+
+export interface CommandMessage {
+  type: 'command';
+  command: ViewerCommand;
+}
+
+export type HostToWebviewMessage = LoadMessage | ReadErrorMessage | ZoomMessage | CommandMessage;
 
 export type WebviewToHostMessage =
   { type: 'ready' } | { type: 'openInOffice' } | { type: 'setColorMode'; mode: ColorMode };

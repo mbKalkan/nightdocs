@@ -21,7 +21,10 @@
   ],
   "keywords": [
     "docx",
+    "xlsx",
     "word",
+    "excel",
+    "spreadsheet",
     "viewer",
     "office",
     "dark"
@@ -47,6 +50,12 @@
         "selector": [
           {
             "filenamePattern": "*.docx"
+          },
+          {
+            "filenamePattern": "*.xlsx"
+          },
+          {
+            "filenamePattern": "*.xlsm"
           }
         ],
         "priority": "default"
@@ -73,6 +82,16 @@
         "command": "nightdocs.resetZoom",
         "title": "%command.resetZoom%",
         "category": "%category%"
+      },
+      {
+        "command": "nightdocs.nextSheet",
+        "title": "%command.nextSheet%",
+        "category": "%category%"
+      },
+      {
+        "command": "nightdocs.previousSheet",
+        "title": "%command.previousSheet%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -91,6 +110,14 @@
         },
         {
           "command": "nightdocs.resetZoom",
+          "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.nextSheet",
+          "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.previousSheet",
           "when": "activeCustomEditorId == nightdocs.viewer"
         }
       ]
@@ -131,6 +158,18 @@
         "key": "ctrl+numpad0",
         "mac": "cmd+numpad0",
         "when": "activeCustomEditorId == nightdocs.viewer"
+      },
+      {
+        "command": "nightdocs.nextSheet",
+        "key": "ctrl+alt+pagedown",
+        "mac": "cmd+alt+pagedown",
+        "when": "activeCustomEditorId == nightdocs.viewer"
+      },
+      {
+        "command": "nightdocs.previousSheet",
+        "key": "ctrl+alt+pageup",
+        "mac": "cmd+alt+pageup",
+        "when": "activeCustomEditorId == nightdocs.viewer"
       }
     ]
   },
@@ -154,6 +193,7 @@
     "test:visual": "node scripts/build.mjs && playwright test",
     "test:smoke": "node scripts/build.mjs && node scripts/smoke.mjs",
     "fixtures": "node scripts/gen-fixtures.mjs",
+    "fixtures:large": "node scripts/gen-fixtures.mjs --large",
     "package": "vsce package --no-dependencies",
     "vscode:prepublish": "node scripts/build.mjs --production"
   },
@@ -175,6 +215,7 @@
   },
   "dependencies": {
     "docx-preview": "^0.4.1",
-    "jszip": "^3.10.2"
+    "jszip": "^3.10.2",
+    "ssf": "^0.11.2"
   }
 }
