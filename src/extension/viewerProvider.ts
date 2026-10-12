@@ -7,6 +7,7 @@ import type {
   WebviewToHostMessage,
   ZoomAction,
 } from '../shared/protocol';
+import { DiffPairs, type DiffMember } from './diffPairs';
 import { watchFile } from './fileWatcher';
 import { openWithDefaultApp } from './openWithDefaultApp';
 import { viewerStrings } from './strings';
@@ -19,6 +20,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private static readonly colorModeKey = 'nightdocs.colorMode';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
+  private readonly diffs = new DiffPairs();
 
   constructor(
     private readonly extension: vscode.Extension<unknown>,
@@ -70,12 +72,21 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
     const post = (message: HostToWebviewMessage) => panel.webview.postMessage(message);
     const load = (reload: boolean) => this.loadInto(uri, info, reload, post);
+    const member: DiffMember = { uri, post, ready: false };
+    this.diffs.add(member, panel.viewColumn);
 
     const subscriptions: vscode.Disposable[] = [
       panel.webview.onDidReceiveMessage((message: WebviewToHostMessage) => {
         switch (message.type) {
           case 'ready':
+            this.diffs.ready(member);
             void load(false);
+            break;
+          case 'summary':
+            this.diffs.summary(member, message.summary);
+            break;
+          case 'scroll':
+            this.diffs.scroll(member, message.anchor);
             break;
           case 'openInOffice':
             void this.openInOffice(uri, info);
@@ -92,6 +103,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
     panel.onDidDispose(() => {
       subscriptions.forEach((s) => s.dispose());
+      this.diffs.remove(member);
       if (this.activePanel?.panel === panel) {
         this.activePanel = undefined;
         this.updateContext();

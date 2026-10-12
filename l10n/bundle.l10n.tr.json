@@ -29,5 +29,11 @@
   "The file is empty.": "Dosya boş.",
   "Slide {0}": "Slayt {0}",
   "Slide {0} of {1}": "Slayt {0} / {1}",
-  "Hidden slide": "Gizli slayt"
+  "Hidden slide": "Gizli slayt",
+  "No changes": "Değişiklik yok",
+  "1 change": "1 değişiklik",
+  "{0} changes": "{0} değişiklik",
+  "Change {0} of {1}": "Değişiklik {0} / {1}",
+  "Previous Change": "Önceki Değişiklik",
+  "Next Change": "Sonraki Değişiklik"
 }

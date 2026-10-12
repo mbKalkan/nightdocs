@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { lastSent, openComparison, relayScroll } from './comparison';
 import { openViewer } from './harness';
 
 // Screenshots for the README and the Marketplace page. Not part of the test run:
@@ -51,4 +52,28 @@ test('PowerPoint presentation in a dark theme', async ({ page }) => {
   await expect(page.locator('.ov-status')).toHaveText('Slide 4 of 8');
   await page.locator('.ov-viewport').blur();
   await page.screenshot({ path: `${OUT}/powerpoint-dark.png` });
+});
+
+test('Word comparison in a dark theme', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['sample.docx', 'sample-revised.docx'],
+    600,
+  );
+  // The modified side opens at its first change; the original follows, as in VS Code.
+  await expect.poll(() => lastSent(modified.viewer, 'scroll')).toBeTruthy();
+  await relayScroll(modified, original);
+  const shots = await Promise.all([original.page.screenshot(), modified.page.screenshot()]);
+
+  // Side by side with a one-pixel divider, like VS Code's diff editor.
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1201, height: 760 });
+  const images = shots.map(
+    (shot) => `<img src="data:image/png;base64,${shot.toString('base64')}">`,
+  );
+  await page.setContent(
+    `<body style="margin:0;display:flex;gap:1px;background:#2b2b2b">${images.join('')}</body>`,
+  );
+  await page.screenshot({ path: `${OUT}/word-compare-dark.png` });
 });

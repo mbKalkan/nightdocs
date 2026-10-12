@@ -59,6 +59,16 @@ click opens the file in Word, Excel or PowerPoint.
 
 ![A PowerPoint presentation in Nightdocs with charts adapted to a dark theme](docs/images/powerpoint-dark.png)
 
+### Comparing versions
+
+- Open a changed Word document from **Source Control**, or compare two files with **Select for
+  Compare**, and Nightdocs shows both versions side by side
+- Edited, added and removed paragraphs and table cells are marked, down to the changed words
+- Both sides scroll together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
+  status bar move between changes
+
+![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)
+
 ### Everywhere
 
 - Zoom with the toolbar, the keyboard, <kbd>Ctrl</kbd>+mouse wheel or pinch
@@ -89,14 +99,15 @@ If another extension also opens these files, right-click the file and choose
 
 ## Keyboard shortcuts
 
-| Action                | Windows / Linux                                                  | macOS                                                           |
-| --------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
-| Zoom in / out         | <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>      | <kbd>Cmd</kbd>+<kbd>=</kbd> / <kbd>Cmd</kbd>+<kbd>-</kbd>       |
-| Reset zoom            | <kbd>Ctrl</kbd>+<kbd>Numpad 0</kbd>                              | <kbd>Cmd</kbd>+<kbd>Numpad 0</kbd>                              |
-| Find                  | <kbd>Ctrl</kbd>+<kbd>F</kbd>                                     | <kbd>Cmd</kbd>+<kbd>F</kbd>                                     |
-| Next / previous sheet | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> | <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
-| Copy selected cells   | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                     | <kbd>Cmd</kbd>+<kbd>C</kbd>                                     |
-| Next / previous slide | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                                | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                               |
+| Action                 | Windows / Linux                                                  | macOS                                                           |
+| ---------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Zoom in / out          | <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>      | <kbd>Cmd</kbd>+<kbd>=</kbd> / <kbd>Cmd</kbd>+<kbd>-</kbd>       |
+| Reset zoom             | <kbd>Ctrl</kbd>+<kbd>Numpad 0</kbd>                              | <kbd>Cmd</kbd>+<kbd>Numpad 0</kbd>                              |
+| Find                   | <kbd>Ctrl</kbd>+<kbd>F</kbd>                                     | <kbd>Cmd</kbd>+<kbd>F</kbd>                                     |
+| Next / previous sheet  | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> | <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
+| Copy selected cells    | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                     | <kbd>Cmd</kbd>+<kbd>C</kbd>                                     |
+| Next / previous slide  | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                                | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                               |
+| Next / previous change | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                   | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                  |
 
 ## Limitations
 
@@ -104,6 +115,8 @@ If another extension also opens these files, right-click the file and choose
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
 - Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
+- Comparing versions works for Word documents so far; Excel and PowerPoint files open side by side
+  without marks.
 - PowerPoint animations, transitions, speaker notes and media playback aren't shown. Some pasted
   vector pictures (EMF/WMF) appear as placeholders.
 

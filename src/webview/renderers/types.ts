@@ -1,5 +1,11 @@
 import type { DarkPalette } from '../../shared/color';
-import type { ViewerStrings, ViewerCommand } from '../../shared/protocol';
+import type {
+  DiffSide,
+  DocumentSummary,
+  ScrollAnchor,
+  ViewerCommand,
+  ViewerStrings,
+} from '../../shared/protocol';
 
 export interface RenderOptions {
   /** Present when document colors should be adapted to a dark theme. */
@@ -31,7 +37,23 @@ export interface RenderedDocument {
   command?(command: ViewerCommand): void;
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
+  /** What the other side of a comparison needs to find the differences. */
+  summary?(): DocumentSummary;
+  /** Marks where this document differs from the other side's, once it is on screen. */
+  compare?(peer: DocumentSummary, side: DiffSide, context: RenderContext): Comparison | undefined;
   dispose?(): void;
+}
+
+/** The differences marked in one side of a comparison. */
+export interface Comparison {
+  /** Scroll position of each change in this document, top to bottom. */
+  changeTops(): number[];
+  /** Where the other side should scroll to so that the same content is at the top. */
+  anchor(): ScrollAnchor | undefined;
+  /** Scrolls to a position the other side sent. */
+  scrollTo(anchor: ScrollAnchor): void;
+  /** Removes the marks. */
+  dispose(): void;
 }
 
 export interface Renderer {

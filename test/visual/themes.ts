@@ -13,6 +13,10 @@ export const themes = {
     classes: ['vscode-dark'],
     variables: {
       ...font,
+      '--vscode-diffEditor-insertedTextBackground': 'rgba(156, 204, 44, 0.2)',
+      '--vscode-diffEditor-removedTextBackground': 'rgba(255, 0, 0, 0.2)',
+      '--vscode-diffEditor-insertedLineBackground': 'rgba(155, 185, 85, 0.2)',
+      '--vscode-diffEditor-removedLineBackground': 'rgba(255, 0, 0, 0.2)',
       '--vscode-editor-background': '#1f1f1f',
       '--vscode-editor-foreground': '#cccccc',
       '--vscode-inputOption-activeBackground': 'rgba(36, 137, 219, 0.51)',
@@ -54,6 +58,10 @@ export const themes = {
     classes: ['vscode-light'],
     variables: {
       ...font,
+      '--vscode-diffEditor-insertedTextBackground': 'rgba(156, 204, 44, 0.25)',
+      '--vscode-diffEditor-removedTextBackground': 'rgba(255, 0, 0, 0.2)',
+      '--vscode-diffEditor-insertedLineBackground': 'rgba(155, 185, 85, 0.2)',
+      '--vscode-diffEditor-removedLineBackground': 'rgba(255, 0, 0, 0.2)',
       '--vscode-editor-background': '#ffffff',
       '--vscode-editor-foreground': '#3b3b3b',
       '--vscode-inputOption-activeBackground': 'rgba(0, 95, 184, 0.2)',
@@ -95,6 +103,8 @@ export const themes = {
     classes: ['vscode-high-contrast'],
     variables: {
       ...font,
+      '--vscode-diffEditor-insertedTextBorder': '#33ff2e',
+      '--vscode-diffEditor-removedTextBorder': '#ff008f',
       '--vscode-editor-background': '#000000',
       '--vscode-editor-foreground': '#ffffff',
       '--vscode-inputOption-activeBackground': 'rgba(0, 0, 0, 0)',
@@ -133,6 +143,8 @@ export const themes = {
     classes: ['vscode-high-contrast', 'vscode-high-contrast-light'],
     variables: {
       ...font,
+      '--vscode-diffEditor-insertedTextBorder': '#374e06',
+      '--vscode-diffEditor-removedTextBorder': '#ad0707',
       '--vscode-editor-background': '#ffffff',
       '--vscode-editor-foreground': '#292929',
       '--vscode-inputOption-activeBackground': 'rgba(0, 0, 0, 0)',

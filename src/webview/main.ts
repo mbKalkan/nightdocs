@@ -3,8 +3,9 @@ import { formatCssColor } from '../shared/color';
 import { detectContainer } from '../shared/formats';
 import type { HostToWebviewMessage, LoadMessage, ReadErrorMessage } from '../shared/protocol';
 import { isDarkTheme, readPalette } from './darkColors';
+import { DiffController } from './diff/controller';
 import { loadRenderer } from './renderers';
-import type { RenderedDocument } from './renderers/types';
+import type { RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
 import { vscode, type ViewState } from './vscodeApi';
 import { ZoomController } from './zoomController';
@@ -18,6 +19,8 @@ let lastLoad: LoadMessage | undefined;
 /** The document currently on screen. */
 let current: RenderedDocument | undefined;
 let themeKey = currentThemeKey();
+/** Present when this viewer is one side of a comparison. */
+const diff = new DiffController();
 
 const shell = new Shell(document.getElementById('app') as HTMLElement, {
   onZoomIn: () => zoom.zoomIn(),
@@ -60,6 +63,15 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       break;
     case 'command':
       current?.command?.(message.command);
+      break;
+    case 'diff':
+      diff.setSide(message.side);
+      break;
+    case 'peerSummary':
+      diff.setPeer(message.summary);
+      break;
+    case 'peerScroll':
+      diff.follow(message.anchor);
       break;
   }
 });
@@ -157,13 +169,15 @@ async function show(message: LoadMessage): Promise<void> {
     shell.setZoomEnabled(true);
     zoom.setNaturalWidth(rendered.naturalWidth);
     restoreScroll(scrollRatio);
-    rendered.activate?.({
+    const context: RenderContext = {
       viewport: shell.viewport,
       footer: shell.footer,
       overlay: shell.overlay,
       getZoom: () => zoom.zoom,
       setBusy: (busy) => shell.setBusy(busy),
-    });
+    };
+    rendered.activate?.(context);
+    diff.attach(rendered, context, message.strings);
   } catch (error) {
     console.error(error);
     if (id === renderId && !keepOnFailure) {
@@ -211,6 +225,7 @@ function showError(message: LoadMessage | ReadErrorMessage, reason: string): voi
 
 /** Releases the previous document (its workers, listeners and footer) before showing another. */
 function replaceCurrent(next: RenderedDocument | undefined): void {
+  diff.detach();
   current?.dispose?.();
   current = next;
   shell.footer.replaceChildren();

@@ -41,6 +41,35 @@ export interface ViewerStrings {
   /** `Slide {0} of {1}`, shown in the status bar of presentations. */
   slidePosition: string;
   hiddenSlide: string;
+  /** Status bar text when comparing two versions; `{0}` is a number. */
+  noChanges: string;
+  oneChange: string;
+  changeCount: string;
+  /** `Change {0} of {1}` */
+  changePosition: string;
+  previousChange: string;
+  nextChange: string;
+}
+
+/** Which version a viewer shows when VS Code compares two files side by side. */
+export type DiffSide = 'original' | 'modified';
+
+/** What a viewer shares with the other side of a comparison to find the differences. */
+export type DocumentSummary = WordSummary;
+
+export interface WordSummary {
+  format: 'docx';
+  /** Text of each paragraph of the body, in order; pictures count as U+FFFC. */
+  blocks: string[];
+}
+
+/**
+ * A scroll position in the receiver's terms: `fraction` of the way through item `index`
+ * (a paragraph, a slide, a row) is at the top of the window.
+ */
+export interface ScrollAnchor {
+  index: number;
+  fraction: number;
 }
 
 export interface LoadMessage {
@@ -79,7 +108,35 @@ export interface CommandMessage {
   command: ViewerCommand;
 }
 
-export type HostToWebviewMessage = LoadMessage | ReadErrorMessage | ZoomMessage | CommandMessage;
+/** The viewer is one side of a comparison; `diff` with no side means it no longer is. */
+export interface DiffMessage {
+  type: 'diff';
+  side: DiffSide | undefined;
+}
+
+export interface PeerSummaryMessage {
+  type: 'peerSummary';
+  summary: DocumentSummary;
+}
+
+export interface PeerScrollMessage {
+  type: 'peerScroll';
+  anchor: ScrollAnchor;
+}
+
+export type HostToWebviewMessage =
+  | LoadMessage
+  | ReadErrorMessage
+  | ZoomMessage
+  | CommandMessage
+  | DiffMessage
+  | PeerSummaryMessage
+  | PeerScrollMessage;
 
 export type WebviewToHostMessage =
-  { type: 'ready' } | { type: 'openInOffice' } | { type: 'setColorMode'; mode: ColorMode };
+  | { type: 'ready' }
+  | { type: 'openInOffice' }
+  | { type: 'setColorMode'; mode: ColorMode }
+  | { type: 'summary'; summary: DocumentSummary }
+  /** Where the other side should scroll to, in its own terms. */
+  | { type: 'scroll'; anchor: ScrollAnchor };

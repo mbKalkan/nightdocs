@@ -157,14 +157,19 @@ function cell(text, fill) {
   });
 }
 
-function sampleDocument() {
+/**
+ * The sample report; `revised` is a later version with words edited, paragraphs added and
+ * removed, and a table cell changed, for comparing two versions.
+ */
+function sampleDocument({ revised = false } = {}) {
   const random = makeRandom(7);
   const rows = [
     ['North', '1,240', '1,385', '+11.7%'],
     ['South', '980', '1,012', '+3.3%'],
-    ['East', '1,105', '1,060', '-4.1%'],
+    revised ? ['East', '1,105', '1,095', '-0.9%'] : ['East', '1,105', '1,060', '-4.1%'],
     ['West', '1,430', '1,598', '+11.7%'],
   ];
+  const only = (condition, ...paragraphs) => (condition ? paragraphs : []);
 
   return new Document({
     creator: 'Nightdocs',
@@ -191,7 +196,10 @@ function sampleDocument() {
           new Paragraph({ text: 'Quarterly Report', heading: HeadingLevel.TITLE }),
           new Paragraph({
             children: [
-              new TextRun({ text: 'Prepared for the leadership team. ', italics: true }),
+              new TextRun({
+                text: revised ? 'Prepared for the board. ' : 'Prepared for the leadership team. ',
+                italics: true,
+              }),
               new TextRun({ text: 'Confidential', bold: true, color: 'C00000' }),
             ],
           }),
@@ -217,11 +225,24 @@ function sampleDocument() {
           new Paragraph(paragraphText(random)),
           new Paragraph({ text: 'Key points', heading: HeadingLevel.HEADING_2 }),
           new Paragraph({ text: 'Retention reached an all-time high.', bullet: { level: 0 } }),
-          new Paragraph({ text: 'Onboarding time dropped by two days.', bullet: { level: 0 } }),
           new Paragraph({
-            text: 'Self-service answers most common questions.',
-            bullet: { level: 1 },
+            text: `Onboarding time dropped by ${revised ? 'three' : 'two'} days.`,
+            bullet: { level: 0 },
           }),
+          ...only(
+            revised,
+            new Paragraph({
+              text: 'Churn fell for the third quarter in a row.',
+              bullet: { level: 0 },
+            }),
+          ),
+          ...only(
+            !revised,
+            new Paragraph({
+              text: 'Self-service answers most common questions.',
+              bullet: { level: 1 },
+            }),
+          ),
           new Paragraph({ text: 'Regional results', heading: HeadingLevel.HEADING_1 }),
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
@@ -262,14 +283,24 @@ function sampleDocument() {
             text: 'Expand self-service content.',
             numbering: { reference: 'steps', level: 0 },
           }),
-          new Paragraph({
-            text: 'Hire two support engineers.',
-            numbering: { reference: 'steps', level: 0 },
-          }),
+          ...only(
+            !revised,
+            new Paragraph({
+              text: 'Hire two support engineers.',
+              numbering: { reference: 'steps', level: 0 },
+            }),
+          ),
           new Paragraph({
             text: 'Review pricing in the East region.',
             numbering: { reference: 'steps', level: 0 },
           }),
+          ...only(
+            revised,
+            new Paragraph({
+              text: 'Open a support hub in Lisbon.',
+              numbering: { reference: 'steps', level: 0 },
+            }),
+          ),
           ...Array.from({ length: 6 }, () => new Paragraph(paragraphText(random))),
           new Paragraph({
             children: [
@@ -338,6 +369,7 @@ async function write(name, document) {
 
 if (!LARGE_ONLY) {
   await write('sample.docx', sampleDocument());
+  await write('sample-revised.docx', sampleDocument({ revised: true }));
   await write('long.docx', longDocument());
 }
 
