@@ -391,6 +391,12 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
   display: none;
 }
 
+/* Fills of row and column default styles; they hide grid lines like cell fills do. */
+.ng-band {
+  position: absolute;
+  pointer-events: none;
+}
+
 .ng-c {
   position: absolute;
   display: flex;
@@ -404,9 +410,12 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
   white-space: pre;
 }
 
+/* Merged cells and spilled text hide the grid lines inside them but keep their outer right and
+   bottom lines, which sit in the last pixel; a fill from the cell style still covers all. */
 .ng-m {
   z-index: 1;
-  background: var(--ng-sheet);
+  background: linear-gradient(var(--ng-sheet), var(--ng-sheet)) no-repeat 0 0 / calc(100% - 1px)
+    calc(100% - 1px);
 }
 
 .ng-w > span {
