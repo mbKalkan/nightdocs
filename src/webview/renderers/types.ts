@@ -15,6 +15,8 @@ export interface RenderContext {
   viewport: HTMLElement;
   /** Bar under the viewport, hidden unless a document puts something in it. */
   footer: HTMLElement;
+  /** Positioned container for floating widgets. */
+  overlay: HTMLElement;
   getZoom(): number;
   setBusy(busy: boolean): void;
 }

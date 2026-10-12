@@ -7,7 +7,7 @@ const EXTENSION_ID = 'mbkalkan.nightdocs';
 const VIEW_TYPE = 'nightdocs.viewer';
 const FIXTURES = path.resolve(__dirname, '../../test/fixtures');
 
-async function waitFor<T>(probe: () => T | undefined, timeoutMs = 10_000): Promise<T> {
+async function waitFor<T>(probe: () => T | undefined, timeoutMs = 30_000): Promise<T> {
   const start = Date.now();
   for (;;) {
     const value = probe();

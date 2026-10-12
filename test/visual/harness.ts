@@ -31,6 +31,12 @@ export const strings: ViewerStrings = {
   statusCount: 'Count: {0}',
   statusSum: 'Sum: {0}',
   statusAverage: 'Average: {0}',
+  find: 'Find',
+  findNoResults: 'No results',
+  findCount: '{0} of {1}',
+  findPrevious: 'Previous Match (Shift+Enter)',
+  findNext: 'Next Match (Enter)',
+  findClose: 'Close (Escape)',
 };
 
 /**

@@ -154,6 +154,7 @@ async function show(message: LoadMessage): Promise<void> {
     rendered.activate?.({
       viewport: shell.viewport,
       footer: shell.footer,
+      overlay: shell.overlay,
       getZoom: () => zoom.zoom,
       setBusy: (busy) => shell.setBusy(busy),
     });

@@ -147,6 +147,40 @@ test('keeps the sheet and selection when the file changes on disk', async ({ pag
   await expect(status(page)).toContainText('C4');
 });
 
+test('finds text anywhere in the sheet, not only on screen', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  await page.locator('.ov-sheet-tab', { hasText: 'Data' }).click();
+  await expect(page.locator('.ng-c', { hasText: 'Revenue' })).toBeVisible();
+
+  await viewer.post({ type: 'command', command: 'find' });
+  const input = page.locator('.ov-find-input');
+  await expect(input).toBeFocused();
+  // ID 1999 is far below the visible rows.
+  await input.fill('1999');
+  await input.press('Enter');
+  await expect(page.locator('.ov-find-count')).toHaveText('1 of 1');
+  await expect(status(page)).toContainText('A2000');
+  await expect(page.locator('.ng-found', { hasText: '1999' })).toBeVisible();
+  await page.screenshot({ path: `${SCREENS}/xlsx-find.png` });
+
+  await input.fill('enterprise');
+  await input.press('Enter');
+  await expect(page.locator('.ov-find-count')).toHaveText(/^1 of \d+$/);
+  await input.press('Enter');
+  await expect(page.locator('.ov-find-count')).toHaveText(/^2 of \d+$/);
+  await input.press('Shift+Enter');
+  await expect(page.locator('.ov-find-count')).toHaveText(/^1 of \d+$/);
+
+  await input.fill('no such text');
+  await input.press('Enter');
+  await expect(page.locator('.ov-find-count')).toHaveText('No results');
+
+  await input.press('Escape');
+  await expect(page.locator('.ov-find')).toBeHidden();
+  await expect(page.locator('.ng-found')).toHaveCount(0);
+});
+
 test('explains a protected workbook', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('protected.xlsx');

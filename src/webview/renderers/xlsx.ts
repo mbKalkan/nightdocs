@@ -1,4 +1,5 @@
 import type { ViewerCommand } from '../../shared/protocol';
+import { FindBar } from '../findBar';
 import { columnName, SheetGrid } from '../xlsx/grid';
 import type { SheetData, WorkbookInfo } from '../xlsx/model';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
@@ -49,6 +50,9 @@ class WorkbookView implements RenderedDocument {
   private status: HTMLElement | undefined;
   private readonly cleanup: (() => void)[] = [];
   private readonly numberFormat: Intl.NumberFormat;
+  private find: FindBar | undefined;
+  private matches: { row: number; col: number }[] = [];
+  private matchIndex = -1;
 
   constructor(
     private readonly client: WorkbookClient,
@@ -139,6 +143,10 @@ class WorkbookView implements RenderedDocument {
   }
 
   command(command: ViewerCommand): void {
+    if (command === 'find') {
+      this.openFind();
+      return;
+    }
     const visible = this.visibleSheets();
     const position = visible.indexOf(this.index);
     const next = command === 'nextSheet' ? position + 1 : position - 1;
@@ -154,7 +162,44 @@ class WorkbookView implements RenderedDocument {
 
   dispose(): void {
     this.cleanup.forEach((dispose) => dispose());
+    this.find?.dispose();
     this.client.dispose();
+  }
+
+  /** Searches the displayed values of the current sheet; Ctrl+F's own widget only sees drawn cells. */
+  private openFind(): void {
+    if (!this.context) return;
+    this.find ??= new FindBar(
+      this.context.overlay,
+      {
+        search: (query) => {
+          this.matches = this.grid.findAll(query, this.options.locale);
+          this.grid.setHighlights(this.matches);
+          // Like Excel, start from the active cell.
+          const active = this.grid.activeCell;
+          const next = this.matches.findIndex(
+            (m) => m.row > active.row || (m.row === active.row && m.col >= active.col),
+          );
+          this.matchIndex = (next < 0 ? 0 : next) - 1;
+          return this.matches.length;
+        },
+        step: (direction) => {
+          const count = this.matches.length;
+          if (count === 0) return 0;
+          this.matchIndex = (this.matchIndex + direction + count) % count;
+          const match = this.matches[this.matchIndex];
+          this.grid.select(match.row, match.col);
+          return this.matchIndex + 1;
+        },
+        clear: () => {
+          this.matches = [];
+          this.grid.setHighlights(undefined);
+        },
+      },
+      this.options.strings,
+      () => this.context?.viewport.focus(),
+    );
+    this.find.open();
   }
 
   private createGrid(sheet: SheetData): SheetGrid {
@@ -221,6 +266,7 @@ class WorkbookView implements RenderedDocument {
     this.context.viewport.scrollTo(0, 0);
     grid.render(true);
     grid.selectRange({ row1: 0, col1: 0, row2: 0, col2: 0 });
+    this.find?.refresh();
   }
 
   private onMouseDown(event: MouseEvent): void {

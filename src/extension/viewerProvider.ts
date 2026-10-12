@@ -44,6 +44,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       vscode.commands.registerCommand('nightdocs.previousSheet', () =>
         provider.sendCommand('previousSheet'),
       ),
+      vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
     );
   }
 
@@ -93,6 +94,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       subscriptions.forEach((s) => s.dispose());
       if (this.activePanel?.panel === panel) {
         this.activePanel = undefined;
+        this.updateContext();
       }
     });
   }
@@ -103,6 +105,13 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     } else if (this.activePanel?.panel === panel) {
       this.activePanel = undefined;
     }
+    this.updateContext();
+  }
+
+  /** Lets keybindings target one format, e.g. our own find for spreadsheets. */
+  private updateContext(): void {
+    const format = this.activePanel ? formatForPath(this.activePanel.uri.path)?.format : undefined;
+    void vscode.commands.executeCommand('setContext', 'nightdocs.activeFormat', format ?? '');
   }
 
   private async loadInto(
