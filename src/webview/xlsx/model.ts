@@ -122,6 +122,9 @@ export interface SheetData {
   drawings: Drawing[];
   /** Conditional formatting results, by cell index. */
   conditional: Map<number, CellOverride>;
+  /** Default styles of whole rows and columns, which also cover the cells the file omits. */
+  rowStyles: Map<number, number>;
+  colStyles: { min: number; max: number; style: number }[];
 }
 
 /** Colors number formats can force, by `cellFormatColors` index (0 = none). */

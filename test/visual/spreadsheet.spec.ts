@@ -97,6 +97,42 @@ test('grows a sheet to show drawings past its data', async ({ page }) => {
   await expect(page.locator('.ng-main .ng-pic')).toBeInViewport();
 });
 
+test('spills text by alignment and fills styled rows and columns', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  await page.locator('.ov-sheet-tab', { hasText: 'No Grid' }).click();
+  await expect(page.locator('.ng-main .ng-c', { hasText: 'Centered across' })).toBeVisible();
+
+  // Measured in one go: the grid may repaint, replacing elements, between separate calls.
+  const { cells, columns } = await page.evaluate(() => {
+    const rects = (selector: string) =>
+      Object.fromEntries(
+        [...document.querySelectorAll(selector)].map((el) => {
+          const { x, width } = el.getBoundingClientRect();
+          return [el.textContent, { x, right: x + width }];
+        }),
+      );
+    return { cells: rects('.ng-main .ng-c'), columns: rects('.ng-top .ng-hc') };
+  });
+  const { B: b, C: c, D: d, F: f } = columns;
+
+  // Right-aligned text grows to the left; centered text grows evenly around its cell.
+  const right = cells['Right-aligned text spills left'];
+  expect(right.x).toBeLessThan(f.x);
+  expect(right.right).toBeCloseTo(f.right, 0);
+  const centered = cells['Centered text spills to both sides'];
+  expect(centered.x).toBeLessThan(c.x);
+  expect(centered.x).toBeGreaterThanOrEqual(b.x - 1);
+  expect(c.x - centered.x).toBeCloseTo(centered.right - c.right, 0);
+  const across = cells['Centered across B to D'];
+  expect(across.x).toBeCloseTo(b.x, 0);
+  expect(across.right).toBeCloseTo(d.right, 0);
+
+  // A styled row and a styled column paint cells the file doesn't list.
+  await expect(page.locator('.ng-main .ng-band')).toHaveCount(2);
+  await page.screenshot({ path: `${SCREENS}/xlsx-layout.png` });
+});
+
 test('shows the original workbook colors on request', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx', false, 'original');

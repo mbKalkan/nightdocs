@@ -421,6 +421,8 @@ export class SheetGrid {
       }
     }
 
+    parts.push(this.bandsHtml(range));
+
     // Merged ranges touching this region: draw each once, and skip the cells they cover.
     const covered = new Set<number>();
     const merges = sheet.merges;
@@ -459,6 +461,40 @@ export class SheetGrid {
     return parts.join('');
   }
 
+  /**
+   * Fills from whole-row and whole-column default styles, under the cells. Rows win over
+   * columns, as in Excel. Their borders are left out: they belong to each cell, not the band.
+   */
+  private bandsHtml(range: CellRange): string {
+    const { sheet, colLeft, rowTop, headerWidth } = this;
+    const fillOf = (style: number) => this.options.colors.fill(this.options.styles[style]?.fill);
+    const parts: string[] = [];
+    const left = headerWidth + colLeft[range.col1];
+    const width = colLeft[range.col2 + 1] - colLeft[range.col1];
+    const top = HEADER_HEIGHT + rowTop[range.row1];
+    const height = rowTop[range.row2 + 1] - rowTop[range.row1];
+    for (const band of sheet.colStyles) {
+      const fill = fillOf(band.style);
+      const c1 = Math.max(band.min, range.col1);
+      const c2 = Math.min(band.max, range.col2);
+      if (!fill || c1 > c2) continue;
+      parts.push(
+        `<div class="ng-band" style="left:${headerWidth + colLeft[c1]}px;top:${top}px;width:${colLeft[c2 + 1] - colLeft[c1]}px;height:${height}px;background:${fill}"></div>`,
+      );
+    }
+    if (sheet.rowStyles.size) {
+      for (let r = range.row1; r <= range.row2; r++) {
+        const style = sheet.rowStyles.get(r);
+        const fill = style === undefined ? undefined : fillOf(style);
+        if (!fill || sheet.rowHeights[r] === 0) continue;
+        parts.push(
+          `<div class="ng-band" style="left:${left}px;top:${HEADER_HEIGHT + rowTop[r]}px;width:${width}px;height:${sheet.rowHeights[r]}px;background:${fill}"></div>`,
+        );
+      }
+    }
+    return parts.join('');
+  }
+
   private cellHtml(
     row: number,
     col: number,
@@ -491,9 +527,12 @@ export class SheetGrid {
       horizontal = kind === CellKind.Number ? 'right' : kind === CellKind.Text ? 'left' : 'center';
     }
 
+    let drawX = x;
     let drawWidth = width;
     const singleLine = !style.wrap && !merged;
-    if (singleLine && text) {
+    if (singleLine && style.horizontal === 'centerContinuous') {
+      drawWidth += this.centerAcrossWidth(row, col, index);
+    } else if (singleLine && text) {
       const textWidth = this.textWidth(text, style) + CELL_PADDING;
       if (textWidth > width) {
         if (kind === CellKind.Number) {
@@ -501,8 +540,10 @@ export class SheetGrid {
           text = '#'.repeat(
             Math.max(1, Math.floor((width - CELL_PADDING) / this.textWidth('#', style))),
           );
-        } else if (kind === CellKind.Text && horizontal === 'left') {
-          drawWidth = this.overflowWidth(row, col, index, textWidth);
+        } else if (kind === CellKind.Text) {
+          const spill = this.spill(row, col, index, textWidth - width, horizontal);
+          drawX -= spill.left;
+          drawWidth += spill.left + spill.right;
         }
       }
     }
@@ -515,7 +556,7 @@ export class SheetGrid {
     if (style.wrap) classes.push('ng-w');
     if (merged || drawWidth > width) classes.push('ng-m');
     if (this.highlights?.has(row * 16384 + col)) classes.push('ng-found');
-    const inline = [`left:${x}px;top:${y}px;width:${drawWidth}px;height:${height}px`];
+    const inline = [`left:${drawX}px;top:${y}px;width:${drawWidth}px;height:${height}px`];
     inline.push(...this.colorCss(style, sheet.cellFormatColors[index], override));
     const bar = override?.bar
       ? `<div class="ng-bar" style="width:calc(${(override.bar.length * 100).toFixed(1)}% - 2px);--bar:${override.bar.color}"></div>`
@@ -558,28 +599,80 @@ export class SheetGrid {
     return css;
   }
 
-  /** Width covering the following empty cells that left-aligned text spills into. */
-  private overflowWidth(row: number, col: number, index: number, needed: number): number {
+  /**
+   * How far text that doesn't fit spills into empty neighbors, as in Excel: left-aligned text
+   * to the right, right-aligned text to the left, centered text evenly to both sides.
+   */
+  private spill(
+    row: number,
+    col: number,
+    index: number,
+    extra: number,
+    horizontal: string,
+  ): { left: number; right: number } {
+    switch (horizontal) {
+      case 'left':
+        return { left: 0, right: this.room(row, col, index, 1, extra) };
+      case 'right':
+        return { left: this.room(row, col, index, -1, extra), right: 0 };
+      case 'center': {
+        // Equal on both sides keeps the text centered on its own cell.
+        const half = extra / 2;
+        const side = Math.min(
+          this.room(row, col, index, -1, half),
+          this.room(row, col, index, 1, half),
+        );
+        return { left: side, right: side };
+      }
+      default:
+        return { left: 0, right: 0 };
+    }
+  }
+
+  /** Width of the empty cells beside a cell in one direction, until `needed` is covered. */
+  private room(row: number, col: number, index: number, direction: 1 | -1, needed: number): number {
     const { sheet } = this;
-    let width = sheet.colWidths[col];
-    const limit = Math.min(
-      this.nextNonEmpty(row, index + 1),
-      col + MAX_OVERFLOW_COLS,
-      sheet.colCount,
-    );
-    for (let c = col + 1; c < limit && width < needed; c++) {
+    const blocker = this.nearestNonEmpty(row, index, direction);
+    let width = 0;
+    for (
+      let c = col + direction, steps = 0;
+      c >= 0 && c < sheet.colCount && c !== blocker && steps < MAX_OVERFLOW_COLS && width < needed;
+      c += direction, steps++
+    ) {
       if (this.isMerged(row, c)) break;
       width += sheet.colWidths[c];
     }
     return width;
   }
 
-  private nextNonEmpty(row: number, from: number): number {
+  /** Column of the closest cell with a value beside cell `index`, or -1 when there is none. */
+  private nearestNonEmpty(row: number, index: number, direction: 1 | -1): number {
     const { sheet } = this;
-    for (let i = from; i < sheet.rowStarts[row + 1]; i++) {
+    const start = sheet.rowStarts[row];
+    const end = sheet.rowStarts[row + 1];
+    for (let i = index + direction; i >= start && i < end; i += direction) {
       if (sheet.cellKinds[i] !== CellKind.Empty) return sheet.cellCols[i];
     }
-    return Infinity;
+    return -1;
+  }
+
+  /** Center across selection: the following empty cells that share the alignment. */
+  private centerAcrossWidth(row: number, col: number, index: number): number {
+    const { sheet } = this;
+    let width = 0;
+    let next = col + 1;
+    for (let i = index + 1; i < sheet.rowStarts[row + 1]; i++, next++) {
+      const style = this.options.styles[sheet.cellStyles[i]];
+      if (
+        sheet.cellCols[i] !== next ||
+        sheet.cellKinds[i] !== CellKind.Empty ||
+        style.horizontal !== 'centerContinuous'
+      ) {
+        break;
+      }
+      width += sheet.colWidths[next];
+    }
+    return width;
   }
 
   private isMerged(row: number, col: number): boolean {

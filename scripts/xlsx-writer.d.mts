@@ -37,8 +37,10 @@ export interface Sheet {
   tabColor?: string;
   frozen?: { rows: number; cols: number };
   showGridLines?: boolean;
-  cols?: { min: number; max: number; width: number; hidden?: boolean }[];
+  cols?: { min: number; max: number; width: number; hidden?: boolean; style?: number }[];
   rowHeights?: Record<number, number>;
+  /** Default style of whole rows. */
+  rowStyles?: Record<number, number>;
   hiddenRows?: number[];
   merges?: string[];
   cells: Cell[];
