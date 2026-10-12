@@ -15,6 +15,8 @@ export class Shell {
   readonly viewport: HTMLElement;
   readonly content: HTMLElement;
   readonly footer: HTMLElement;
+  /** Positioned container for widgets that float over the document, such as find. */
+  readonly overlay: HTMLElement;
   private readonly root: HTMLElement;
   private readonly fileName: HTMLElement;
   private readonly fileIcon: HTMLElement;
@@ -58,6 +60,7 @@ export class Shell {
     const find = <T extends HTMLElement>(selector: string) =>
       container.querySelector(selector) as T;
     this.root = find('.ov-shell');
+    this.overlay = this.root;
     this.fileName = find('.ov-file-name');
     this.fileIcon = find('.ov-file-icon');
     this.colorsButton = find('[data-action="colors"]');

@@ -8,5 +8,6 @@
   "command.zoomOut": "Zoom Out",
   "command.resetZoom": "Reset Zoom",
   "command.nextSheet": "Next Sheet",
-  "command.previousSheet": "Previous Sheet"
+  "command.previousSheet": "Previous Sheet",
+  "command.find": "Find in Sheet"
 }

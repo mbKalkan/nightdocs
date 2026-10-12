@@ -34,6 +34,7 @@ body {
 }
 
 .ov-shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -573,4 +574,56 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
 
 .ov-status > span:first-child {
   color: var(--vscode-foreground);
+}
+
+/* Find widget (spreadsheets) */
+
+.ov-find {
+  position: absolute;
+  top: calc(var(--ov-toolbar-height) + 4px);
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--vscode-editorWidget-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  color: var(--vscode-editorWidget-foreground, var(--vscode-foreground));
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 0.36));
+}
+
+.ov-find-input {
+  width: 220px;
+  height: 24px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  outline: none;
+  background: var(--vscode-input-background, var(--vscode-editor-background));
+  color: var(--vscode-input-foreground, var(--vscode-foreground));
+  font: inherit;
+}
+
+.ov-find-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.ov-find-empty .ov-find-input {
+  border-color: var(--vscode-inputValidation-errorBorder, #be1100);
+}
+
+.ov-find-count {
+  min-width: 70px;
+  padding: 0 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ng-found {
+  box-shadow: inset 0 0 0 999px
+    var(--vscode-editor-findMatchHighlightBackground, rgb(234 92 0 / 0.33));
 }
