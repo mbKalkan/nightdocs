@@ -31,6 +31,8 @@ export interface ViewerStrings {
   findPrevious: string;
   findNext: string;
   findClose: string;
+  chart: string;
+  chartHint: string;
 }
 
 export interface LoadMessage {

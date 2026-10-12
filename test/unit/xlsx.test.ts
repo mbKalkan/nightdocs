@@ -35,7 +35,13 @@ describe('openWorkbook', () => {
   });
 
   it('lists sheets with visibility and tab colors', () => {
-    expect(info.sheets.map((s) => s.name)).toEqual(['Budget', 'Data', 'Hidden', 'No Grid']);
+    expect(info.sheets.map((s) => s.name)).toEqual([
+      'Budget',
+      'Data',
+      'Hidden',
+      'No Grid',
+      'Charts',
+    ]);
     expect(info.sheets[2].hidden).toBe(true);
     expect(info.sheets[0].tabColor).toBe('#70ad47');
     expect(info.activeSheet).toBe(0);
@@ -104,6 +110,41 @@ describe('openWorkbook', () => {
     expect(data.rowCount).toBe(2001);
     const noGrid = await workbook.readSheet(3);
     expect(noGrid.showGridLines).toBe(false);
+  });
+
+  it('reads pictures, chart titles and text boxes', async () => {
+    const workbook = await openWorkbook(bytes, 'en-US');
+    const sheet = await workbook.readSheet(4);
+    const [chart, picture, text, untitled, badge] = sheet.drawings;
+    expect(chart).toMatchObject({
+      kind: 'chart',
+      from: { col: 1, row: 2, colOffset: 0, rowOffset: 0 },
+      to: { col: 8, row: 17 },
+      text: 'Q3 revenue by region',
+    });
+    expect(picture).toMatchObject({ kind: 'picture', mime: 'image/png', from: { col: 9, row: 0 } });
+    expect([...picture.image!.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+    expect(text).toMatchObject({
+      kind: 'text',
+      text: 'Pictures, charts and text boxes\nare drawn over the grid.',
+      fill: '#ffffff',
+      width: 320,
+      height: 64,
+    });
+    // An axis title is not the chart's title.
+    expect(untitled).toMatchObject({ kind: 'chart', text: '' });
+    expect(badge).toMatchObject({ kind: 'picture', from: { col: 30, row: 70 }, width: 96 });
+  });
+
+  it('grows a sheet to fit drawings past its data', async () => {
+    const workbook = await openWorkbook(bytes, 'en-US');
+    const sheet = await workbook.readSheet(4);
+    expect(sheet.rowCount).toBeGreaterThan(71);
+    expect(sheet.colCount).toBeGreaterThan(30);
+    expect(sheet.rowStarts).toHaveLength(sheet.rowCount + 1);
+    expect(sheet.rowHeights).toHaveLength(sheet.rowCount);
+    expect(sheet.colWidths).toHaveLength(sheet.colCount);
+    expect(sheet.rowHeights[sheet.rowCount - 1]).toBe(sheet.defaultRowHeight);
   });
 
   it('rejects files that are not workbooks', async () => {

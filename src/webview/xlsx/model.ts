@@ -45,6 +45,32 @@ export const CellKind = {
   Error: 4,
 } as const;
 
+/** A cell position plus an offset in pixels, as drawings are anchored. */
+export interface CellAnchor {
+  row: number;
+  col: number;
+  rowOffset: number;
+  colOffset: number;
+}
+
+/** Something drawn over the grid: a picture, a chart (shown as a placeholder) or a text box. */
+export interface Drawing {
+  kind: 'picture' | 'chart' | 'text';
+  from: CellAnchor;
+  /** Bottom-right corner for two-cell anchors. */
+  to?: CellAnchor;
+  /** Size in pixels for one-cell anchors. */
+  width?: number;
+  height?: number;
+  image?: Uint8Array<ArrayBuffer>;
+  mime?: string;
+  /** Chart title or text box content. */
+  text?: string;
+  /** Text box colors. */
+  fill?: string;
+  color?: string;
+}
+
 export interface SheetData {
   /** Rows and columns that contain data, merges or formatting. */
   rowCount: number;
@@ -71,6 +97,7 @@ export interface SheetData {
   frozenRows: number;
   frozenCols: number;
   showGridLines: boolean;
+  drawings: Drawing[];
 }
 
 /** Colors number formats can force, by `cellFormatColors` index (0 = none). */

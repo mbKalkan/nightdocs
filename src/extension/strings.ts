@@ -31,5 +31,7 @@ export function viewerStrings(appName: string): ViewerStrings {
     findPrevious: vscode.l10n.t('Previous Match (Shift+Enter)'),
     findNext: vscode.l10n.t('Next Match (Enter)'),
     findClose: vscode.l10n.t('Close (Escape)'),
+    chart: vscode.l10n.t('Chart'),
+    chartHint: vscode.l10n.t('Open in {0} to see this chart', appName),
   };
 }

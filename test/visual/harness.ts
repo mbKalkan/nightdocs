@@ -37,6 +37,8 @@ export const strings: ViewerStrings = {
   findPrevious: 'Previous Match (Shift+Enter)',
   findNext: 'Next Match (Enter)',
   findClose: 'Close (Escape)',
+  chart: 'Chart',
+  chartHint: 'Open in Excel to see this chart',
 };
 
 /**

@@ -493,6 +493,52 @@ function dataSheet(rows) {
   };
 }
 
+function chartsSheet() {
+  const series = {
+    name: 'Q3',
+    categories: 'Budget!$A$3:$A$8',
+    values: 'Budget!$C$3:$C$8',
+    labels: ['North', 'South', 'East', 'West', 'Central', 'Online'],
+    numbers: [1385, 1012, 1060, 1598, 802, 2650],
+  };
+  // A small badge far past the data, so the sheet must grow to show it.
+  const badge = png(96, 48, (x, y) =>
+    y >= 20 && y < 28 ? [255, 255, 255, 255] : [237, 125, 49, 255],
+  );
+  return {
+    name: 'Charts',
+    frozen: { rows: 1, cols: 0 },
+    cells: [{ ref: 'A1', value: 'Drawings', style: 1 }],
+    merges: ['A1:H1'],
+    drawings: [
+      {
+        type: 'chart',
+        from: { col: 1, row: 2 },
+        to: { col: 8, row: 17 },
+        title: 'Q3 revenue by region',
+        series,
+      },
+      // Crosses the frozen row, so each pane draws its part.
+      { type: 'picture', from: { col: 9, row: 0 }, to: { col: 14, row: 11 }, png: chartImage() },
+      {
+        type: 'text',
+        from: { col: 9, row: 13 },
+        size: { width: 320, height: 64 },
+        text: 'Pictures, charts and text boxes\nare drawn over the grid.',
+        fill: 'lt1',
+      },
+      {
+        type: 'chart',
+        from: { col: 1, row: 19 },
+        to: { col: 8, row: 32 },
+        axisTitle: 'Thousands',
+        series,
+      },
+      { type: 'picture', from: { col: 30, row: 70 }, size: { width: 96, height: 48 }, png: badge },
+    ],
+  };
+}
+
 function sampleWorkbook(dataRows) {
   return {
     styles: BASE_STYLES,
@@ -515,6 +561,7 @@ function sampleWorkbook(dataRows) {
         merges: ['B2:D2'],
         cols: [{ min: 2, max: 4, width: 20 }],
       },
+      chartsSheet(),
     ],
   };
 }
