@@ -5,6 +5,15 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Publishes an existing tag again, for example to a store whose token was added after the tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to publish, like v0.2.0
+        required: true
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -18,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -27,8 +38,8 @@ jobs:
       - name: Check the tag, version and changelog agree
         run: |
           version="$(node -p "require('./package.json').version")"
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+          if [ "v$version" != "$TAG" ]; then
+            echo "Tag $TAG doesn't match package.json version $version"
             exit 1
           fi
           node scripts/release-notes.mjs "$version" > release-notes.md
@@ -42,10 +53,11 @@ jobs:
       - run: npm run test:visual
       - run: xvfb-run -a npm run test:smoke
 
-      - run: npm run package -- --out "nightdocs-$GITHUB_REF_NAME.vsix"
+      - run: npm run package -- --out "nightdocs-$TAG.vsix"
 
       # Each store is published to only when its token is set, so a version can also be uploaded
-      # by hand and still get its GitHub release here. Tokens reach only the step that uses them.
+      # by hand and still get its GitHub release here. A version already in a store is skipped,
+      # so publishing a tag again is safe. Tokens reach only the step that uses them.
       - name: Check which stores to publish to
         id: stores
         run: |
@@ -54,18 +66,24 @@ jobs:
 
       - name: Publish to the Visual Studio Marketplace
         if: steps.stores.outputs.marketplace == 'true'
-        run: npx vsce publish --packagePath "nightdocs-$GITHUB_REF_NAME.vsix"
+        run: npx vsce publish --skip-duplicate --packagePath "nightdocs-$TAG.vsix"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       # Run with npx rather than installed: it's a publishing tool, not part of the extension.
       - name: Publish to Open VSX
         if: steps.stores.outputs.openvsx == 'true'
-        run: npx --yes ovsx@1.2.0 publish "nightdocs-$GITHUB_REF_NAME.vsix"
+        run: npx --yes ovsx@1.2.0 publish --skip-duplicate "nightdocs-$TAG.vsix"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
+      # A published release stays as it was when a tag is published again.
       - name: Create the GitHub release
-        run: gh release create "$GITHUB_REF_NAME" "nightdocs-$GITHUB_REF_NAME.vsix" --title "$GITHUB_REF_NAME" --notes-file release-notes.md
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          else
+            gh release create "$TAG" "nightdocs-$TAG.vsix" --title "$TAG" --notes-file release-notes.md
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
