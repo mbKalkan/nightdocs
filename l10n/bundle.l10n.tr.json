@@ -13,5 +13,8 @@
   "Something went wrong while rendering this document.": "Belge görüntülenirken bir sorun oluştu.",
   "The file couldn't be read.": "Dosya okunamadı.",
   "Opening in {0} is only available for local files.": "{0} ile açma yalnızca yerel dosyalarda kullanılabilir.",
-  "Couldn't open the file in {0}: {1}": "Dosya {0} ile açılamadı: {1}"
+  "Couldn't open the file in {0}: {1}": "Dosya {0} ile açılamadı: {1}",
+  "Count: {0}": "Sayı: {0}",
+  "Sum: {0}": "Toplam: {0}",
+  "Average: {0}": "Ortalama: {0}"
 }

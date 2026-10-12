@@ -32,9 +32,29 @@ const tests: Record<string, () => Promise<void>> = {
     assert.ok(vscode.extensions.getExtension(EXTENSION_ID)?.isActive);
   },
 
+  async 'opens .xlsx files in the viewer by default'() {
+    await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(`${FIXTURES}/sample.xlsx`));
+    const input = await waitFor(() => {
+      const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      return tab?.input instanceof vscode.TabInputCustom && tab.input.uri.path.endsWith('.xlsx')
+        ? tab.input
+        : undefined;
+    });
+    assert.equal(input.viewType, VIEW_TYPE);
+    await vscode.commands.executeCommand('nightdocs.nextSheet');
+    await vscode.commands.executeCommand('nightdocs.previousSheet');
+  },
+
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
-    for (const id of ['openInOffice', 'zoomIn', 'zoomOut', 'resetZoom']) {
+    for (const id of [
+      'openInOffice',
+      'zoomIn',
+      'zoomOut',
+      'resetZoom',
+      'nextSheet',
+      'previousSheet',
+    ]) {
       assert.ok(commands.includes(`nightdocs.${id}`), `missing nightdocs.${id}`);
     }
   },

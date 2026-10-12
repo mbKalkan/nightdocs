@@ -311,3 +311,266 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
   color: var(--vscode-descriptionForeground);
   line-height: 1.5;
 }
+
+/* Spreadsheets */
+
+.ov-file-icon[data-format='xlsx'] {
+  color: var(--vscode-charts-green, var(--vscode-icon-foreground));
+}
+
+.ng-host {
+  --ng-accent: var(--vscode-focusBorder, #0078d4);
+  min-width: 100%;
+  min-height: 100%;
+  width: fit-content;
+  background: var(--ng-sheet);
+}
+
+.ng-canvas {
+  position: relative;
+  color: var(--ng-text);
+  font-size: 11pt;
+  line-height: 1.25;
+  cursor: cell;
+  user-select: none;
+}
+
+.ng-layer {
+  position: relative;
+  overflow: hidden;
+}
+
+.ng-main {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.ng-top,
+.ng-left,
+.ng-corner {
+  background: var(--ng-sheet);
+}
+
+.ng-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.ng-left {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.ng-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
+
+.ng-gv,
+.ng-gh {
+  position: absolute;
+  background: var(--ng-grid);
+}
+
+.ng-gv {
+  width: 1px;
+}
+
+.ng-gh {
+  height: 1px;
+}
+
+.ng-no-lines .ng-gv,
+.ng-no-lines .ng-gh {
+  display: none;
+}
+
+.ng-c {
+  position: absolute;
+  display: flex;
+  box-sizing: border-box;
+  padding: 0 3px;
+  overflow: hidden;
+}
+
+.ng-c > span {
+  overflow: hidden;
+  white-space: pre;
+}
+
+.ng-m {
+  z-index: 1;
+  background: var(--ng-sheet);
+}
+
+.ng-w > span {
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ng-h-l {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.ng-h-c {
+  justify-content: center;
+  text-align: center;
+}
+
+.ng-h-r {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.ng-h-j {
+  justify-content: flex-start;
+  text-align: justify;
+}
+
+.ng-v-t {
+  align-items: flex-start;
+}
+
+.ng-v-c {
+  align-items: center;
+}
+
+.ng-v-b {
+  align-items: flex-end;
+}
+
+.ng-h {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-right: 1px solid var(--ng-header-line);
+  border-bottom: 1px solid var(--ng-header-line);
+  background: var(--ng-header-bg);
+  color: var(--ng-header-fg);
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.ng-h.ng-sel {
+  background: color-mix(in srgb, var(--ng-accent) 22%, var(--ng-header-bg));
+  color: var(--ng-text);
+}
+
+.ng-hc.ng-sel {
+  box-shadow: inset 0 -2px 0 var(--ng-accent);
+}
+
+.ng-hr.ng-sel {
+  box-shadow: inset -2px 0 0 var(--ng-accent);
+}
+
+.ng-hx {
+  z-index: 1;
+}
+
+.ng-range,
+.ng-active {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ng-range {
+  border: 1px solid var(--ng-accent);
+  background: color-mix(in srgb, var(--ng-accent) 14%, transparent);
+}
+
+.ng-active {
+  border: 2px solid var(--ng-accent);
+}
+
+/* Footer: sheet tabs and status */
+
+.ov-footer {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  border-top: 1px solid var(--ov-border);
+  background: var(--vscode-editor-background);
+  font-size: 12px;
+  user-select: none;
+}
+
+.ov-sheet-tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ov-sheet-tab {
+  position: relative;
+  flex: none;
+  max-width: 220px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid var(--ov-border);
+  background: transparent;
+  color: var(--vscode-tab-inactiveForeground, var(--vscode-descriptionForeground));
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.ov-sheet-tab:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.ov-sheet-tab[aria-selected='true'] {
+  background: var(--vscode-tab-activeBackground, var(--vscode-editor-background));
+  color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
+  box-shadow: inset 0 2px 0 var(--vscode-focusBorder);
+}
+
+.ov-sheet-tab-colored::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 3px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--tab-color);
+}
+
+.ov-sheet-tab:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.ov-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 16px;
+  max-width: 60%;
+  padding: 0 12px;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ov-status > span:first-child {
+  color: var(--vscode-foreground);
+}

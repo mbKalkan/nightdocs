@@ -6,5 +6,7 @@
   "command.openInOffice": "Open in Office",
   "command.zoomIn": "Zoom In",
   "command.zoomOut": "Zoom Out",
-  "command.resetZoom": "Reset Zoom"
+  "command.resetZoom": "Reset Zoom",
+  "command.nextSheet": "Next Sheet",
+  "command.previousSheet": "Previous Sheet"
 }
