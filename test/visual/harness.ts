@@ -5,6 +5,12 @@ import { buildWebviewHtml } from '../../src/extension/webviewHtml';
 import type { ColorMode, HostToWebviewMessage, ViewerStrings } from '../../src/shared/protocol';
 import { themes, type ThemeName } from './themes';
 
+interface Theme {
+  kind: string;
+  classes: readonly string[];
+  variables: Record<string, string>;
+}
+
 const ORIGIN = 'http://webview.test';
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -74,30 +80,37 @@ export async function openViewer(page: Page, theme: ThemeName) {
     }
   });
 
-  const { bodyClass, variables } = themes[theme];
-  await page.addInitScript(
-    ({ bodyClass, variables }) => {
-      const sent: unknown[] = [];
-      let state: unknown;
-      Object.assign(window, {
-        __sent: sent,
-        acquireVsCodeApi: () => ({
-          postMessage: (message: unknown) => sent.push(message),
-          getState: () => state,
-          setState: (value: unknown) => (state = value),
-        }),
-      });
-      // Init scripts run before the document exists, so theme it once parsing is done.
-      document.addEventListener('DOMContentLoaded', () => {
-        for (const [name, value] of Object.entries(variables)) {
-          document.documentElement.style.setProperty(name, value);
-        }
-        document.body.classList.add(bodyClass);
-        document.body.dataset.vscodeThemeKind = bodyClass;
-      });
-    },
-    { bodyClass, variables },
-  );
+  await page.addInitScript((theme) => {
+    const sent: unknown[] = [];
+    let state: unknown;
+    // VS Code replaces all theme variables and classes on a theme change.
+    const applyTheme = ({ kind, classes, variables }: typeof theme) => {
+      const root = document.documentElement;
+      for (const name of [...root.style]) {
+        if (name.startsWith('--vscode-')) root.style.removeProperty(name);
+      }
+      for (const [name, value] of Object.entries(variables)) root.style.setProperty(name, value);
+      document.body.classList.remove(
+        'vscode-dark',
+        'vscode-light',
+        'vscode-high-contrast',
+        'vscode-high-contrast-light',
+      );
+      document.body.classList.add(...classes);
+      document.body.dataset.vscodeThemeKind = kind;
+    };
+    Object.assign(window, {
+      __sent: sent,
+      __applyTheme: applyTheme,
+      acquireVsCodeApi: () => ({
+        postMessage: (message: unknown) => sent.push(message),
+        getState: () => state,
+        setState: (value: unknown) => (state = value),
+      }),
+    });
+    // Init scripts run before the document exists, so theme it once parsing is done.
+    document.addEventListener('DOMContentLoaded', () => applyTheme(theme));
+  }, themes[theme] as Theme);
 
   await page.goto(`${ORIGIN}/index.html`);
   await page.waitForFunction(() =>
@@ -139,17 +152,9 @@ export async function openViewer(page: Page, theme: ThemeName) {
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */
     async setTheme(name: ThemeName) {
-      const { bodyClass, variables } = themes[name];
       await page.evaluate(
-        ({ bodyClass, variables }) => {
-          for (const [variable, value] of Object.entries(variables)) {
-            document.documentElement.style.setProperty(variable, value);
-          }
-          document.body.classList.remove('vscode-dark', 'vscode-light');
-          document.body.classList.add(bodyClass);
-          document.body.dataset.vscodeThemeKind = bodyClass;
-        },
-        { bodyClass, variables },
+        (theme) => (window as unknown as { __applyTheme(theme: Theme): void }).__applyTheme(theme),
+        themes[name] as Theme,
       );
     },
     sent: () => page.evaluate(() => (window as unknown as { __sent: { type: string }[] }).__sent),

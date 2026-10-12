@@ -26,12 +26,22 @@ export function isDarkTheme(): boolean {
   );
 }
 
+/** True for both the dark and the light high-contrast theme. */
+export function isHighContrastTheme(): boolean {
+  const kind = document.body.dataset.vscodeThemeKind;
+  return kind
+    ? kind.startsWith('vscode-high-contrast')
+    : document.body.classList.contains('vscode-high-contrast');
+}
+
 /** Page and text colors taken from the current VS Code theme. */
 export function readPalette(): DarkPalette | undefined {
   const styles = getComputedStyle(document.documentElement);
   const background = parseCssColor(styles.getPropertyValue('--vscode-editor-background'));
   const foreground = parseCssColor(styles.getPropertyValue('--vscode-editor-foreground'));
-  return background && foreground ? { background, foreground } : undefined;
+  return background && foreground
+    ? { background, foreground, highContrast: isHighContrastTheme() }
+    : undefined;
 }
 
 interface ColorRead {
