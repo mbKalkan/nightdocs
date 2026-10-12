@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+*.vsix
+
+# Test artifacts
+.vscode-test/
+coverage/
+test-results/
+playwright-report/
+test/fixtures/private/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
