@@ -38,5 +38,11 @@ export function viewerStrings(appName: string): ViewerStrings {
     slide: vscode.l10n.t('Slide {0}'),
     slidePosition: vscode.l10n.t('Slide {0} of {1}'),
     hiddenSlide: vscode.l10n.t('Hidden slide'),
+    noChanges: vscode.l10n.t('No changes'),
+    oneChange: vscode.l10n.t('1 change'),
+    changeCount: vscode.l10n.t('{0} changes'),
+    changePosition: vscode.l10n.t('Change {0} of {1}'),
+    previousChange: vscode.l10n.t('Previous Change'),
+    nextChange: vscode.l10n.t('Next Change'),
   };
 }

@@ -1,5 +1,6 @@
 import { renderAsync } from 'docx-preview';
 import { adaptDocumentColors } from '../darkColors';
+import { compareWord, wordBlocks, type WordBlocks } from '../diff/wordCompare';
 import { paginate } from '../paginate';
 import type { RenderedDocument, RenderOptions, Renderer } from './types';
 
@@ -41,6 +42,15 @@ export const docxRenderer: Renderer = {
 
     const pages = target.querySelectorAll<HTMLElement>('.docx-wrapper > section.docx');
     const widest = Math.max(0, ...Array.from(pages, (page) => page.offsetWidth));
-    return { naturalWidth: widest + PAGE_GUTTER };
+    // Only needed when comparing. Looked up in the wrapper, which stays with the content when
+    // it moves out of `target` to be shown.
+    let blocks: WordBlocks | undefined;
+    const paragraphs = () => (blocks ??= wordBlocks(wrapper ?? target));
+    return {
+      naturalWidth: widest + PAGE_GUTTER,
+      summary: () => ({ format: 'docx', blocks: paragraphs().texts }),
+      compare: (peer, side, context) =>
+        peer.format === 'docx' ? compareWord(paragraphs(), peer, side, context) : undefined,
+    };
   },
 };

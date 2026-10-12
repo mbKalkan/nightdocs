@@ -56,6 +56,21 @@ const tests: Record<string, () => Promise<void>> = {
     assert.equal(input.viewType, VIEW_TYPE);
   },
 
+  async 'compares two versions side by side in a tab it can recognize'() {
+    await vscode.commands.executeCommand(
+      'vscode.diff',
+      vscode.Uri.file(`${FIXTURES}/sample.docx`),
+      vscode.Uri.file(`${FIXTURES}/sample-revised.docx`),
+    );
+    const tab = await waitFor(() => {
+      const active = vscode.window.tabGroups.activeTabGroup.activeTab;
+      return active?.label.includes(' ↔ ') ? active : undefined;
+    });
+    // The viewers of a comparison find each other by this: a tab with no input the API exposes.
+    assert.equal(tab.input, undefined);
+    await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+  },
+
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
     for (const id of [

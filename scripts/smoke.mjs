@@ -1,5 +1,7 @@
 // Builds the smoke test suite and runs it inside a downloaded copy of VS Code.
-import { resolve } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { runTests } from '@vscode/test-electron';
 import * as esbuild from 'esbuild';
 
@@ -20,9 +22,21 @@ await esbuild.build({
 // When launched from a terminal inside VS Code this is set and would make Code.exe behave as Node.
 delete process.env.ELECTRON_RUN_AS_NODE;
 
-await runTests({
-  version: process.env.VSCODE_VERSION ?? 'stable',
-  extensionDevelopmentPath: root,
-  extensionTestsPath: suite,
-  launchArgs: [resolve(root, 'test/fixtures'), '--disable-extensions', '--skip-welcome'],
-});
+// A fresh profile each run, so editors VS Code restores from an earlier run can't get in the way.
+const userData = mkdtempSync(join(tmpdir(), 'nightdocs-smoke-'));
+try {
+  await runTests({
+    version: process.env.VSCODE_VERSION ?? 'stable',
+    extensionDevelopmentPath: root,
+    extensionTestsPath: suite,
+    launchArgs: [
+      resolve(root, 'test/fixtures'),
+      '--disable-extensions',
+      '--skip-welcome',
+      '--user-data-dir',
+      userData,
+    ],
+  });
+} finally {
+  rmSync(userData, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+}

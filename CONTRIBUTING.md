@@ -33,6 +33,7 @@ with **Extensions: Install from VSIX…**.
 | `src/webview/renderers/` | One renderer per format, loaded on demand                                    |
 | `src/webview/xlsx/`      | Workbook parsing (in a web worker) and the virtualized grid                  |
 | `src/webview/pptx/`      | Slide navigation and chart colors around the PowerPoint renderer             |
+| `src/webview/diff/`      | Comparing two versions: aligning content, marking changes, scrolling along   |
 | `src/shared/`            | Code used on both sides: the message protocol, colors, zoom                  |
 | `test/unit/`             | Unit tests (Vitest)                                                          |
 | `test/visual/`           | Browser tests of the viewer UI (Playwright)                                  |

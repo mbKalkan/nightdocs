@@ -51,6 +51,12 @@ export const strings: ViewerStrings = {
   slide: 'Slide {0}',
   slidePosition: 'Slide {0} of {1}',
   hiddenSlide: 'Hidden slide',
+  noChanges: 'No changes',
+  oneChange: '1 change',
+  changeCount: '{0} changes',
+  changePosition: 'Change {0} of {1}',
+  previousChange: 'Previous Change',
+  nextChange: 'Next Change',
 };
 
 /**

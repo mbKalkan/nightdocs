@@ -853,3 +853,90 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   outline: 1px dotted var(--vscode-editor-findMatchHighlightBorder, transparent);
   outline-offset: -1px;
 }
+
+/* Comparing two versions side by side. Colors come from VS Code's diff editor and its
+   change markers in the gutter, so a comparison reads like any other diff in VS Code. */
+
+:root {
+  --ov-diff-added-line: var(--vscode-diffEditor-insertedLineBackground, rgb(155 185 85 / 20%));
+  --ov-diff-removed-line: var(--vscode-diffEditor-removedLineBackground, rgb(255 0 0 / 20%));
+  --ov-diff-added-text: var(--vscode-diffEditor-insertedTextBackground, rgb(156 204 44 / 25%));
+  --ov-diff-removed-text: var(--vscode-diffEditor-removedTextBackground, rgb(255 0 0 / 25%));
+  --ov-diff-added-bar: var(--vscode-editorGutter-addedBackground, #2ea043);
+  --ov-diff-removed-bar: var(--vscode-editorGutter-deletedBackground, #f85149);
+}
+
+.ov-diff {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 0 8px;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ov-diff .ov-icon-button {
+  height: 22px;
+}
+
+.ov-diff-status {
+  padding: 0 4px;
+}
+
+/* A line where the other side has paragraphs this one doesn't. */
+.ov-content .nd-diff-gap-before,
+.ov-content .nd-diff-gap-after {
+  box-shadow:
+    0 -2px 0 0 var(--nd-diff-gap-top, transparent),
+    0 2px 0 0 var(--nd-diff-gap-bottom, transparent);
+}
+
+/* A background image, so it shows over the paragraph's own (adapted) shading. */
+.ov-content .nd-diff-line.nd-diff-removed {
+  background-image: linear-gradient(var(--ov-diff-removed-line), var(--ov-diff-removed-line));
+}
+
+.ov-content .nd-diff-line.nd-diff-added {
+  background-image: linear-gradient(var(--ov-diff-added-line), var(--ov-diff-added-line));
+}
+
+.ov-content .nd-diff-gap-before.nd-diff-gap-removed {
+  --nd-diff-gap-top: var(--ov-diff-removed-bar);
+}
+
+.ov-content .nd-diff-gap-before.nd-diff-gap-added {
+  --nd-diff-gap-top: var(--ov-diff-added-bar);
+}
+
+.ov-content .nd-diff-gap-after.nd-diff-gap-removed {
+  --nd-diff-gap-bottom: var(--ov-diff-removed-bar);
+}
+
+.ov-content .nd-diff-gap-after.nd-diff-gap-added {
+  --nd-diff-gap-bottom: var(--ov-diff-added-bar);
+}
+
+.ov-content span.nd-diff-word.nd-diff-removed {
+  border-radius: 2px;
+  background-color: var(--ov-diff-removed-text);
+  outline: 1px dashed var(--vscode-diffEditor-removedTextBorder, transparent);
+}
+
+.ov-content span.nd-diff-word.nd-diff-added {
+  border-radius: 2px;
+  background-color: var(--ov-diff-added-text);
+  outline: 1px dashed var(--vscode-diffEditor-insertedTextBorder, transparent);
+}
+
+.ov-content .nd-diff-word.nd-diff-removed:is(img, svg) {
+  outline: 3px solid var(--ov-diff-removed-bar);
+  outline-offset: 2px;
+}
+
+.ov-content .nd-diff-word.nd-diff-added:is(img, svg) {
+  outline: 3px solid var(--ov-diff-added-bar);
+  outline-offset: 2px;
+}

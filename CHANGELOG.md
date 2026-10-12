@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Compare two versions of a Word document. When VS Code compares a `.docx` file (Source Control,
+  Select for Compare, the Timeline), Nightdocs shows both versions side by side, marks edited,
+  added and removed paragraphs down to the changed words, and scrolls both sides together.
+  <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the status bar move between
+  changes.
+
 ## [0.2.0] - 2026-10-12
 
 ### Added
