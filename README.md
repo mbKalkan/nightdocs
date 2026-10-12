@@ -61,8 +61,9 @@ click opens the file in Word, Excel or PowerPoint.
 
 ### Comparing versions
 
-- Open a changed Word document from **Source Control**, or compare two files with **Select for
-  Compare**, and Nightdocs shows both versions side by side
+- Open a changed Word document from **Source Control** (changes or staged changes), or compare two
+  files with **Select for Compare**, and Nightdocs shows both versions side by side. There is
+  nothing to set up: VS Code uses Nightdocs for both sides.
 - Edited, added and removed paragraphs and table cells are marked, down to the changed words
 - Both sides scroll together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes

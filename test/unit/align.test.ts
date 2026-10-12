@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { orderSides } from '../../src/extension/diffSides';
+import { orderSides, type DiffCandidate } from '../../src/extension/diffSides';
 import { align } from '../../src/webview/diff/align';
 
 describe('align', () => {
@@ -67,7 +67,7 @@ describe('align', () => {
 
 describe('orderSides', () => {
   const file = (name: string, scheme = 'file') => ({ name, scheme });
-  const describe_ = (x: { name: string; scheme: string }) => x;
+  const describe_ = (x: DiffCandidate) => x;
 
   it('follows the order of the names in the tab label', () => {
     const a = file('old.docx');
@@ -83,9 +83,21 @@ describe('orderSides', () => {
     expect(orderSides(git, disk, describe_, 'report.docx ↔ report.docx')).toEqual([git, disk]);
   });
 
+  it('puts what is staged after the last commit and before the file on disk', () => {
+    const head = { ...file('report.docx', 'git'), gitRef: 'HEAD' };
+    const staged = { ...file('report.docx', 'git'), gitRef: '' };
+    const index = { ...file('report.docx', 'git'), gitRef: '~' };
+    const disk = file('report.docx');
+    const label = 'report.docx ↔ report.docx';
+    expect(orderSides(staged, head, describe_, label)).toEqual([head, staged]);
+    expect(orderSides(head, staged, describe_, label)).toEqual([head, staged]);
+    expect(orderSides(disk, index, describe_, label)).toEqual([index, disk]);
+  });
+
   it('keeps the order the viewers came in otherwise', () => {
-    const a = file('report.docx', 'git');
-    const b = file('report.docx', 'git');
+    const a = { ...file('report.docx', 'git'), gitRef: '3f2a1c' };
+    const b = { ...file('report.docx', 'git'), gitRef: '9e8d7b' };
     expect(orderSides(a, b, describe_, 'report.docx ↔ report.docx')).toEqual([a, b]);
+    expect(orderSides(b, a, describe_, 'report.docx ↔ report.docx')).toEqual([b, a]);
   });
 });
