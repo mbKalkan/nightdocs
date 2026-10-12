@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - High contrast themes: documents and sheets aim for AAA text contrast (7:1) in the dark
   high-contrast theme, grid lines and headers are stronger, and toolbar buttons show the
   theme's outlines on hover and when pressed.
-- Clear messages for damaged, password-protected and legacy-format files.
+- Clear messages for empty, damaged, password-protected and legacy-format files.
 - View Excel workbooks (`.xlsx`, `.xlsm`): cell styles, number and date formats (short dates
   follow your locale), merged cells, frozen panes, column widths and row heights, hidden rows,
   columns and sheets, whole-row and whole-column fills, and text that spills into empty
