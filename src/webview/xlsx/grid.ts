@@ -1,6 +1,15 @@
-import { CellKind, type CellStyle, type SheetData } from './model';
+import { icons } from '../icons';
+import { CellKind, type CellAnchor, type CellStyle, type Drawing, type SheetData } from './model';
 import type { CellColors } from './styleSheet';
 import { fontStack } from './styleSheet';
+
+interface PlacedDrawing {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  html: string;
+}
 
 const HEADER_HEIGHT = 20;
 /** Extra pixels rendered around the visible area so small scrolls don't re-render. */
@@ -15,6 +24,8 @@ export interface GridOptions {
   getZoom(): number;
   styles: CellStyle[];
   colors: CellColors;
+  /** Text for chart placeholders: a generic name and how to see the real chart. */
+  chartLabels: { chart: string; hint: string };
   onSelectionChange(): void;
 }
 
@@ -59,6 +70,8 @@ export class SheetGrid {
   /** Last row and column holding a value, or -1 for an empty sheet. */
   readonly lastDataRow: number;
   readonly lastDataCol: number;
+  private readonly drawings: PlacedDrawing[];
+  private readonly objectUrls: string[] = [];
 
   constructor(
     private readonly sheet: SheetData,
@@ -104,6 +117,13 @@ export class SheetGrid {
       left: layer('left'),
       corner: layer('corner'),
     };
+    this.drawings = sheet.drawings.flatMap((drawing) => this.placeDrawing(drawing));
+  }
+
+  /** Releases the object URLs of pictures. */
+  dispose(): void {
+    this.objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    this.objectUrls.length = 0;
   }
 
   get selection(): CellRange {
@@ -290,21 +310,89 @@ export class SheetGrid {
     const frozenRowRange = { row1: 0, row2: frozenRows - 1 };
     const frozenColRange = { col1: 0, col2: frozenCols - 1 };
 
-    this.layers.main.innerHTML = this.region({ ...regionRows, ...regionCols }) + selection;
+    // Each pane draws its own part of the drawings that cross it, as Excel splits them.
+    const pane = (range: CellRange) => this.region(range) + this.drawingsHtml(range);
+
+    this.layers.main.innerHTML = pane({ ...regionRows, ...regionCols }) + selection;
     this.layers.top.innerHTML =
-      (frozenRows ? this.region({ ...frozenRowRange, ...regionCols }) : '') +
+      (frozenRows ? pane({ ...frozenRowRange, ...regionCols }) : '') +
       selection +
       this.columnHeaders(w.col1, w.col2);
     this.layers.left.innerHTML =
-      (frozenCols ? this.region({ ...regionRows, ...frozenColRange }) : '') +
+      (frozenCols ? pane({ ...regionRows, ...frozenColRange }) : '') +
       selection +
       this.rowHeaders(w.row1, w.row2);
     this.layers.corner.innerHTML =
-      (frozenRows && frozenCols ? this.region({ ...frozenRowRange, ...frozenColRange }) : '') +
+      (frozenRows && frozenCols ? pane({ ...frozenRowRange, ...frozenColRange }) : '') +
       selection +
       (frozenCols ? this.columnHeaders(0, frozenCols - 1) : '') +
       (frozenRows ? this.rowHeaders(0, frozenRows - 1) : '') +
       `<div class="ng-h ng-hx" style="left:0;top:0;width:${this.headerWidth}px;height:${HEADER_HEIGHT}px"></div>`;
+  }
+
+  /** Pictures, chart placeholders and text boxes overlapping a region, as HTML. */
+  private drawingsHtml(range: CellRange): string {
+    if (this.drawings.length === 0 || range.row2 < range.row1 || range.col2 < range.col1) {
+      return '';
+    }
+    const left = this.headerWidth + this.colLeft[range.col1];
+    const right = this.headerWidth + this.colLeft[range.col2 + 1];
+    const top = HEADER_HEIGHT + this.rowTop[range.row1];
+    const bottom = HEADER_HEIGHT + this.rowTop[range.row2 + 1];
+    return this.drawings
+      .filter((d) => d.x < right && d.x + d.width > left && d.y < bottom && d.y + d.height > top)
+      .map((d) => d.html)
+      .join('');
+  }
+
+  private placeDrawing(drawing: Drawing): PlacedDrawing[] {
+    const x = this.headerWidth + this.anchorX(drawing.from);
+    const y = HEADER_HEIGHT + this.anchorY(drawing.from);
+    const width = drawing.to
+      ? this.headerWidth + this.anchorX(drawing.to) - x
+      : (drawing.width ?? 0);
+    const height = drawing.to
+      ? HEADER_HEIGHT + this.anchorY(drawing.to) - y
+      : (drawing.height ?? 0);
+    if (width <= 0 || height <= 0) return [];
+    const box = `left:${x}px;top:${y}px;width:${width}px;height:${height}px`;
+    let html: string;
+    if (drawing.kind === 'picture' && drawing.image) {
+      const url = URL.createObjectURL(new Blob([drawing.image], { type: drawing.mime }));
+      this.objectUrls.push(url);
+      html = `<img class="ng-pic" src="${url}" alt="" draggable="false" style="${box}">`;
+    } else if (drawing.kind === 'chart') {
+      const labels = this.options.chartLabels;
+      html =
+        `<div class="ng-chart" style="${box}">${icons.chart}` +
+        `<span class="ng-chart-title">${escapeHtml(drawing.text || labels.chart)}</span>` +
+        `<span class="ng-chart-hint">${escapeHtml(labels.hint)}</span></div>`;
+    } else {
+      const fill = this.options.colors.fill(drawing.fill);
+      const color = this.options.colors.text(drawing.color, drawing.fill);
+      const style = `${box}${fill ? `;background:${fill}` : ''}${color ? `;color:${color}` : ''}`;
+      html = `<div class="ng-shape" style="${style}"><span>${escapeHtml(drawing.text ?? '')}</span></div>`;
+    }
+    return [{ x, y, width, height, html }];
+  }
+
+  /** Horizontal position of a drawing anchor, in sheet pixels (without the header). */
+  private anchorX(anchor: CellAnchor): number {
+    const last = this.sheet.colCount;
+    const base =
+      anchor.col <= last
+        ? this.colLeft[anchor.col]
+        : this.colLeft[last] + (anchor.col - last) * this.sheet.defaultColWidth;
+    return base + anchor.colOffset;
+  }
+
+  private anchorY(anchor: CellAnchor): number {
+    const last = this.sheet.rowCount;
+    const base =
+      anchor.row <= last
+        ? this.rowTop[anchor.row]
+        : this.rowTop[last] + (anchor.row - last) * this.sheet.defaultRowHeight;
+    return base + anchor.rowOffset;
   }
 
   /** Grid lines, merged cells and cells of a rectangular region, as HTML. */

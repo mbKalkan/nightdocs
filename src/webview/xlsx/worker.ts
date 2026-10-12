@@ -37,7 +37,8 @@ function reply(message: WorkerResponse, transfer: Transferable[] = []): void {
 }
 
 function transferables(sheet: SheetData): Transferable[] {
-  return [
+  // A buffer listed twice fails the transfer, so dedupe in case pictures share one.
+  const arrays = [
     sheet.rowStarts,
     sheet.cellCols,
     sheet.cellStyles,
@@ -48,5 +49,7 @@ function transferables(sheet: SheetData): Transferable[] {
     sheet.colWidths,
     sheet.rowHeights,
     sheet.merges,
-  ].map((array) => array.buffer as ArrayBuffer);
+    ...sheet.drawings.flatMap((drawing) => (drawing.image ? [drawing.image] : [])),
+  ];
+  return [...new Set(arrays.map((array) => array.buffer as ArrayBuffer))];
 }

@@ -6,6 +6,31 @@ export interface Cell {
   formula?: string;
 }
 
+/** 0-based cell. */
+export interface Point {
+  col: number;
+  row: number;
+}
+
+/** Pixels. */
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface Series {
+  name: string;
+  categories: string;
+  values: string;
+  labels: string[];
+  numbers: number[];
+}
+
+export type Drawing =
+  | { type: 'picture'; from: Point; to?: Point; size?: Size; png: Buffer }
+  | { type: 'chart'; from: Point; to: Point; title?: string; axisTitle?: string; series: Series }
+  | { type: 'text'; from: Point; size: Size; text: string; fill?: string };
+
 export interface Sheet {
   name: string;
   hidden?: boolean;
@@ -17,6 +42,7 @@ export interface Sheet {
   hiddenRows?: number[];
   merges?: string[];
   cells: Cell[];
+  drawings?: Drawing[];
 }
 
 export interface Styles {
