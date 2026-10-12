@@ -2,8 +2,8 @@
   "name": "nightdocs",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.0.1",
-  "publisher": "mbkalkan",
+  "version": "0.1.0",
+  "publisher": "MBKDevStudio",
   "icon": "assets/icon.png",
   "license": "MIT",
   "private": true,
@@ -38,6 +38,7 @@
     "dark mode"
   ],
   "preview": true,
+  "pricing": "Free",
   "galleryBanner": {
     "color": "#1e2033",
     "theme": "dark"

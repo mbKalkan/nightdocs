@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-12
+
+First preview release.
+
 ### Added
 
 - View Word documents (`.docx`) in a read-only editor: page layout, headers and footers,
@@ -48,3 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Large sheets stay smooth: workbooks are parsed in a background worker and only visible cells
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
+
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mbKalkan/nightdocs/releases/tag/v0.1.0

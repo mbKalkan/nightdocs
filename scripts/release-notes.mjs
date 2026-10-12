@@ -12,4 +12,6 @@ if (start < 0) {
 }
 const body = changelog.slice(changelog.indexOf('\n', start) + 1);
 const end = body.search(/^## \[/m);
-console.log((end < 0 ? body : body.slice(0, end)).trim());
+const section = end < 0 ? body : body.slice(0, end);
+// The link definitions at the end of the file belong to no section.
+console.log(section.replace(/^\[[^\]]+\]: .*$/gm, '').trim());
