@@ -45,6 +45,28 @@ export const CellKind = {
   Error: 4,
 } as const;
 
+/** Inclusive, 0-based. */
+export interface CellRange {
+  row1: number;
+  col1: number;
+  row2: number;
+  col2: number;
+}
+
+/** What conditional formatting changes in a cell, on top of its own style. */
+export interface CellOverride {
+  fill?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  strike?: boolean;
+  underline?: boolean;
+  /** Data bar: length as a share of the cell width, and its color. */
+  bar?: { length: number; color: string };
+  /** Data bars can hide the value. */
+  hideValue?: boolean;
+}
+
 /** A cell position plus an offset in pixels, as drawings are anchored. */
 export interface CellAnchor {
   row: number;
@@ -98,6 +120,8 @@ export interface SheetData {
   frozenCols: number;
   showGridLines: boolean;
   drawings: Drawing[];
+  /** Conditional formatting results, by cell index. */
+  conditional: Map<number, CellOverride>;
 }
 
 /** Colors number formats can force, by `cellFormatColors` index (0 = none). */

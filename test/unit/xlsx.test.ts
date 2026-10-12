@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { readThemeColors, resolveColor } from '../../src/webview/xlsx/excelColors';
 import { CellKind, type SheetData, type WorkbookInfo } from '../../src/webview/xlsx/model';
 import { builtInFormats, formatNumber } from '../../src/webview/xlsx/numberFormat';
-import { openWorkbook, parseCellRef } from '../../src/webview/xlsx/parse';
+import { openWorkbook } from '../../src/webview/xlsx/parse';
+import { parseCellRef } from '../../src/webview/xlsx/refs';
 import { decodeEntities, elements, textRuns } from '../../src/webview/xlsx/xml';
 
 const bytes = new Uint8Array(readFileSync('test/fixtures/sample.xlsx'));
