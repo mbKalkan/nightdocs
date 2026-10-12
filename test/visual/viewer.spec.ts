@@ -82,8 +82,11 @@ test('shows documents with dark colors in dark themes', async ({ page }) => {
   expect(await lowestTextContrast(page)).toBeGreaterThanOrEqual(4.5);
   await expect(page.locator('[data-action="colors"]')).toBeVisible();
   await expect(page.locator('[data-action="colors"]')).toHaveAttribute('aria-pressed', 'true');
-  // Pictures keep their own colors.
+  // Pictures keep their own colors and are only dimmed.
   expect(await page.locator('img').getAttribute('style')).not.toMatch(/color|filter/);
+  expect(await page.locator('img').evaluate((el) => getComputedStyle(el).filter)).toBe(
+    'brightness(0.8)',
+  );
 });
 
 test('switches between dark and original colors', async ({ page }) => {
@@ -94,6 +97,7 @@ test('switches between dark and original colors', async ({ page }) => {
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   expect(await pageBackground(page)).toBe('rgb(255, 255, 255)');
+  expect(await page.locator('img').evaluate((el) => getComputedStyle(el).filter)).toBe('none');
   expect(await viewer.sent()).toContainEqual({ type: 'setColorMode', mode: 'original' });
   await page.screenshot({ path: `${SCREENS}/sample-dark-original.png` });
 

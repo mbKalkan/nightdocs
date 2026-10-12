@@ -229,6 +229,13 @@ body {
     0 6px 24px rgb(0 0 0 / 0.45);
 }
 
+/* Pictures keep their colors but are dimmed so white areas don't glare on a dark page;
+   at 80% pure white matches the editor's text brightness. */
+.ov-shell[data-colors='dark'] .ov-content img,
+.ov-shell[data-colors='dark'] .ov-content image {
+  filter: brightness(0.8);
+}
+
 /* White pages need a slightly darker canvas to stand out in light themes. */
 body.vscode-light .ov-viewport {
   background: color-mix(in srgb, var(--vscode-editor-background), var(--vscode-foreground) 7%);
