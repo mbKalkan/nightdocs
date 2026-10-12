@@ -52,6 +52,8 @@ export class SheetGrid {
   private readonly frozenHeight: number;
   private window: Window | undefined;
   private anchor = { row: 0, col: 0 };
+  /** Cells matching the current search, as row * 16384 + col. */
+  private highlights: Set<number> | undefined;
   private focus = { row: 0, col: 0 };
   private readonly measure = document.createElement('canvas').getContext('2d');
   /** Last row and column holding a value, or -1 for an empty sheet. */
@@ -154,6 +156,34 @@ export class SheetGrid {
     this.focus = { row: range.row2, col: range.col2 };
     this.paint();
     this.options.onSelectionChange();
+  }
+
+  /** Cells whose displayed text contains `query`, ignoring case, in reading order. */
+  findAll(query: string, locale: string): { row: number; col: number }[] {
+    const needle = query.toLocaleLowerCase(locale);
+    const { sheet } = this;
+    const lowered = new Map<number, boolean>();
+    const matches: { row: number; col: number }[] = [];
+    for (let r = 0; r < sheet.rowCount; r++) {
+      if (sheet.rowHeights[r] === 0) continue;
+      for (let i = sheet.rowStarts[r]; i < sheet.rowStarts[r + 1]; i++) {
+        const textIndex = sheet.cellTexts[i];
+        if (textIndex === 0 || sheet.colWidths[sheet.cellCols[i]] === 0) continue;
+        let hit = lowered.get(textIndex);
+        if (hit === undefined) {
+          hit = sheet.texts[textIndex].toLocaleLowerCase(locale).includes(needle);
+          lowered.set(textIndex, hit);
+        }
+        if (hit) matches.push({ row: r, col: sheet.cellCols[i] });
+      }
+    }
+    return matches;
+  }
+
+  /** Marks search matches; `undefined` clears them. */
+  setHighlights(cells: { row: number; col: number }[] | undefined): void {
+    this.highlights = cells && new Set(cells.map((cell) => cell.row * 16384 + cell.col));
+    this.paint();
   }
 
   /** Displayed text of a cell, '' when empty. */
@@ -381,6 +411,7 @@ export class SheetGrid {
     ];
     if (style.wrap) classes.push('ng-w');
     if (merged || drawWidth > width) classes.push('ng-m');
+    if (this.highlights?.has(row * 16384 + col)) classes.push('ng-found');
     const formatColor = this.options.colors.formatColor(sheet.cellFormatColors[index], style.fill);
     const color = formatColor ? `;color:${formatColor}` : '';
     return `<div class="${classes.join(' ')}" style="left:${x}px;top:${y}px;width:${drawWidth}px;height:${height}px${color}"><span>${escapeHtml(text)}</span></div>`;

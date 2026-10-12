@@ -8,5 +8,6 @@
   "command.zoomOut": "Uzaklaştır",
   "command.resetZoom": "Yakınlaştırmayı Sıfırla",
   "command.nextSheet": "Sonraki Sayfa",
-  "command.previousSheet": "Önceki Sayfa"
+  "command.previousSheet": "Önceki Sayfa",
+  "command.find": "Sayfada Bul"
 }

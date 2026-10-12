@@ -25,5 +25,11 @@ export function viewerStrings(appName: string): ViewerStrings {
     statusCount: vscode.l10n.t('Count: {0}'),
     statusSum: vscode.l10n.t('Sum: {0}'),
     statusAverage: vscode.l10n.t('Average: {0}'),
+    find: vscode.l10n.t('Find'),
+    findNoResults: vscode.l10n.t('No results'),
+    findCount: vscode.l10n.t('{0} of {1}'),
+    findPrevious: vscode.l10n.t('Previous Match (Shift+Enter)'),
+    findNext: vscode.l10n.t('Next Match (Enter)'),
+    findClose: vscode.l10n.t('Close (Escape)'),
   };
 }

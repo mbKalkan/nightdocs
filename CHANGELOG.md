@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Select cells with the mouse or keyboard (arrows, <kbd>Shift</kbd>, <kbd>Ctrl</kbd>+arrows,
   <kbd>PgUp</kbd>/<kbd>PgDn</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>), copy them as tab-separated text,
   and see Sum, Count and Average in the status bar.
+- Find in sheet (<kbd>Ctrl</kbd>+<kbd>F</kbd>): searches every cell of the current sheet, not just the
+  visible ones, highlights matches and steps through them with <kbd>Enter</kbd> /
+  <kbd>Shift</kbd>+<kbd>Enter</kbd>.
 - Large sheets stay smooth: workbooks are parsed in a background worker and only visible cells
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.

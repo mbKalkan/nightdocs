@@ -92,6 +92,11 @@
         "command": "nightdocs.previousSheet",
         "title": "%command.previousSheet%",
         "category": "%category%"
+      },
+      {
+        "command": "nightdocs.find",
+        "title": "%command.find%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -119,6 +124,10 @@
         {
           "command": "nightdocs.previousSheet",
           "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.find",
+          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
         }
       ]
     },
@@ -170,6 +179,12 @@
         "key": "ctrl+alt+pageup",
         "mac": "cmd+alt+pageup",
         "when": "activeCustomEditorId == nightdocs.viewer"
+      },
+      {
+        "command": "nightdocs.find",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
       }
     ]
   },

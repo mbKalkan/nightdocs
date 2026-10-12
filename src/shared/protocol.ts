@@ -24,6 +24,13 @@ export interface ViewerStrings {
   statusCount: string;
   statusSum: string;
   statusAverage: string;
+  find: string;
+  findNoResults: string;
+  /** `{0} of {1}` */
+  findCount: string;
+  findPrevious: string;
+  findNext: string;
+  findClose: string;
 }
 
 export interface LoadMessage {
@@ -55,7 +62,7 @@ export interface ZoomMessage {
 
 export type ZoomAction = 'in' | 'out' | 'reset';
 
-export type ViewerCommand = 'nextSheet' | 'previousSheet';
+export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'find';
 
 export interface CommandMessage {
   type: 'command';
