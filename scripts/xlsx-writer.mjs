@@ -1,6 +1,6 @@
 // A tiny SpreadsheetML writer for test fixtures. Only what the fixtures need: shared strings,
-// numbers, booleans, errors, styles given as XML, merges, frozen panes, column widths, and
-// drawings (PNG pictures, column charts, text boxes).
+// numbers, booleans, errors, styles and conditional formats given as XML, merges, frozen
+// panes, column widths, and drawings (PNG pictures, column charts, text boxes).
 import JSZip from 'jszip';
 
 /**
@@ -8,8 +8,8 @@ import JSZip from 'jszip';
  * @typedef {{ name: string, hidden?: boolean, tabColor?: string, frozen?: { rows: number, cols: number },
  *   showGridLines?: boolean, cols?: { min: number, max: number, width: number, hidden?: boolean }[],
  *   rowHeights?: Record<number, number>, hiddenRows?: number[], merges?: string[], cells: Cell[],
- *   drawings?: Drawing[] }} Sheet
- * @typedef {{ numFmts?: string[], fonts: string[], fills: string[], borders: string[], cellXfs: string[] }} Styles
+ *   conditionalFormats?: string[], drawings?: Drawing[] }} Sheet
+ * @typedef {{ numFmts?: string[], fonts: string[], fills: string[], borders: string[], cellXfs: string[], dxfs?: string[] }} Styles
  * @typedef {{ col: number, row: number }} Point 0-based
  * @typedef {{ width: number, height: number }} Size pixels
  * @typedef {{ name: string, categories: string, values: string, labels: string[], numbers: number[] }} Series
@@ -118,12 +118,13 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
       ? `<mergeCells count="${sheet.merges.length}">${sheet.merges.map((ref) => `<mergeCell ref="${ref}"/>`).join('')}</mergeCells>`
       : '';
     const tab = sheet.tabColor ? `<sheetPr><tabColor rgb="FF${sheet.tabColor}"/></sheetPr>` : '';
+    const conditional = sheet.conditionalFormats?.join('') ?? '';
     const drawing = sheet.drawings?.length ? '<drawing r:id="rId1"/>' : '';
     zip.file(
       `xl/worksheets/sheet${i + 1}.xml`,
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="${NS}" xmlns:r="${REL_NS}">${tab}` +
         `<sheetViews><sheetView workbookViewId="0"${gridLines}${i === activeSheet ? ' tabSelected="1"' : ''}>${pane}</sheetView></sheetViews>` +
-        `<sheetFormatPr defaultRowHeight="15"/>${cols}<sheetData>${rowXml}</sheetData>${merges}${drawing}</worksheet>`,
+        `<sheetFormatPr defaultRowHeight="15"/>${cols}<sheetData>${rowXml}</sheetData>${merges}${conditional}${drawing}</worksheet>`,
     );
     if (drawing) {
       zip.file(
@@ -152,6 +153,7 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
       list('borders', styles.borders) +
       '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
       list('cellXfs', styles.cellXfs) +
+      (styles.dxfs?.length ? list('dxfs', styles.dxfs) : '') +
       '</styleSheet>',
   );
 

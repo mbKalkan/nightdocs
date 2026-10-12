@@ -42,6 +42,8 @@ export interface Sheet {
   hiddenRows?: number[];
   merges?: string[];
   cells: Cell[];
+  /** `<conditionalFormatting>` elements as XML. */
+  conditionalFormats?: string[];
   drawings?: Drawing[];
 }
 
@@ -51,6 +53,7 @@ export interface Styles {
   fills: string[];
   borders: string[];
   cellXfs: string[];
+  dxfs?: string[];
 }
 
 export function writeXlsx(workbook: {

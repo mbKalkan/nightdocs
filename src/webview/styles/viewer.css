@@ -496,6 +496,26 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
   border: 2px solid var(--ng-accent);
 }
 
+/* Data bars from conditional formatting: Excel's gradient, fading out instead of to white.
+   Translucent, so the same bar works on light and dark sheets and text over it stays legible. */
+
+.ng-bar {
+  position: absolute;
+  left: 1px;
+  top: 2px;
+  bottom: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bar) 80%, transparent),
+    color-mix(in srgb, var(--bar) 15%, transparent)
+  );
+  pointer-events: none;
+}
+
+.ng-bar + span {
+  position: relative;
+}
+
 /* Drawings: above cells (including spilled text), below the selection. */
 
 .ng-pic,
