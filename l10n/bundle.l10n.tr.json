@@ -1,0 +1,15 @@
+{
+  "Zoom In": "Yakınlaştır",
+  "Zoom Out": "Uzaklaştır",
+  "Reset Zoom": "Yakınlaştırmayı Sıfırla",
+  "Open in {0}": "{0} ile Aç",
+  "Open the file in its default desktop app to edit it": "Düzenlemek için dosyayı varsayılan masaüstü uygulamasında açın",
+  "Loading…": "Yükleniyor…",
+  "This document can't be displayed": "Bu belge görüntülenemiyor",
+  "The file appears to be damaged or isn't a valid {0} document.": "Dosya hasarlı görünüyor ya da geçerli bir {0} belgesi değil.",
+  "The file is password-protected or uses an older binary format that isn't supported yet.": "Dosya parola korumalı ya da henüz desteklenmeyen eski bir ikili biçimde.",
+  "Something went wrong while rendering this document.": "Belge görüntülenirken bir sorun oluştu.",
+  "The file couldn't be read.": "Dosya okunamadı.",
+  "Opening in {0} is only available for local files.": "{0} ile açma yalnızca yerel dosyalarda kullanılabilir.",
+  "Couldn't open the file in {0}: {1}": "Dosya {0} ile açılamadı: {1}"
+}

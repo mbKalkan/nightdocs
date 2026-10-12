@@ -1,0 +1,290 @@
+/* Viewer chrome. Colors come from VS Code theme variables so every theme looks native. */
+
+:root {
+  --ov-toolbar-height: 35px;
+  --ov-border: var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+  --ov-page-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
+}
+
+body.vscode-light {
+  --ov-page-shadow: 0 1px 2px rgb(0 0 0 / 0.1), 0 4px 16px rgb(0 0 0 / 0.08);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+#app {
+  height: 100%;
+}
+
+.ov-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Toolbar */
+
+.ov-toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--ov-toolbar-height);
+  padding: 0 8px 0 14px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--ov-border);
+  background: var(--vscode-editor-background);
+  user-select: none;
+}
+
+.ov-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ov-file-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+}
+
+.ov-file-icon[data-format='docx'] {
+  color: var(--vscode-charts-blue, var(--vscode-icon-foreground));
+}
+
+.ov-file-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ov-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.ov-icon-button,
+.ov-zoom-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  min-width: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  font: inherit;
+  cursor: pointer;
+}
+
+.ov-zoom-label {
+  min-width: 48px;
+  color: var(--vscode-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-icon-button:hover:not(:disabled),
+.ov-zoom-label:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.ov-icon-button:active:not(:disabled),
+.ov-zoom-label:active:not(:disabled) {
+  background: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground));
+}
+
+.ov-icon-button:disabled,
+.ov-zoom-label:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ov-separator {
+  width: 1px;
+  height: 16px;
+  margin: 0 6px;
+  background: var(--ov-border);
+}
+
+.ov-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 5px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ov-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.ov-button-primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.ov-button-primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.ov-icon-button:focus-visible,
+.ov-zoom-label:focus-visible,
+.ov-button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+/* Progress */
+
+.ov-progress {
+  position: relative;
+  flex: none;
+  height: 2px;
+  margin-bottom: -2px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ov-progress::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: var(--vscode-progressBar-background);
+  animation: ov-progress 1.2s ease-in-out infinite;
+}
+
+@keyframes ov-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-progress::before {
+    width: 100%;
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Document area */
+
+.ov-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+}
+
+/* White pages need a slightly darker canvas to stand out in light themes. */
+body.vscode-light .ov-viewport {
+  background: color-mix(in srgb, var(--vscode-editor-background), var(--vscode-foreground) 7%);
+}
+
+.ov-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Word documents (rendered by docx-preview) */
+
+.ov-content .docx-wrapper {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 100%;
+  padding: 32px;
+  background: transparent;
+}
+
+.ov-content .docx-wrapper > section.docx {
+  margin-bottom: 24px;
+  box-shadow: var(--ov-page-shadow);
+}
+
+.ov-content .docx-wrapper > section.docx:last-child {
+  margin-bottom: 0;
+}
+
+body.vscode-high-contrast .ov-content .docx-wrapper > section.docx,
+body.vscode-high-contrast-light .ov-content .docx-wrapper > section.docx {
+  box-shadow: none;
+  outline: 1px solid var(--vscode-contrastBorder);
+}
+
+/* Error state */
+
+.ov-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: calc(100vh - var(--ov-toolbar-height));
+  padding: 32px;
+  text-align: center;
+}
+
+.ov-error-icon svg {
+  width: 48px;
+  height: 48px;
+  stroke-width: 0.8;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ov-error-title {
+  margin: 8px 0 0;
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+.ov-error-message {
+  max-width: 440px;
+  margin: 0 0 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+}
