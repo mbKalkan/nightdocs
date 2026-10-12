@@ -496,6 +496,67 @@ body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.do
   border: 2px solid var(--ng-accent);
 }
 
+/* Drawings: above cells (including spilled text), below the selection. */
+
+.ng-pic,
+.ng-chart,
+.ng-shape {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ng-pic {
+  object-fit: fill;
+}
+
+.ng-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  overflow: hidden;
+  text-align: center;
+  background: var(--ng-header-bg);
+  border: 1px dashed var(--ng-header-line);
+  color: var(--ng-header-fg);
+}
+
+.ng-chart svg {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  stroke-width: 0.9;
+}
+
+.ng-chart-title {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ng-text);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ng-chart-hint {
+  font-size: 0.85em;
+}
+
+.ng-shape {
+  display: flex;
+  padding: 4px 6px;
+  overflow: hidden;
+  border: 1px solid var(--ng-header-line);
+}
+
+.ng-shape > span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Footer: sheet tabs and status */
 
 .ov-footer {

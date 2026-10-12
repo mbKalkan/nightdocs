@@ -41,7 +41,7 @@ for (const theme of ['dark', 'light'] as const) {
     const viewer = await openViewer(page, theme);
     await viewer.load('sample.xlsx');
 
-    await expect(page.locator('.ov-sheet-tab')).toHaveText(['Budget', 'Data', 'No Grid']);
+    await expect(page.locator('.ov-sheet-tab')).toHaveText(['Budget', 'Data', 'No Grid', 'Charts']);
     await expect(activeTab(page)).toHaveText('Budget');
     await expect(page.locator('.ng-c', { hasText: 'Q3 Budget Overview' }).first()).toBeVisible();
     await expect(page.locator('.ng-c', { hasText: '-4.1%' })).toBeVisible();
@@ -53,6 +53,45 @@ for (const theme of ['dark', 'light'] as const) {
     expect(viewer.problems).toEqual([]);
   });
 }
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`draws pictures, chart placeholders and text boxes in the ${theme} theme`, async ({
+    page,
+  }) => {
+    const viewer = await openViewer(page, theme);
+    await viewer.load('sample.xlsx');
+    await page.locator('.ov-sheet-tab', { hasText: 'Charts' }).click();
+
+    const charts = page.locator('.ng-main .ng-chart');
+    await expect(charts.first()).toContainText('Q3 revenue by region');
+    await expect(charts.first()).toContainText('Open in Excel to see this chart');
+    await expect(charts.nth(1).locator('.ng-chart-title')).toHaveText('Chart');
+    await expect(page.locator('.ng-shape')).toContainText('are drawn over the grid.');
+    const picture = page.locator('.ng-main .ng-pic').first();
+    await expect
+      .poll(() => picture.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
+      .toBe(480);
+    // The picture crosses the frozen row, so the frozen pane draws its top part.
+    await expect(page.locator('.ng-top .ng-pic')).toHaveCount(1);
+    await page.screenshot({ path: `${SCREENS}/xlsx-drawings-${theme}.png` });
+    if (theme === 'dark') {
+      await page.locator('.ov-viewport').evaluate((el) => (el.scrollTop = 100));
+      await page.screenshot({ path: `${SCREENS}/xlsx-drawings-scrolled.png` });
+    }
+    expect(viewer.problems).toEqual([]);
+  });
+}
+
+test('grows a sheet to show drawings past its data', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  await page.locator('.ov-sheet-tab', { hasText: 'Charts' }).click();
+  await expect(page.locator('.ng-main .ng-chart').first()).toBeVisible();
+
+  await page.locator('.ov-viewport').evaluate((el) => el.scrollTo(el.scrollWidth, el.scrollHeight));
+  await expect(page.locator('.ng-main .ng-pic')).toHaveCount(1);
+  await expect(page.locator('.ng-main .ng-pic')).toBeInViewport();
+});
 
 test('shows the original workbook colors on request', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');

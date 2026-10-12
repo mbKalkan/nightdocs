@@ -3,7 +3,9 @@ import { firstColor, readThemeColors, resolveColor } from './excelColors';
 import {
   CellKind,
   type BorderSide,
+  type CellAnchor,
   type CellStyle,
+  type Drawing,
   type SheetData,
   type SheetInfo,
   type WorkbookInfo,
@@ -22,6 +24,9 @@ const POINTS_TO_PIXELS = 96 / 72;
 /** Empty rows and columns shown past the data so a sheet looks like a sheet. */
 const MIN_ROWS = 60;
 const MIN_COLS = 26;
+/** Excel's sheet size limits. */
+const MAX_ROWS = 1_048_576;
+const MAX_COLS = 16_384;
 
 export interface OpenedWorkbook {
   info: WorkbookInfo;
@@ -93,11 +98,15 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
       styles,
     },
     async readSheet(index) {
-      const xml = await read(sheets[index]?.path);
+      const path = sheets[index]?.path;
+      const xml = await read(path);
       if (xml === undefined) {
         throw new Error(`Missing sheet ${index}`);
       }
-      return parseSheet(xml, { sharedStrings, styles, formats, date1904 });
+      const sheet = parseSheet(xml, { sharedStrings, styles, formats, date1904 });
+      sheet.drawings = await readDrawings(zip, read, path!, xml, theme);
+      fitDrawings(sheet);
+      return sheet;
     },
   };
 }
@@ -460,6 +469,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     frozenRows,
     frozenCols,
     showGridLines: view?.attrs.showGridLines !== '0' && view?.attrs.showGridLines !== 'false',
+    drawings: [],
   };
 }
 
@@ -534,4 +544,197 @@ function valueOf(
 function numberValue(value: number, code: string, date1904: boolean): CellValue {
   const formatted = formatNumber(value, code, date1904);
   return { kind: CellKind.Number, text: formatted.text, number: value, color: formatted.color };
+}
+
+const EMU_PER_PIXEL = 9525;
+const MEDIA_TYPES: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  svg: 'image/svg+xml',
+  webp: 'image/webp',
+};
+
+/** Pictures, chart placeholders and text boxes from the sheet's drawing part. */
+async function readDrawings(
+  zip: JSZip,
+  read: (path: string | undefined) => Promise<string | undefined>,
+  sheetPath: string,
+  sheetXml: string,
+  theme: string[],
+): Promise<Drawing[]> {
+  const drawingRef = firstElement(sheetXml, 'drawing');
+  if (!drawingRef) return [];
+  const sheetRels = await relationships(read, sheetPath);
+  const drawingPath = sheetRels.get(drawingRef.attrs.id)?.target;
+  const xml = await read(drawingPath);
+  if (!drawingPath || !xml) return [];
+  const rels = await relationships(read, drawingPath);
+
+  const drawings: Drawing[] = [];
+  // Both anchor kinds in one pass: document order is the stacking order.
+  for (const anchor of elements(xml, '(?:two|one)CellAnchor')) {
+    const from = cellAnchor(firstElement(anchor.body, 'from')?.body);
+    if (!from || HIDDEN_SHAPE.test(anchor.body)) continue;
+    const to = cellAnchor(firstElement(anchor.body, 'to')?.body);
+    const ext = firstElement(anchor.body, 'ext')?.attrs;
+    const size = ext ? { width: emu(ext.cx), height: emu(ext.cy) } : {};
+    const placement = { from, ...(to ? { to } : size) };
+
+    const blip = firstElement(anchor.body, 'blip');
+    const chart = /<(?:[\w.-]+:)?chart\b[^>]*\bid="([^"]+)"/.exec(anchor.body);
+    if (blip?.attrs.embed) {
+      const target = rels.get(blip.attrs.embed)?.target;
+      const file = target ? zip.file(target) : null;
+      const mime = target && MEDIA_TYPES[target.slice(target.lastIndexOf('.') + 1).toLowerCase()];
+      if (file && mime) {
+        const image = new Uint8Array(await file.async('arraybuffer'));
+        drawings.push({ kind: 'picture', ...placement, image, mime });
+      }
+    } else if (chart) {
+      const chartXml = await read(rels.get(chart[1])?.target);
+      drawings.push({ kind: 'chart', ...placement, text: chartXml ? chartTitle(chartXml) : '' });
+    } else {
+      const text = firstElement(anchor.body, 'txBody');
+      if (!text) continue;
+      const content = [...elements(text.body, 'p')].map((p) => textRuns(p.body)).join('\n');
+      if (content.trim()) {
+        const colors = shapeColors(anchor.body, text.body, theme);
+        drawings.push({ kind: 'text', ...placement, text: content, ...colors });
+      }
+    }
+  }
+  return drawings;
+}
+
+const HIDDEN_SHAPE = /<(?:[\w.-]+:)?cNvPr\b[^>]*\bhidden="(?:1|true)"/;
+const OUTLINE = /<(?:[\w.-]+:)?ln\b(?:[^>]*\/>|[\s\S]*?<\/(?:[\w.-]+:)?ln>)/g;
+
+/** Fill and text color of a shape: its own properties first, then its style's references. */
+function shapeColors(
+  shape: string,
+  text: string,
+  theme: string[],
+): { fill?: string; color?: string } {
+  // The outline has fills of its own.
+  const props = (firstElement(shape, 'spPr')?.body ?? '').replace(OUTLINE, '');
+  const style = firstElement(shape, 'style')?.body ?? '';
+  const fillRef = firstElement(style, 'fillRef');
+  const fontRef = firstElement(style, 'fontRef');
+  const fill = /<(?:[\w.-]+:)?noFill\b/.test(props)
+    ? undefined
+    : (solidColor(props, theme) ??
+      (fillRef && fillRef.attrs.idx !== '0' ? drawingColor(fillRef.body, theme) : undefined));
+  const color =
+    solidColor(firstElement(text, 'rPr')?.body ?? '', theme) ??
+    (fontRef ? drawingColor(fontRef.body, theme) : undefined);
+  return { fill, color };
+}
+
+function solidColor(xml: string, theme: string[]): string | undefined {
+  const solid = firstElement(xml, 'solidFill');
+  return solid ? drawingColor(solid.body, theme) : undefined;
+}
+
+/** The chart's own title; axis titles come later, inside the plot area. */
+function chartTitle(xml: string): string {
+  const plotArea = xml.search(/<(?:[\w.-]+:)?plotArea\b/);
+  const title = firstElement(plotArea < 0 ? xml : xml.slice(0, plotArea), 'title');
+  return title ? textRuns(title.body) : '';
+}
+
+/** Grows the sheet so that drawings past its last used cell can be scrolled to. */
+function fitDrawings(sheet: SheetData): void {
+  let rows = sheet.rowCount;
+  let cols = sheet.colCount;
+  for (const drawing of sheet.drawings) {
+    const end = drawing.to ?? {
+      row: endIndex(
+        sheet.rowHeights,
+        sheet.defaultRowHeight,
+        drawing.from.row,
+        drawing.from.rowOffset + (drawing.height ?? 0),
+      ),
+      col: endIndex(
+        sheet.colWidths,
+        sheet.defaultColWidth,
+        drawing.from.col,
+        drawing.from.colOffset + (drawing.width ?? 0),
+      ),
+    };
+    rows = Math.max(rows, Math.min(end.row + 1, MAX_ROWS));
+    cols = Math.max(cols, Math.min(end.col + 1, MAX_COLS));
+  }
+  if (rows > sheet.rowCount) {
+    const rowStarts = new Uint32Array(rows + 1);
+    rowStarts.set(sheet.rowStarts);
+    rowStarts.fill(sheet.rowStarts[sheet.rowCount], sheet.rowCount + 1);
+    const rowHeights = new Float32Array(rows).fill(sheet.defaultRowHeight);
+    rowHeights.set(sheet.rowHeights);
+    Object.assign(sheet, { rowCount: rows, rowStarts, rowHeights });
+  }
+  if (cols > sheet.colCount) {
+    const colWidths = new Float32Array(cols).fill(sheet.defaultColWidth);
+    colWidths.set(sheet.colWidths);
+    Object.assign(sheet, { colCount: cols, colWidths });
+  }
+}
+
+/** Index of the row or column where a span of `length` pixels, starting in `start`, ends. */
+function endIndex(sizes: Float32Array, size: number, start: number, length: number): number {
+  let index = start;
+  let remaining = length;
+  while (index < MAX_ROWS) {
+    const current = index < sizes.length ? sizes[index] : size;
+    if (remaining < current || (current <= 0 && size <= 0)) break;
+    remaining -= current;
+    index++;
+  }
+  return index;
+}
+
+function cellAnchor(xml: string | undefined): CellAnchor | undefined {
+  if (!xml) return undefined;
+  const value = (name: string) =>
+    parseInt(new RegExp(`<(?:[\\w.-]+:)?${name}>(-?\\d+)<`).exec(xml)?.[1] ?? '0', 10);
+  return {
+    col: value('col'),
+    row: value('row'),
+    colOffset: value('colOff') / EMU_PER_PIXEL,
+    rowOffset: value('rowOff') / EMU_PER_PIXEL,
+  };
+}
+
+function emu(value: string | undefined): number {
+  return (parseInt(value ?? '0', 10) || 0) / EMU_PER_PIXEL;
+}
+
+/** Theme slots by DrawingML scheme color name, in the order of `readThemeColors`. */
+const SCHEME_SLOTS: Record<string, number> = {
+  lt1: 0,
+  bg1: 0,
+  dk1: 1,
+  tx1: 1,
+  lt2: 2,
+  bg2: 2,
+  dk2: 3,
+  tx2: 3,
+  accent1: 4,
+  accent2: 5,
+  accent3: 6,
+  accent4: 7,
+  accent5: 8,
+  accent6: 9,
+  hlink: 10,
+  folHlink: 11,
+};
+
+function drawingColor(xml: string, theme: string[]): string | undefined {
+  const rgb = firstElement(xml, 'srgbClr')?.attrs.val;
+  if (rgb && /^[0-9a-f]{6}$/i.test(rgb)) return `#${rgb.toLowerCase()}`;
+  const scheme = firstElement(xml, 'schemeClr')?.attrs.val;
+  const slot = scheme === undefined ? undefined : SCHEME_SLOTS[scheme];
+  return slot === undefined ? undefined : `#${theme[slot].toLowerCase()}`;
 }

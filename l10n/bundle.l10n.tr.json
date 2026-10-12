@@ -22,5 +22,7 @@
   "{0} of {1}": "{0} / {1}",
   "Previous Match (Shift+Enter)": "Önceki Eşleşme (Shift+Enter)",
   "Next Match (Enter)": "Sonraki Eşleşme (Enter)",
-  "Close (Escape)": "Kapat (Escape)"
+  "Close (Escape)": "Kapat (Escape)",
+  "Chart": "Grafik",
+  "Open in {0} to see this chart": "Bu grafiği görmek için {0} ile açın"
 }

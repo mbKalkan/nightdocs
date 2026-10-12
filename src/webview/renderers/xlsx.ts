@@ -163,6 +163,7 @@ class WorkbookView implements RenderedDocument {
   dispose(): void {
     this.cleanup.forEach((dispose) => dispose());
     this.find?.dispose();
+    this.grid.dispose();
     this.client.dispose();
   }
 
@@ -208,6 +209,7 @@ class WorkbookView implements RenderedDocument {
       getZoom: () => this.context?.getZoom() ?? 1,
       styles: this.info.styles,
       colors: this.colors,
+      chartLabels: { chart: this.options.strings.chart, hint: this.options.strings.chartHint },
       onSelectionChange: () => this.updateStatus(),
     });
   }
@@ -262,6 +264,7 @@ class WorkbookView implements RenderedDocument {
     }
     const grid = this.createGrid(sheet);
     this.grid.element.replaceWith(grid.element);
+    this.grid.dispose();
     this.grid = grid;
     this.context.viewport.scrollTo(0, 0);
     grid.render(true);
