@@ -376,7 +376,17 @@ const BASE_STYLES = {
     /* 14 iso date */ '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0"/>',
     /* 15 link */ '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0"/>',
   ],
+  // Formats for conditional rules, as Excel's presets write them.
+  dxfs: [
+    /* 0 light red fill, dark red text */ '<dxf><font><color rgb="FF9C0006"/></font><fill><patternFill><bgColor rgb="FFFFC7CE"/></patternFill></fill></dxf>',
+    /* 1 green fill, dark green text */ '<dxf><font><color rgb="FF006100"/></font><fill><patternFill><bgColor rgb="FFC6EFCE"/></patternFill></fill></dxf>',
+    /* 2 bold italic */ '<dxf><font><b/><i/></font></dxf>',
+  ],
 };
+
+const conditional = (sqref, rules) =>
+  `<conditionalFormatting sqref="${sqref}">${rules}</conditionalFormatting>`;
+const cfvo = (type, val) => `<cfvo type="${type}"${val === undefined ? '' : ` val="${val}"`}/>`;
 
 function budgetSheet() {
   const regions = [
@@ -453,6 +463,26 @@ function budgetSheet() {
     rowHeights: { 1: 28, 4: 45 },
     merges: ['A1:F1'],
     cells,
+    conditionalFormats: [
+      conditional(
+        'B3:B8',
+        `<cfRule type="colorScale" priority="4"><colorScale>${cfvo('min')}${cfvo('percentile', 50)}${cfvo('max')}` +
+          '<color rgb="FFF8696B"/><color rgb="FFFFEB84"/><color rgb="FF63BE7B"/></colorScale></cfRule>',
+      ),
+      conditional(
+        'C3:C8',
+        `<cfRule type="dataBar" priority="3"><dataBar>${cfvo('min')}${cfvo('max')}<color rgb="FF638EC6"/></dataBar></cfRule>`,
+      ),
+      conditional(
+        'D3:D9',
+        '<cfRule type="cellIs" dxfId="0" priority="2" operator="lessThan"><formula>0</formula></cfRule>',
+      ),
+      conditional(
+        'E3:E8',
+        '<cfRule type="containsText" dxfId="2" priority="1" operator="containsText" text="season">' +
+          '<formula>NOT(ISERROR(SEARCH("season",E3)))</formula></cfRule>',
+      ),
+    ],
   };
 }
 
@@ -490,6 +520,18 @@ function dataSheet(rows) {
       { min: 8, max: 8, width: 12 },
     ],
     cells,
+    // Whole-column rules, so large.xlsx measures their cost too.
+    conditionalFormats: [
+      conditional(
+        `F2:F${rows + 1}`,
+        '<cfRule type="top10" dxfId="1" priority="2" percent="1" rank="10"/>',
+      ),
+      conditional(
+        `G2:G${rows + 1}`,
+        `<cfRule type="colorScale" priority="1"><colorScale>${cfvo('min')}${cfvo('max')}` +
+          '<color rgb="FFFCFCFF"/><color rgb="FF63BE7B"/></colorScale></cfRule>',
+      ),
+    ],
   };
 }
 

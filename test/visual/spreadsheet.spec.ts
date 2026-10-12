@@ -48,6 +48,10 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.locator('.ng-c', { hasText: '$1,234.50' })).toBeVisible();
     await expect(page.locator('.ng-c', { hasText: '10/15/2024' })).toBeVisible();
     await expect(page.locator('.ng-c', { hasText: /^#+$/ })).toBeVisible();
+    // Conditional formatting: data bars, and a fill on the negative change.
+    await expect(page.locator('.ng-main .ng-bar')).toHaveCount(6);
+    const negative = page.locator('.ng-main .ng-c', { hasText: '-4.1%' });
+    expect(await negative.evaluate((el) => el.style.background)).not.toBe('');
     await expect(status(page)).toContainText('A1');
     await page.screenshot({ path: `${SCREENS}/xlsx-${theme}.png` });
     expect(viewer.problems).toEqual([]);

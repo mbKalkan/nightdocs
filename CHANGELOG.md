@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   <kbd>Shift</kbd>+<kbd>Enter</kbd>.
 - Pictures and text boxes in sheets are shown where Excel places them; charts appear as
   placeholders with their title and a pointer to open the file in Excel.
+- Conditional formatting in sheets: highlight rules (comparisons, text, top/bottom, above or
+  below average, duplicates), color scales and data bars. Rules built on custom formulas and
+  icon sets are not shown yet.
 - Large sheets stay smooth: workbooks are parsed in a background worker and only visible cells
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.

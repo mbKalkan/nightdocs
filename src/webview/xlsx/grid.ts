@@ -1,5 +1,13 @@
 import { icons } from '../icons';
-import { CellKind, type CellAnchor, type CellStyle, type Drawing, type SheetData } from './model';
+import {
+  CellKind,
+  type CellAnchor,
+  type CellOverride,
+  type CellRange,
+  type CellStyle,
+  type Drawing,
+  type SheetData,
+} from './model';
 import type { CellColors } from './styleSheet';
 import { fontStack } from './styleSheet';
 
@@ -27,13 +35,6 @@ export interface GridOptions {
   /** Text for chart placeholders: a generic name and how to see the real chart. */
   chartLabels: { chart: string; hint: string };
   onSelectionChange(): void;
-}
-
-export interface CellRange {
-  row1: number;
-  col1: number;
-  row2: number;
-  col2: number;
 }
 
 interface Window {
@@ -445,8 +446,13 @@ export class SheetGrid {
         const c = sheet.cellCols[i];
         if (c > range.col2) break;
         if (sheet.colWidths[c] === 0 || covered.has(r * 16384 + c)) continue;
-        if (sheet.cellKinds[i] === CellKind.Empty && !this.isDecorated(sheet.cellStyles[i]))
+        if (
+          sheet.cellKinds[i] === CellKind.Empty &&
+          !this.isDecorated(sheet.cellStyles[i]) &&
+          !sheet.conditional.has(i)
+        ) {
           continue;
+        }
         parts.push(this.cellHtml(r, c, i, sheet.colWidths[c], sheet.rowHeights[r], false));
       }
     }
@@ -468,9 +474,18 @@ export class SheetGrid {
       return `<div class="ng-c ng-m" style="left:${x}px;top:${y}px;width:${width}px;height:${height}px"></div>`;
     }
     const styleIndex = sheet.cellStyles[index];
-    const style = this.options.styles[styleIndex];
+    const override = sheet.conditional.get(index);
+    const ownStyle = this.options.styles[styleIndex];
+    const style =
+      override && (override.bold !== undefined || override.italic !== undefined)
+        ? {
+            ...ownStyle,
+            bold: override.bold ?? ownStyle.bold,
+            italic: override.italic ?? ownStyle.italic,
+          }
+        : ownStyle;
     const kind = sheet.cellKinds[index];
-    let text = sheet.texts[sheet.cellTexts[index]];
+    let text = override?.hideValue ? '' : sheet.texts[sheet.cellTexts[index]];
     let horizontal = style.horizontal;
     if (horizontal === 'general') {
       horizontal = kind === CellKind.Number ? 'right' : kind === CellKind.Text ? 'left' : 'center';
@@ -500,9 +515,47 @@ export class SheetGrid {
     if (style.wrap) classes.push('ng-w');
     if (merged || drawWidth > width) classes.push('ng-m');
     if (this.highlights?.has(row * 16384 + col)) classes.push('ng-found');
-    const formatColor = this.options.colors.formatColor(sheet.cellFormatColors[index], style.fill);
-    const color = formatColor ? `;color:${formatColor}` : '';
-    return `<div class="${classes.join(' ')}" style="left:${x}px;top:${y}px;width:${drawWidth}px;height:${height}px${color}"><span>${escapeHtml(text)}</span></div>`;
+    const inline = [`left:${x}px;top:${y}px;width:${drawWidth}px;height:${height}px`];
+    inline.push(...this.colorCss(style, sheet.cellFormatColors[index], override));
+    const bar = override?.bar
+      ? `<div class="ng-bar" style="width:calc(${(override.bar.length * 100).toFixed(1)}% - 2px);--bar:${override.bar.color}"></div>`
+      : '';
+    return `<div class="${classes.join(' ')}" style="${inline.join(';')}">${bar}<span>${escapeHtml(text)}</span></div>`;
+  }
+
+  /**
+   * Inline CSS for what the cell's style class can't know: number format colors and
+   * conditional formatting.
+   */
+  private colorCss(style: CellStyle, formatColor: number, override?: CellOverride): string[] {
+    const { colors } = this.options;
+    if (!override) {
+      const color = colors.formatColor(formatColor, style.fill);
+      return color ? [`color:${color}`] : [];
+    }
+    const css: string[] = [];
+    const fill = override.fill ?? style.fill;
+    if (override.fill) css.push(`background:${colors.fill(override.fill)}`);
+    // Conditional colors win over number format colors, as in Excel.
+    const color = override.color
+      ? colors.text(override.color, fill)
+      : formatColor
+        ? colors.formatColor(formatColor, fill)
+        : override.fill
+          ? colors.text(style.color, fill)
+          : undefined;
+    if (color) css.push(`color:${color}`);
+    if (override.bold !== undefined) css.push(`font-weight:${override.bold ? 700 : 400}`);
+    if (override.italic !== undefined)
+      css.push(`font-style:${override.italic ? 'italic' : 'normal'}`);
+    if (override.underline !== undefined || override.strike !== undefined) {
+      const lines = [
+        (override.underline ?? style.underline !== 'none') ? 'underline' : '',
+        (override.strike ?? style.strike) ? 'line-through' : '',
+      ].filter(Boolean);
+      css.push(`text-decoration:${lines.join(' ') || 'none'}`);
+    }
+    return css;
   }
 
   /** Width covering the following empty cells that left-aligned text spills into. */

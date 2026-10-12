@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { evaluateConditionalFormats, parseDxfs } from './conditional';
 import { firstColor, readThemeColors, resolveColor } from './excelColors';
 import {
   CellKind,
@@ -11,6 +12,7 @@ import {
   type WorkbookInfo,
 } from './model';
 import { builtInFormats, formatNumber, formatText } from './numberFormat';
+import { parseCellRef } from './refs';
 import { decodeEntities, elements, firstElement, textRuns } from './xml';
 
 const REL_OFFICE_DOCUMENT = /\/officeDocument$/;
@@ -59,7 +61,9 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
   const activeTab = parseInt(firstElement(workbookXml, 'workbookView')?.attrs.activeTab ?? '0', 10);
 
   const theme = readThemeColors(await read(relByType(REL_THEME)));
-  const { styles, formats } = parseStyles(await read(relByType(REL_STYLES)), theme, locale);
+  const stylesXml = await read(relByType(REL_STYLES));
+  const { styles, formats } = parseStyles(stylesXml, theme, locale);
+  const dxfs = parseDxfs(stylesXml, theme);
   const sharedStrings = parseSharedStrings(await read(relByType(REL_SHARED_STRINGS)));
 
   const sheets: SheetEntry[] = [];
@@ -104,6 +108,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
         throw new Error(`Missing sheet ${index}`);
       }
       const sheet = parseSheet(xml, { sharedStrings, styles, formats, date1904 });
+      sheet.conditional = evaluateConditionalFormats(xml, sheet, dxfs, theme);
       sheet.drawings = await readDrawings(zip, read, path!, xml, theme);
       fitDrawings(sheet);
       return sheet;
@@ -306,17 +311,6 @@ interface SheetContext {
   date1904: boolean;
 }
 
-/** "AB12" → { row: 11, col: 27 } (0-based). */
-export function parseCellRef(ref: string): { row: number; col: number } | undefined {
-  const match = /^\$?([A-Z]{1,3})\$?(\d+)$/i.exec(ref);
-  if (!match) return undefined;
-  let col = 0;
-  for (const char of match[1].toUpperCase()) {
-    col = col * 26 + (char.charCodeAt(0) - 64);
-  }
-  return { row: parseInt(match[2], 10) - 1, col: col - 1 };
-}
-
 export function parseSheet(xml: string, context: SheetContext): SheetData {
   const view = firstElement(xml, 'sheetView');
   const pane = view && firstElement(view.body, 'pane');
@@ -470,6 +464,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     frozenCols,
     showGridLines: view?.attrs.showGridLines !== '0' && view?.attrs.showGridLines !== 'false',
     drawings: [],
+    conditional: new Map(),
   };
 }
 
