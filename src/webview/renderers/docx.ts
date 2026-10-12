@@ -1,5 +1,6 @@
 import { renderAsync } from 'docx-preview';
 import { adaptDocumentColors } from '../darkColors';
+import { paginate } from '../paginate';
 import type { RenderedDocument, RenderOptions, Renderer } from './types';
 
 /** Horizontal space around pages; matches the padding of `.docx-wrapper` in viewer.css. */
@@ -28,6 +29,11 @@ export const docxRenderer: Renderer = {
       useBase64URL: false,
       experimental: true,
     });
+
+    // Page breaks depend on text metrics, so wait for the document's fonts first.
+    await document.fonts.ready;
+    const wrapper = target.querySelector<HTMLElement>('.docx-wrapper');
+    if (wrapper) paginate(wrapper);
 
     if (options.palette) {
       adaptDocumentColors(target, options.palette);

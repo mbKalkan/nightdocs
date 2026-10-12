@@ -292,6 +292,29 @@ function longDocument() {
     for (let i = 0; i < 14; i++) {
       children.push(new Paragraph(paragraphText(random)));
     }
+    // A table longer than a page, so pagination has to split it between rows.
+    if (chapter === 6) {
+      children.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({
+              tableHeader: true,
+              children: ['Week', 'Orders', 'Returns'].map(headerCell),
+            }),
+            ...Array.from(
+              { length: 60 },
+              (_, week) =>
+                new TableRow({
+                  children: [`Week ${week + 1}`, `${120 + week * 3}`, `${week % 7}`].map((value) =>
+                    cell(value),
+                  ),
+                }),
+            ),
+          ],
+        }),
+      );
+    }
   }
   return new Document({
     creator: 'Nightdocs',
