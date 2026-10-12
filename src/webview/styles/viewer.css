@@ -175,6 +175,12 @@ body {
   outline-offset: 1px;
 }
 
+/* Keyboard focus on the document area itself, e.g. after tabbing past the toolbar. */
+.ov-viewport:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
 /* Progress */
 
 .ov-progress {

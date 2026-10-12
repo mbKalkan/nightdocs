@@ -191,6 +191,29 @@ test('zooms the grid and keeps clicks on the right cell', async ({ page }) => {
   await page.screenshot({ path: `${SCREENS}/xlsx-zoom-80.png` });
 });
 
+test('moves between sheet tabs with the keyboard', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+
+  await expect(page.getByRole('tablist', { name: 'Sheets' })).toBeVisible();
+  const tabs = page.getByRole('tab');
+  // Only the selected tab is a tab stop.
+  await expect(tabs.first()).toHaveAttribute('tabindex', '0');
+  await expect(tabs.nth(1)).toHaveAttribute('tabindex', '-1');
+
+  await tabs.first().focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(activeTab(page)).toHaveText('Data');
+  await expect(page.getByRole('tab', { name: 'Data' })).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(activeTab(page)).toHaveText('Charts');
+  await page.keyboard.press('ArrowRight');
+  await expect(activeTab(page)).toHaveText('Charts');
+  await page.keyboard.press('Home');
+  await expect(activeTab(page)).toHaveText('Budget');
+  await expect(page.getByRole('tab', { name: 'Budget' })).toBeFocused();
+});
+
 test('switches sheets and keeps frozen headers in view', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');
