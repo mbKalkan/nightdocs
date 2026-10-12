@@ -117,7 +117,8 @@ If another extension also opens these files, right-click the file and choose
 - Excel formulas aren't recalculated: cells show the values saved in the file.
 - Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
 - Comparing versions works for Word documents so far; Excel and PowerPoint files open side by side
-  without marks.
+  without marks. Files in Git LFS compare only when their content is on this machine: Nightdocs
+  doesn't download it.
 - PowerPoint animations, transitions, speaker notes and media playback aren't shown. Some pasted
   vector pictures (EMF/WMF) appear as placeholders.
 

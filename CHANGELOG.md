@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added and removed paragraphs down to the changed words, and scrolls both sides together.
   <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the status bar move between
   changes.
+- Versions from Git open as committed. That includes Word files that Git for Windows turns into
+  plain text for diffs, and files kept in Git LFS whose content is on this machine.
 
 ## [0.2.0] - 2026-10-12
 
