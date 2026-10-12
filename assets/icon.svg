@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3f73"/>
+      <stop offset="1" stop-color="#171a33"/>
+    </linearGradient>
+    <mask id="crescent">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="101" cy="31" r="16" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#bg)"/>
+  <!-- A dark page with light text: a document shown the way Nightdocs shows it. -->
+  <path d="M34 24h38l22 22v56a8 8 0 0 1-8 8H34a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8z" fill="#22263f" stroke="#c9cdf2" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M72 24v16a6 6 0 0 0 6 6h16" fill="none" stroke="#c9cdf2" stroke-width="4" stroke-linejoin="round"/>
+  <rect x="38" y="58" width="44" height="6" rx="3" fill="#c9cdf2"/>
+  <rect x="38" y="72" width="44" height="6" rx="3" fill="#8f95c9"/>
+  <rect x="38" y="86" width="30" height="6" rx="3" fill="#8f95c9"/>
+  <!-- Crescent moon over the folded corner. -->
+  <circle cx="92" cy="38" r="18" fill="#ffd27a" mask="url(#crescent)"/>
+</svg>
