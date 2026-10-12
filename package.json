@@ -1,0 +1,72 @@
+{
+  "name": "office-viewer",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.0.1",
+  "publisher": "mbkalkan",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mbKalkan/office-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mbKalkan/office-viewer/issues"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "docx",
+    "word",
+    "viewer",
+    "office",
+    "dark"
+  ],
+  "main": "./dist/extension.js",
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "activationEvents": [],
+  "contributes": {},
+  "files": [
+    "dist/**",
+    "package.nls*.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.extension.json && tsc -p tsconfig.webview.json && tsc -p tsconfig.json",
+    "lint": "eslint src scripts test",
+    "format": "prettier --write \"src/**/*.{ts,css}\" \"scripts/**/*.mjs\" \"test/**/*.ts\" \"*.{json,mjs}\" \".github/**/*.yml\" \".vscode/*.json\"",
+    "format:check": "prettier --check \"src/**/*.{ts,css}\" \"scripts/**/*.mjs\" \"test/**/*.ts\" \"*.{json,mjs}\" \".github/**/*.yml\" \".vscode/*.json\"",
+    "test": "vitest run --passWithNoTests",
+    "package": "vsce package --no-dependencies",
+    "vscode:prepublish": "node scripts/build.mjs --production"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}

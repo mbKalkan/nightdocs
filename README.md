@@ -18,6 +18,22 @@ Need to edit? One click opens the file in your desktop Office app.
 
 No telemetry. No network access. Your documents never leave your machine.
 
+## Development
+
+Requires Node.js 22+.
+
+```bash
+npm install
+npm run build      # bundle the extension and the webview into dist/
+npm run watch      # rebuild on change
+npm test           # unit tests
+npm run lint       # ESLint
+npm run typecheck  # TypeScript
+npm run package    # create a .vsix
+```
+
+Press <kbd>F5</kbd> in VS Code to launch an Extension Development Host with the sample documents in `test/fixtures`.
+
 ## License
 
 [MIT](LICENSE)
