@@ -27,6 +27,9 @@ npm install
 npm run build      # bundle the extension and the webview into dist/
 npm run watch      # rebuild on change
 npm test           # unit tests
+npm run test:visual  # browser tests of the viewer UI (Playwright)
+npm run test:smoke   # end-to-end tests in a downloaded copy of VS Code
+npm run fixtures   # regenerate the sample documents in test/fixtures
 npm run lint       # ESLint
 npm run typecheck  # TypeScript
 npm run package    # create a .vsix

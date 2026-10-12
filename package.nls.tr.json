@@ -1,4 +1,10 @@
 {
   "displayName": "Office Viewer",
-  "description": "Word ve Excel dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici."
+  "description": "Word ve Excel dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici.",
+  "category": "Office Viewer",
+  "customEditor.displayName": "Office Viewer",
+  "command.openInOffice": "Office'te Aç",
+  "command.zoomIn": "Yakınlaştır",
+  "command.zoomOut": "Uzaklaştır",
+  "command.resetZoom": "Yakınlaştırmayı Sıfırla"
 }

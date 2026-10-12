@@ -1,7 +1,8 @@
 import type * as vscode from 'vscode';
+import { ViewerProvider } from './viewerProvider';
 
-export function activate(_context: vscode.ExtensionContext): void {
-  // Viewers are registered here as they are added.
+export function activate(context: vscode.ExtensionContext): void {
+  context.subscriptions.push(ViewerProvider.register(context));
 }
 
 export function deactivate(): void {}
