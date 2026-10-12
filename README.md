@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="" width="96" align="right">
+
 # Nightdocs
 
 [![CI](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml/badge.svg)](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml)

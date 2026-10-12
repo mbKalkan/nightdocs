@@ -60,6 +60,7 @@ Other useful scripts:
 - `npm run fixtures` regenerates the sample documents in `test/fixtures` from code.
 - `npm run fixtures:large` writes a 100,000-row workbook for the performance test.
 - `npm run screenshots` regenerates the images in `docs/images`.
+- `npm run icon` renders `assets/icon.png` from `assets/icon.svg`.
 
 If you change the UI, look at the screenshots the browser tests save in `test-results/screens`,
 in both the dark and the light theme.
