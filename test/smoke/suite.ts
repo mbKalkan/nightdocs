@@ -3,7 +3,7 @@ import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'mbkalkan.nightdocs';
+const EXTENSION_ID = 'MBKDevStudio.nightdocs';
 const VIEW_TYPE = 'nightdocs.viewer';
 const FIXTURES = path.resolve(__dirname, '../../test/fixtures');
 

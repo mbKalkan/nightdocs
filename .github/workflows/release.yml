@@ -44,13 +44,23 @@ jobs:
 
       - run: npm run package -- --out "nightdocs-$GITHUB_REF_NAME.vsix"
 
+      # Each store is published to only when its token is set, so a version can also be uploaded
+      # by hand and still get its GitHub release here. Tokens reach only the step that uses them.
+      - name: Check which stores to publish to
+        id: stores
+        run: |
+          echo "marketplace=${{ secrets.VSCE_PAT != '' }}" >> "$GITHUB_OUTPUT"
+          echo "openvsx=${{ secrets.OVSX_PAT != '' }}" >> "$GITHUB_OUTPUT"
+
       - name: Publish to the Visual Studio Marketplace
+        if: steps.stores.outputs.marketplace == 'true'
         run: npx vsce publish --packagePath "nightdocs-$GITHUB_REF_NAME.vsix"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       # Run with npx rather than installed: it's a publishing tool, not part of the extension.
       - name: Publish to Open VSX
+        if: steps.stores.outputs.openvsx == 'true'
         run: npx --yes ovsx@1.2.0 publish "nightdocs-$GITHUB_REF_NAME.vsix"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

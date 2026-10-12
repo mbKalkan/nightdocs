@@ -11,7 +11,7 @@ Nightdocs is a lightweight, view-only viewer for `.docx` and `.xlsx` files. Docu
 editor's colors so a white page doesn't light up a dark room, and when you need to edit, one click
 opens the file in Word or Excel.
 
-> **Status:** preview. Not on the Marketplace yet.
+> **Status:** preview. Feedback is very welcome.
 
 ![A Word document in Nightdocs with a dark VS Code theme](docs/images/word-dark.png)
 
@@ -57,7 +57,9 @@ opens the file in Word or Excel.
 
 ## Getting started
 
-1. Install Nightdocs (Marketplace and Open VSX links will appear here at release).
+1. Install **Nightdocs** from the
+   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs),
+   or search for "Nightdocs" in the Extensions view.
 2. Open a `.docx`, `.xlsx` or `.xlsm` file. Nightdocs is the default viewer for these files.
 
 If another extension also opens these files, right-click the file and choose
