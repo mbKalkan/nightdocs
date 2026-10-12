@@ -205,6 +205,39 @@ test('zooms with toolbar buttons and host commands', async ({ page }) => {
   await expect(label).not.toHaveText('90%');
 });
 
+test('splits documents Word never paginated into pages', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  // Generated without Word's page break marks: docx-preview alone shows one long page.
+  await viewer.load('long.docx');
+
+  const pages = page.locator('.docx-wrapper > section.docx');
+  expect(await pages.count()).toBeGreaterThan(8);
+  const heights = await pages.evaluateAll((sections) =>
+    sections.map((section) => section.getBoundingClientRect().height),
+  );
+  // Every page keeps its paper size and repeats the running header.
+  expect(new Set(heights.map(Math.round)).size).toBe(1);
+  await expect(page.locator('.docx-wrapper > section.docx > header')).toHaveCount(heights.length);
+  await expect(page.locator('.docx-wrapper > section.docx > footer')).toHaveCount(heights.length);
+  // The long table continues on the next page, with every row kept once.
+  const tables = page.locator('.docx-wrapper > section.docx > article > table');
+  expect(await tables.count()).toBeGreaterThan(1);
+  expect(
+    await tables.evaluateAll((all) =>
+      all.reduce((sum, t) => sum + (t as HTMLTableElement).rows.length, 0),
+    ),
+  ).toBe(61);
+  await expect(
+    page.locator('.docx-wrapper > section.docx > article > table:first-child', {
+      hasText: 'Week',
+    }),
+  ).not.toHaveCount(0);
+
+  // Pages Word laid out stay as they are.
+  await viewer.load('sample.docx');
+  await expect(pages).toHaveCount(2);
+});
+
 test('keeps the scroll position when the file changes on disk', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('long.docx');
