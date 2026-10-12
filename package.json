@@ -26,10 +26,14 @@
     "docx",
     "xlsx",
     "xlsm",
+    "pptx",
     "word",
     "excel",
+    "powerpoint",
     "office",
     "spreadsheet",
+    "presentation",
+    "slides",
     "document",
     "viewer",
     "reader",
@@ -70,6 +74,15 @@
           },
           {
             "filenamePattern": "*.xlsm"
+          },
+          {
+            "filenamePattern": "*.pptx"
+          },
+          {
+            "filenamePattern": "*.pptm"
+          },
+          {
+            "filenamePattern": "*.ppsx"
           }
         ],
         "priority": "default"
@@ -240,12 +253,14 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.12.0",
     "globals": "^17.13.0",
+    "pptxgenjs": "^4.0.1",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1",
     "vitest": "^5.0.3"
   },
   "dependencies": {
+    "@aiden0z/pptx-renderer": "1.3.0",
     "docx-preview": "^0.4.1",
     "jszip": "^3.10.2",
     "ssf": "^0.11.2"

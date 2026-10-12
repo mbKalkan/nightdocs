@@ -10,7 +10,13 @@ const FORMATS: Readonly<Record<string, FormatInfo>> = {
   '.docx': { format: 'docx', appName: 'Word' },
   '.xlsx': { format: 'xlsx', appName: 'Excel' },
   '.xlsm': { format: 'xlsx', appName: 'Excel' },
+  '.pptx': { format: 'pptx', appName: 'PowerPoint' },
+  '.pptm': { format: 'pptx', appName: 'PowerPoint' },
+  '.ppsx': { format: 'pptx', appName: 'PowerPoint' },
 };
+
+/** File extensions the viewer opens, with the leading dot. */
+export const SUPPORTED_EXTENSIONS: readonly string[] = Object.keys(FORMATS);
 
 export function formatForPath(path: string): FormatInfo | undefined {
   const dot = path.lastIndexOf('.');

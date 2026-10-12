@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { SUPPORTED_EXTENSIONS } from '../../src/shared/formats';
 
 const readJson = (path: string) =>
   JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
 
 const manifest = readJson('package.json') as {
   engines: { vscode: string };
+  contributes: { customEditors: { selector: { filenamePattern: string }[] }[] };
   devDependencies: Record<string, string>;
   icon: string;
   files: string[];
@@ -16,6 +18,13 @@ describe('extension manifest', () => {
     const engine = manifest.engines.vscode.replace(/^\^/, '');
     const types = manifest.devDependencies['@types/vscode'].replace(/^[\^~]/, '');
     expect(types).toBe(engine);
+  });
+
+  it('opens exactly the file types the viewer can render', () => {
+    const patterns = manifest.contributes.customEditors.flatMap((editor) =>
+      editor.selector.map((selector) => selector.filenamePattern),
+    );
+    expect(patterns.sort()).toEqual(SUPPORTED_EXTENSIONS.map((ext) => `*${ext}`).sort());
   });
 
   it('defines every %placeholder% in each package.nls file', () => {

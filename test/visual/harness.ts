@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
+import { formatForPath } from '../../src/shared/formats';
 import type { ColorMode, HostToWebviewMessage, ViewerStrings } from '../../src/shared/protocol';
 import { themes, type ThemeName } from './themes';
 
@@ -47,6 +48,9 @@ export const strings: ViewerStrings = {
   chart: 'Chart',
   chartHint: 'Open in Excel to see this chart',
   sheets: 'Sheets',
+  slide: 'Slide {0}',
+  slidePosition: 'Slide {0} of {1}',
+  hiddenSlide: 'Hidden slide',
 };
 
 /**
@@ -136,20 +140,19 @@ export async function openViewer(page: Page, theme: ThemeName) {
       );
     },
     async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
+      const info = formatForPath(fixture) ?? { format: 'docx', appName: 'Word' };
       await this.post({
         type: 'load',
         fileName: fixture,
-        format: fixture.endsWith('.xlsx') ? 'xlsx' : 'docx',
+        format: info.format,
         data: readFileSync(join('test/fixtures', fixture)),
         reload,
         canOpenInOffice: true,
         colorMode,
         locale: 'en-US',
-        strings: fixture.endsWith('.xlsx')
-          ? { ...strings, openInOffice: 'Open in Excel' }
-          : strings,
+        strings: { ...strings, openInOffice: `Open in ${info.appName}` },
       });
-      await page.waitForSelector('.docx-wrapper, .ng-canvas, .ov-error');
+      await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .ov-error');
       await page.waitForSelector('.ov-progress', { state: 'hidden' });
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */

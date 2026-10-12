@@ -26,5 +26,8 @@
   "Chart": "Grafik",
   "Open in {0} to see this chart": "Bu grafiği görmek için {0} ile açın",
   "Sheets": "Sayfalar",
-  "The file is empty.": "Dosya boş."
+  "The file is empty.": "Dosya boş.",
+  "Slide {0}": "Slayt {0}",
+  "Slide {0} of {1}": "Slayt {0} / {1}",
+  "Hidden slide": "Gizli slayt"
 }

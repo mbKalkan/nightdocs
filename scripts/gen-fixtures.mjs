@@ -22,6 +22,8 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
+import JSZip from 'jszip';
+import PptxGenJS from 'pptxgenjs';
 import { writeXlsx } from './xlsx-writer.mjs';
 
 const OUT = 'test/fixtures';
@@ -667,3 +669,328 @@ if (!LARGE_ONLY) {
   writeFileSync(`${OUT}/empty.xlsx`, Buffer.alloc(0));
   console.log(`wrote ${OUT}/empty.xlsx`);
 }
+
+// --- Presentations ---------------------------------------------------------------------------
+
+const BRAND = '1F4E79';
+const REGIONS = ['North', 'South', 'East', 'West'];
+/** The Office theme accents, which PowerPoint gives new charts. */
+const ACCENTS = ['4472C4', 'ED7D31', 'A5A5A5', 'FFC000'];
+
+function photo() {
+  return png(320, 200, (x, y) => [
+    Math.round(80 + (x / 320) * 150),
+    Math.round(120 + (y / 200) * 100),
+    200,
+    255,
+  ]);
+}
+
+function slideTitle(slide, text) {
+  slide.addText(text, { x: 0.5, y: 0.3, w: 9, h: 0.8, fontSize: 30, bold: true, color: BRAND });
+}
+
+function addResultsTable(slide, y) {
+  const head = ['Region', 'Q2', 'Q3', 'Change'].map((text) => ({
+    text,
+    options: { bold: true, color: 'FFFFFF', fill: { color: BRAND } },
+  }));
+  const rows = [
+    ['North', '1,240', '1,385', '+11.7%'],
+    ['South', '980', '1,012', '+3.3%'],
+    ['East', '1,105', '1,060', '-4.1%'],
+    ['West', '1,430', '1,598', '+11.7%'],
+  ].map((row, i) =>
+    row.map((text) => ({ text, options: { fill: { color: i % 2 ? 'DEEAF6' : 'FFFFFF' } } })),
+  );
+  // PowerPoint always stores row heights; without them pptxgenjs writes zero-height rows.
+  slide.addTable([head, ...rows], {
+    x: 0.7,
+    y,
+    w: 8.6,
+    rowH: 0.45,
+    fontSize: 16,
+    color: '262626',
+    border: { type: 'solid', pt: 1, color: 'A6A6A6' },
+  });
+}
+
+function samplePresentation() {
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_16x9';
+  pptx.title = 'Quarterly Review';
+  pptx.company = 'Nightdocs';
+
+  let slide = pptx.addSlide();
+  slide.addText('Quarterly Review', {
+    x: 0.5,
+    y: 1.6,
+    w: 9,
+    h: 1,
+    fontSize: 40,
+    bold: true,
+    color: BRAND,
+    align: 'center',
+  });
+  slide.addText('Prepared for the leadership team', {
+    x: 0.5,
+    y: 2.7,
+    w: 9,
+    h: 0.6,
+    fontSize: 20,
+    color: '595959',
+    align: 'center',
+  });
+
+  slide = pptx.addSlide();
+  slideTitle(slide, 'Highlights');
+  slide.addText(
+    [
+      { text: 'Revenue grew in three of four regions', options: { bullet: true } },
+      { text: 'North and West led the growth', options: { bullet: true, indentLevel: 1 } },
+      { text: 'Customer retention reached an all-time high', options: { bullet: true } },
+      { text: 'Support backlog down 40%', options: { bullet: true, color: 'C00000', bold: true } },
+      {
+        text: 'Details are on the regional results slide',
+        options: { bullet: true, hyperlink: { slide: 3 } },
+      },
+      {
+        text: 'Methodology: example.com/method',
+        options: { bullet: true, hyperlink: { url: 'https://example.com/method' } },
+      },
+    ],
+    { x: 0.7, y: 1.3, w: 8.5, h: 3.5, fontSize: 20, color: '262626', valign: 'top' },
+  );
+
+  slide = pptx.addSlide();
+  slideTitle(slide, 'Regional results');
+  addResultsTable(slide, 1.3);
+
+  slide = pptx.addSlide();
+  slideTitle(slide, 'Revenue by region');
+  slide.addChart(
+    pptx.ChartType.bar,
+    [
+      { name: 'Q2', labels: REGIONS, values: [1240, 980, 1105, 1430] },
+      { name: 'Q3', labels: REGIONS, values: [1385, 1012, 1060, 1598] },
+    ],
+    {
+      x: 0.5,
+      y: 1.2,
+      w: 5.6,
+      h: 4,
+      barGrouping: 'clustered',
+      chartColors: ACCENTS,
+      showLegend: true,
+      legendPos: 'b',
+      showTitle: true,
+      title: 'Revenue (k$)',
+      catAxisLabelColor: '404040',
+      valAxisLabelColor: '404040',
+      showValue: true,
+      dataLabelPosition: 'outEnd',
+      dataLabelFontSize: 9,
+      dataLabelColor: '404040',
+    },
+  );
+  slide.addChart(
+    pptx.ChartType.line,
+    [{ name: 'Customers', labels: ['Q1', 'Q2', 'Q3', 'Q4'], values: [410, 455, 520, 590] }],
+    {
+      x: 6.3,
+      y: 1.2,
+      w: 3.4,
+      h: 4,
+      chartColors: ['70AD47'],
+      lineSize: 3,
+      lineDataSymbol: 'circle',
+      showLegend: true,
+      legendPos: 'b',
+      catAxisLabelColor: '404040',
+      valAxisLabelColor: '404040',
+    },
+  );
+
+  slide = pptx.addSlide();
+  slideTitle(slide, 'Shapes and pictures');
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7,
+    y: 1.4,
+    w: 2.4,
+    h: 1.2,
+    fill: { color: '4472C4' },
+    rectRadius: 0.2,
+  });
+  slide.addText('Rounded', {
+    x: 0.7,
+    y: 1.4,
+    w: 2.4,
+    h: 1.2,
+    color: 'FFFFFF',
+    align: 'center',
+    fontSize: 18,
+  });
+  slide.addShape(pptx.ShapeType.ellipse, {
+    x: 3.4,
+    y: 1.4,
+    w: 1.6,
+    h: 1.2,
+    fill: { color: 'ED7D31' },
+  });
+  slide.addShape(pptx.ShapeType.rightArrow, {
+    x: 5.3,
+    y: 1.6,
+    w: 1.6,
+    h: 0.8,
+    fill: { color: '70AD47' },
+  });
+  slide.addShape(pptx.ShapeType.line, {
+    x: 0.7,
+    y: 3.0,
+    w: 6.2,
+    h: 0,
+    line: { color: '7F7F7F', width: 2, dashType: 'dash' },
+  });
+  slide.addImage({
+    data: `data:image/png;base64,${photo().toString('base64')}`,
+    x: 7.2,
+    y: 1.4,
+    w: 2.4,
+    h: 1.5,
+  });
+  slide.addShape(pptx.ShapeType.rect, {
+    x: 0.7,
+    y: 3.4,
+    w: 8.6,
+    h: 1.2,
+    fill: { color: 'FFF2CC' },
+    line: { color: 'BF9000', width: 1 },
+  });
+  slide.addText('Note: light fills become dark, pictures keep their colors.', {
+    x: 0.9,
+    y: 3.5,
+    w: 8.2,
+    h: 1,
+    fontSize: 16,
+    color: '7F6000',
+  });
+
+  slide = pptx.addSlide();
+  slide.background = { color: '1B1B2F' };
+  slide.addText('Already dark', {
+    x: 0.5,
+    y: 1.8,
+    w: 9,
+    h: 1,
+    fontSize: 36,
+    bold: true,
+    color: 'FFFFFF',
+    align: 'center',
+  });
+  slide.addText('Slides designed dark stay as they are.', {
+    x: 0.5,
+    y: 2.8,
+    w: 9,
+    h: 0.6,
+    fontSize: 18,
+    color: 'BFBFBF',
+    align: 'center',
+  });
+  slide.addNotes('Speaker notes for the dark slide.');
+
+  slide = pptx.addSlide();
+  slide.background = { data: `image/png;base64,${photo().toString('base64')}` };
+  slide.addText('Picture background', {
+    x: 0.5,
+    y: 2,
+    w: 9,
+    h: 1,
+    fontSize: 36,
+    bold: true,
+    color: '1B1B2F',
+    align: 'center',
+  });
+
+  slide = pptx.addSlide();
+  slide.hidden = true;
+  slideTitle(slide, 'Hidden slide');
+  slide.addText('Skipped in slide shows; shown dimmed here.', {
+    x: 0.7,
+    y: 1.4,
+    w: 8.6,
+    h: 0.6,
+    fontSize: 18,
+    color: '404040',
+  });
+
+  return pptx;
+}
+
+/** A deck long enough to check scrolling and render time. */
+function longPresentation(slides) {
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_16x9';
+  const random = makeRandom(11);
+  for (let i = 1; i <= slides; i++) {
+    const slide = pptx.addSlide();
+    slideTitle(slide, `Section ${i}`);
+    if (i % 5 === 0) {
+      addResultsTable(slide, 1.3);
+    } else {
+      slide.addText(
+        Array.from({ length: 4 }, () => ({
+          text: sentence(random, 6 + Math.floor(random() * 6)),
+          options: { bullet: true },
+        })),
+        { x: 0.7, y: 1.3, w: 8.5, h: 3.5, fontSize: 20, color: '262626', valign: 'top' },
+      );
+    }
+  }
+  return pptx;
+}
+
+/** pptxgenjs writes single-level chart categories the multi-level way; PowerPoint doesn't. */
+function singleLevelCategories(xml) {
+  return xml.replace(
+    /<c:multiLvlStrRef>(.*?)<c:multiLvlStrCache>(.*?)<c:lvl>(.*?)<\/c:lvl>\s*<\/c:multiLvlStrCache>\s*<\/c:multiLvlStrRef>/gs,
+    '<c:strRef>$1<c:strCache>$2$3</c:strCache></c:strRef>',
+  );
+}
+
+/**
+ * pptxgenjs stamps the current time into the package and into the workbooks embedded for
+ * charts; pin it, so regenerating the fixtures only changes them when their content changes.
+ */
+async function pinTimestamps(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const pinned = new JSZip();
+  const date = new Date(Date.UTC(2024, 0, 1));
+  for (const [name, file] of Object.entries(zip.files)) {
+    if (file.dir) continue;
+    let content = await file.async('nodebuffer');
+    if (name === 'docProps/core.xml') {
+      content = Buffer.from(
+        content
+          .toString('utf8')
+          .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z/g, '2024-01-01T00:00:00Z'),
+      );
+    } else if (name.endsWith('.xlsx')) {
+      content = await pinTimestamps(content);
+    } else if (/^ppt\/charts\/chart\d+\.xml$/.test(name)) {
+      content = Buffer.from(singleLevelCategories(content.toString('utf8')));
+    }
+    pinned.file(name, content, { date, createFolders: false });
+  }
+  return pinned.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+}
+
+async function writePresentation(path, pptx) {
+  writeFileSync(path, await pinTimestamps(await pptx.write({ outputType: 'nodebuffer' })));
+  console.log(`wrote ${path}`);
+}
+
+if (!LARGE_ONLY) {
+  await writePresentation(`${OUT}/sample.pptx`, samplePresentation());
+  await writePresentation(`${OUT}/long.pptx`, longPresentation(30));
+}
+await writePresentation(`${OUT}/generated/large.pptx`, longPresentation(200));

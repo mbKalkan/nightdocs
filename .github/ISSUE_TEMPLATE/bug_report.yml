@@ -23,6 +23,7 @@ body:
       options:
         - Word (.docx)
         - Excel (.xlsx / .xlsm)
+        - PowerPoint (.pptx / .pptm / .ppsx)
         - Other
     validations:
       required: true

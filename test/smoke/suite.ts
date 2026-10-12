@@ -45,6 +45,17 @@ const tests: Record<string, () => Promise<void>> = {
     await vscode.commands.executeCommand('nightdocs.previousSheet');
   },
 
+  async 'opens .pptx files in the viewer by default'() {
+    await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(`${FIXTURES}/sample.pptx`));
+    const input = await waitFor(() => {
+      const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      return tab?.input instanceof vscode.TabInputCustom && tab.input.uri.path.endsWith('.pptx')
+        ? tab.input
+        : undefined;
+    });
+    assert.equal(input.viewType, VIEW_TYPE);
+  },
+
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
     for (const id of [

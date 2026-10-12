@@ -131,6 +131,14 @@ export function adaptBorder(color: Rgb, palette: DarkPalette): Rgb {
   return fromLabInGamut(withHue(lab, target, target.l + t * (0.5 - target.l), t), color.a);
 }
 
+/**
+ * For chart axes and gridlines: faint light lines stay faint against the dark page (as
+ * fills do), dark lines become visible (as borders do).
+ */
+export function adaptLine(color: Rgb, palette: DarkPalette): Rgb {
+  return toLab(color).l > 0.5 ? adaptBackground(color, palette) : adaptBorder(color, palette);
+}
+
 /** Moves the lightness of `color` away from `background` until the contrast is reached. */
 export function ensureContrast(color: Rgb, background: Rgb, minimum: number): Rgb {
   if (contrastRatio(color, background) >= minimum) {
