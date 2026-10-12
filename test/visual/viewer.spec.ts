@@ -163,6 +163,27 @@ test('fits wide pages into a narrow window', async ({ page }) => {
   await page.screenshot({ path: `${SCREENS}/narrow-dark.png` });
 });
 
+test('can be used from the keyboard and a screen reader', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+
+  // Every toolbar button has a name; the zoom label is named by its percentage.
+  await expect(page.getByRole('button', { name: 'Zoom Out' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '100%' })).toHaveAttribute('title', 'Reset Zoom');
+  await expect(page.getByRole('main', { name: 'sample.docx' })).toBeVisible();
+
+  // Arrow keys move through the toolbar and wrap around.
+  await page.locator('[data-action="colors"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-action="zoom-out"]')).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(page.locator('[data-action="open"]')).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-action="colors"]')).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('[data-action="open"]')).toBeFocused();
+});
+
 test('zooms with toolbar buttons and host commands', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.docx');

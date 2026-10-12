@@ -33,6 +33,8 @@ export interface ViewerStrings {
   findClose: string;
   chart: string;
   chartHint: string;
+  /** Accessible name of the sheet tab list. */
+  sheets: string;
 }
 
 export interface LoadMessage {

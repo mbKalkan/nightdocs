@@ -45,6 +45,7 @@ export const strings: ViewerStrings = {
   findClose: 'Close (Escape)',
   chart: 'Chart',
   chartHint: 'Open in Excel to see this chart',
+  sheets: 'Sheets',
 };
 
 /**
