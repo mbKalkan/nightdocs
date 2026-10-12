@@ -34,6 +34,7 @@ export const strings: ViewerStrings = {
     "The file is password-protected or uses an older binary format that isn't supported yet.",
   errorRender: 'Something went wrong while rendering this document.',
   errorRead: "The file couldn't be read.",
+  errorEmpty: 'The file is empty.',
   statusCount: 'Count: {0}',
   statusSum: 'Sum: {0}',
   statusAverage: 'Average: {0}',

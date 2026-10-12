@@ -203,6 +203,11 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
       '</Types>',
   );
 
+  // A fixed timestamp keeps regenerated fixtures byte-identical.
+  const date = new Date(Date.UTC(2024, 0, 1));
+  zip.forEach((_, file) => {
+    file.date = date;
+  });
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 

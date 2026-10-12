@@ -291,6 +291,14 @@ test('explains a protected workbook', async ({ page }) => {
   await expect(page.locator('.ov-footer')).toBeHidden();
 });
 
+test('says so when a file is empty', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('empty.xlsx');
+  await expect(page.locator('.ov-error-message')).toHaveText('The file is empty.');
+  await expect(page.locator('.ov-error .ov-button')).toHaveText('Open in Excel');
+  expect(viewer.problems).toEqual([]);
+});
+
 test('opens a 100,000-row workbook and scrolls to the end', async ({ page }) => {
   test.skip(!existsSync('test/fixtures/generated/large.xlsx'), 'run npm run fixtures:large first');
   test.setTimeout(90_000);
