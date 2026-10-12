@@ -7,8 +7,8 @@ describe('getOpenCommand', () => {
     const { command, args, options } = getOpenCommand('win32', path, { ComSpec: 'C:\\cmd.exe' });
     expect(command).toBe('C:\\cmd.exe');
     expect(args.join(' ')).not.toContain(path);
-    expect(args.at(-1)).toBe('start "" "%OFFICE_VIEWER_FILE%"');
-    expect(options.env?.OFFICE_VIEWER_FILE).toBe(path);
+    expect(args.at(-1)).toBe('start "" "%NIGHTDOCS_FILE%"');
+    expect(options.env?.NIGHTDOCS_FILE).toBe(path);
     expect(options.windowsVerbatimArguments).toBe(true);
     expect(options.windowsHide).toBe(true);
   });

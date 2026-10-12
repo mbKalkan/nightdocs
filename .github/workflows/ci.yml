@@ -29,9 +29,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:visual
       - run: xvfb-run -a npm run test:smoke
-      - run: npm run package -- --out office-viewer.vsix
+      - run: npm run package -- --out nightdocs.vsix
       - uses: actions/upload-artifact@v7
         with:
-          name: office-viewer-vsix
-          path: office-viewer.vsix
+          name: nightdocs-vsix
+          path: nightdocs.vsix
           retention-days: 7

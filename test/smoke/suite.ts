@@ -3,8 +3,8 @@ import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'mbkalkan.office-viewer';
-const VIEW_TYPE = 'officeViewer.viewer';
+const EXTENSION_ID = 'mbkalkan.nightdocs';
+const VIEW_TYPE = 'nightdocs.viewer';
 const FIXTURES = path.resolve(__dirname, '../../test/fixtures');
 
 async function waitFor<T>(probe: () => T | undefined, timeoutMs = 10_000): Promise<T> {
@@ -35,13 +35,13 @@ const tests: Record<string, () => Promise<void>> = {
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
     for (const id of ['openInOffice', 'zoomIn', 'zoomOut', 'resetZoom']) {
-      assert.ok(commands.includes(`officeViewer.${id}`), `missing officeViewer.${id}`);
+      assert.ok(commands.includes(`nightdocs.${id}`), `missing nightdocs.${id}`);
     }
   },
 
   async 'accepts zoom commands while the viewer is active'() {
-    await vscode.commands.executeCommand('officeViewer.zoomIn');
-    await vscode.commands.executeCommand('officeViewer.resetZoom');
+    await vscode.commands.executeCommand('nightdocs.zoomIn');
+    await vscode.commands.executeCommand('nightdocs.resetZoom');
   },
 };
 

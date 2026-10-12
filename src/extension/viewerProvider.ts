@@ -7,7 +7,7 @@ import { viewerStrings } from './strings';
 import { buildWebviewHtml } from './webviewHtml';
 
 export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
-  static readonly viewType = 'officeViewer.viewer';
+  static readonly viewType = 'nightdocs.viewer';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
 
@@ -20,12 +20,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
         webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true },
         supportsMultipleEditorsPerDocument: true,
       }),
-      vscode.commands.registerCommand('officeViewer.openInOffice', () =>
+      vscode.commands.registerCommand('nightdocs.openInOffice', () =>
         provider.openActiveInOffice(),
       ),
-      vscode.commands.registerCommand('officeViewer.zoomIn', () => provider.zoomActive('in')),
-      vscode.commands.registerCommand('officeViewer.zoomOut', () => provider.zoomActive('out')),
-      vscode.commands.registerCommand('officeViewer.resetZoom', () => provider.zoomActive('reset')),
+      vscode.commands.registerCommand('nightdocs.zoomIn', () => provider.zoomActive('in')),
+      vscode.commands.registerCommand('nightdocs.zoomOut', () => provider.zoomActive('out')),
+      vscode.commands.registerCommand('nightdocs.resetZoom', () => provider.zoomActive('reset')),
     );
   }
 

@@ -1,8 +1,8 @@
 {
-  "displayName": "Office Viewer",
+  "displayName": "Nightdocs",
   "description": "Word ve Excel dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici.",
-  "category": "Office Viewer",
-  "customEditor.displayName": "Office Viewer",
+  "category": "Nightdocs",
+  "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Office'te Aç",
   "command.zoomIn": "Yakınlaştır",
   "command.zoomOut": "Uzaklaştır",
