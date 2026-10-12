@@ -1,5 +1,5 @@
 {
-  "name": "office-viewer",
+  "name": "nightdocs",
   "displayName": "%displayName%",
   "description": "%description%",
   "version": "0.0.1",
@@ -42,7 +42,7 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "officeViewer.viewer",
+        "viewType": "nightdocs.viewer",
         "displayName": "%customEditor.displayName%",
         "selector": [
           {
@@ -54,23 +54,23 @@
     ],
     "commands": [
       {
-        "command": "officeViewer.openInOffice",
+        "command": "nightdocs.openInOffice",
         "title": "%command.openInOffice%",
         "category": "%category%",
         "icon": "$(link-external)"
       },
       {
-        "command": "officeViewer.zoomIn",
+        "command": "nightdocs.zoomIn",
         "title": "%command.zoomIn%",
         "category": "%category%"
       },
       {
-        "command": "officeViewer.zoomOut",
+        "command": "nightdocs.zoomOut",
         "title": "%command.zoomOut%",
         "category": "%category%"
       },
       {
-        "command": "officeViewer.resetZoom",
+        "command": "nightdocs.resetZoom",
         "title": "%command.resetZoom%",
         "category": "%category%"
       }
@@ -78,59 +78,59 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "officeViewer.openInOffice",
-          "when": "activeCustomEditorId == officeViewer.viewer"
+          "command": "nightdocs.openInOffice",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         },
         {
-          "command": "officeViewer.zoomIn",
-          "when": "activeCustomEditorId == officeViewer.viewer"
+          "command": "nightdocs.zoomIn",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         },
         {
-          "command": "officeViewer.zoomOut",
-          "when": "activeCustomEditorId == officeViewer.viewer"
+          "command": "nightdocs.zoomOut",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         },
         {
-          "command": "officeViewer.resetZoom",
-          "when": "activeCustomEditorId == officeViewer.viewer"
+          "command": "nightdocs.resetZoom",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "officeViewer.zoomIn",
+        "command": "nightdocs.zoomIn",
         "key": "ctrl+=",
         "mac": "cmd+=",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       },
       {
-        "command": "officeViewer.zoomIn",
+        "command": "nightdocs.zoomIn",
         "key": "ctrl+numpad_add",
         "mac": "cmd+numpad_add",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       },
       {
-        "command": "officeViewer.zoomIn",
+        "command": "nightdocs.zoomIn",
         "key": "ctrl+shift+=",
         "mac": "cmd+shift+=",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       },
       {
-        "command": "officeViewer.zoomOut",
+        "command": "nightdocs.zoomOut",
         "key": "ctrl+-",
         "mac": "cmd+-",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       },
       {
-        "command": "officeViewer.zoomOut",
+        "command": "nightdocs.zoomOut",
         "key": "ctrl+numpad_subtract",
         "mac": "cmd+numpad_subtract",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       },
       {
-        "command": "officeViewer.resetZoom",
+        "command": "nightdocs.resetZoom",
         "key": "ctrl+numpad0",
         "mac": "cmd+numpad0",
-        "when": "activeCustomEditorId == officeViewer.viewer"
+        "when": "activeCustomEditorId == nightdocs.viewer"
       }
     ]
   },

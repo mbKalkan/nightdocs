@@ -162,9 +162,9 @@ function sampleDocument() {
   ];
 
   return new Document({
-    creator: 'Office Viewer',
+    creator: 'Nightdocs',
     title: 'Quarterly Report',
-    description: 'Sample document for Office Viewer',
+    description: 'Sample document for Nightdocs',
     footnotes: {
       1: { children: [new Paragraph('Figures are in thousands of US dollars.')] },
     },
@@ -291,7 +291,7 @@ function longDocument() {
     }
   }
   return new Document({
-    creator: 'Office Viewer',
+    creator: 'Nightdocs',
     title: 'Long Document',
     sections: [
       {
