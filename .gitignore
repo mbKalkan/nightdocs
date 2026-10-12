@@ -13,6 +13,9 @@ test-results/
 playwright-report/
 test/fixtures/private/
 
+# Office lock files (created while a document is open in Word/Excel)
+~$*
+
 # Logs & OS files
 *.log
 .DS_Store
