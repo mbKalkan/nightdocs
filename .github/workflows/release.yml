@@ -1,0 +1,61 @@
+name: Release
+
+# Pushing a tag like v0.1.0 checks, packages and publishes that version. The tag must match the
+# version in package.json, and CHANGELOG.md must have a section for it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Check the tag, version and changelog agree
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+          node scripts/release-notes.mjs "$version" > release-notes.md
+
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run fixtures:large
+      - run: npm run test:visual
+      - run: xvfb-run -a npm run test:smoke
+
+      - run: npm run package -- --out "nightdocs-$GITHUB_REF_NAME.vsix"
+
+      - name: Publish to the Visual Studio Marketplace
+        run: npx vsce publish --packagePath "nightdocs-$GITHUB_REF_NAME.vsix"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # Run with npx rather than installed: it's a publishing tool, not part of the extension.
+      - name: Publish to Open VSX
+        run: npx --yes ovsx@1.2.0 publish "nightdocs-$GITHUB_REF_NAME.vsix"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Create the GitHub release
+        run: gh release create "$GITHUB_REF_NAME" "nightdocs-$GITHUB_REF_NAME.vsix" --title "$GITHUB_REF_NAME" --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
