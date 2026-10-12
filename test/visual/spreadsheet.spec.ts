@@ -36,7 +36,7 @@ const copied = (page: Page) =>
     return data.getData('text/plain');
   });
 
-for (const theme of ['dark', 'light'] as const) {
+for (const theme of ['dark', 'light', 'hcDark', 'hcLight'] as const) {
   test(`renders a workbook in the ${theme} theme`, async ({ page }) => {
     const viewer = await openViewer(page, theme);
     await viewer.load('sample.xlsx');
