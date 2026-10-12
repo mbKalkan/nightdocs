@@ -4,6 +4,7 @@
   "description": "%description%",
   "version": "0.0.1",
   "publisher": "mbkalkan",
+  "icon": "assets/icon.png",
   "license": "MIT",
   "private": true,
   "repository": {
@@ -204,6 +205,7 @@
     "dist/**",
     "l10n/**",
     "package.nls*.json",
+    "assets/icon.png",
     "LICENSE",
     "README.md",
     "CHANGELOG.md",
@@ -219,6 +221,7 @@
     "test": "vitest run --passWithNoTests",
     "test:visual": "node scripts/build.mjs && playwright test",
     "screenshots": "node scripts/build.mjs && node scripts/screenshots.mjs",
+    "icon": "node scripts/render-icon.mjs",
     "test:smoke": "node scripts/build.mjs && node scripts/smoke.mjs",
     "fixtures": "node scripts/gen-fixtures.mjs",
     "fixtures:large": "node scripts/gen-fixtures.mjs --large",
