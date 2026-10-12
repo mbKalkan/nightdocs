@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 import { formatForPath, type FormatInfo } from '../shared/formats';
-import type { HostToWebviewMessage, WebviewToHostMessage, ZoomAction } from '../shared/protocol';
+import type {
+  ColorMode,
+  HostToWebviewMessage,
+  WebviewToHostMessage,
+  ZoomAction,
+} from '../shared/protocol';
 import { watchFile } from './fileWatcher';
 import { openWithDefaultApp } from './openWithDefaultApp';
 import { viewerStrings } from './strings';
@@ -9,12 +14,18 @@ import { buildWebviewHtml } from './webviewHtml';
 export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   static readonly viewType = 'nightdocs.viewer';
 
+  /** Remembers the last color choice across documents and sessions. */
+  private static readonly colorModeKey = 'nightdocs.colorMode';
+
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
 
-  constructor(private readonly extension: vscode.Extension<unknown>) {}
+  constructor(
+    private readonly extension: vscode.Extension<unknown>,
+    private readonly state: vscode.Memento,
+  ) {}
 
   static register(context: vscode.ExtensionContext): vscode.Disposable {
-    const provider = new ViewerProvider(context.extension);
+    const provider = new ViewerProvider(context.extension, context.globalState);
     return vscode.Disposable.from(
       vscode.window.registerCustomEditorProvider(ViewerProvider.viewType, provider, {
         webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true },
@@ -60,6 +71,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'openInOffice':
             void this.openInOffice(uri, info);
+            break;
+          case 'setColorMode':
+            void this.state.update(ViewerProvider.colorModeKey, message.mode);
             break;
         }
       }),
@@ -107,7 +121,13 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       return;
     }
     // Copy into a standalone buffer: small Node buffers can be views into a shared pool.
-    await post({ type: 'load', data: new Uint8Array(data), reload, ...common });
+    await post({
+      type: 'load',
+      data: new Uint8Array(data),
+      reload,
+      colorMode: this.state.get<ColorMode>(ViewerProvider.colorModeKey, 'dark'),
+      ...common,
+    });
   }
 
   /** Opening a desktop app only makes sense for local files on the machine running the UI. */

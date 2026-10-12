@@ -6,6 +6,9 @@ const svg = (body: string) =>
 export const icons = {
   zoomIn: svg('<path d="M3.5 8h9M8 3.5v9"/>'),
   zoomOut: svg('<path d="M3.5 8h9"/>'),
+  colors: svg(
+    '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/>',
+  ),
   openExternal: svg(
     '<path d="M9.5 2.5h4v4M13.5 2.5 8 8M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/>',
   ),

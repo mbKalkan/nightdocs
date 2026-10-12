@@ -15,5 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zoom with the toolbar, <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>,
   <kbd>Ctrl</kbd>+mouse wheel or pinch; pages fit the window width by default.
 - Find in document with <kbd>Ctrl</kbd>+<kbd>F</kbd>.
+- Dark document colors in dark themes: pages take the editor background, text and fills are
+  remapped keeping their hues with readable contrast, and pictures keep their original colors.
+  A toolbar toggle switches to the original colors; the choice is remembered.
 - Clear messages for damaged, password-protected and legacy-format files.
 - English and Turkish user interface.

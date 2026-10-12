@@ -1,8 +1,51 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { openViewer } from './harness';
 import type { ThemeName } from './themes';
 
 const SCREENS = 'test-results/screens';
+
+const pageBackground = (page: Page) =>
+  page
+    .locator('.ov-content .docx-wrapper > section.docx')
+    .first()
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+
+/**
+ * Lowest WCAG contrast between any text and the opaque background behind it, measured from
+ * computed styles in the page.
+ */
+const lowestTextContrast = (page: Page) =>
+  page.evaluate(() => {
+    const parse = (value: string) => {
+      const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/.exec(value);
+      return m ? { rgb: [+m[1], +m[2], +m[3]], a: m[4] === undefined ? 1 : +m[4] } : undefined;
+    };
+    const luminance = ([r, g, b]: number[]) => {
+      const lin = (c: number) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const backgroundOf = (el: Element | null): number[] => {
+      for (let node = el; node; node = node.parentElement) {
+        const bg = parse(getComputedStyle(node).backgroundColor);
+        if (bg && bg.a >= 0.5) return bg.rgb;
+      }
+      return [255, 255, 255];
+    };
+    let lowest = Infinity;
+    const walker = document.createTreeWalker(
+      document.querySelector('.ov-content') as Node,
+      NodeFilter.SHOW_TEXT,
+    );
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const el = node.parentElement;
+      if (!el || el.tagName === 'STYLE' || !node.textContent?.trim()) continue;
+      const fg = parse(getComputedStyle(el).color);
+      if (!fg) continue;
+      const [a, b] = [luminance(fg.rgb), luminance(backgroundOf(el))].sort((x, y) => y - x);
+      lowest = Math.min(lowest, (a + 0.05) / (b + 0.05));
+    }
+    return lowest;
+  });
 
 for (const theme of ['dark', 'light'] as ThemeName[]) {
   test.describe(`${theme} theme`, () => {
@@ -30,6 +73,61 @@ for (const theme of ['dark', 'light'] as ThemeName[]) {
     });
   });
 }
+
+test('shows documents with dark colors in dark themes', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+
+  expect(await pageBackground(page)).toBe('rgb(31, 31, 31)');
+  expect(await lowestTextContrast(page)).toBeGreaterThanOrEqual(4.5);
+  await expect(page.locator('[data-action="colors"]')).toBeVisible();
+  await expect(page.locator('[data-action="colors"]')).toHaveAttribute('aria-pressed', 'true');
+  // Pictures keep their own colors.
+  expect(await page.locator('img').getAttribute('style')).not.toMatch(/color|filter/);
+});
+
+test('switches between dark and original colors', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+  const toggle = page.locator('[data-action="colors"]');
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  expect(await pageBackground(page)).toBe('rgb(255, 255, 255)');
+  expect(await viewer.sent()).toContainEqual({ type: 'setColorMode', mode: 'original' });
+  await page.screenshot({ path: `${SCREENS}/sample-dark-original.png` });
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await pageBackground(page)).toBe('rgb(31, 31, 31)');
+});
+
+test('respects the remembered original-colors choice', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx', false, 'original');
+
+  expect(await pageBackground(page)).toBe('rgb(255, 255, 255)');
+  await expect(page.locator('[data-action="colors"]')).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('keeps original colors in light themes', async ({ page }) => {
+  const viewer = await openViewer(page, 'light');
+  await viewer.load('sample.docx');
+
+  expect(await pageBackground(page)).toBe('rgb(255, 255, 255)');
+  await expect(page.locator('[data-action="colors"]')).toBeHidden();
+});
+
+test('follows a theme change while open', async ({ page }) => {
+  const viewer = await openViewer(page, 'light');
+  await viewer.load('sample.docx');
+  expect(await pageBackground(page)).toBe('rgb(255, 255, 255)');
+
+  await viewer.setTheme('dark');
+  await expect.poll(() => pageBackground(page)).toBe('rgb(31, 31, 31)');
+  await viewer.setTheme('light');
+  await expect.poll(() => pageBackground(page)).toBe('rgb(255, 255, 255)');
+});
 
 test('reports damaged files', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
