@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { formatForPath, type FormatInfo } from '../shared/formats';
+import { detectContainer, formatForPath, type FormatInfo } from '../shared/formats';
 import type {
   ColorMode,
   HostToWebviewMessage,
@@ -9,6 +9,7 @@ import type {
 } from '../shared/protocol';
 import { DiffPairs, type DiffMember } from './diffPairs';
 import { watchFile } from './fileWatcher';
+import { readGitBlob } from './gitBlob';
 import { openWithDefaultApp } from './openWithDefaultApp';
 import { viewerStrings } from './strings';
 import { buildWebviewHtml } from './webviewHtml';
@@ -141,6 +142,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     let data: Uint8Array;
     try {
       data = await vscode.workspace.fs.readFile(uri);
+      // A version from Git can come back converted to text; Office files are never text.
+      if (uri.scheme === 'git' && detectContainer(data) === 'unknown') {
+        data = (await readGitBlob(uri)) ?? data;
+      }
     } catch {
       // A save in progress can briefly remove the file; keep showing the last good render.
       if (!reload) {
