@@ -1,4 +1,10 @@
 {
   "displayName": "Office Viewer",
-  "description": "A lightweight, dark-first, view-only viewer for Word and Excel files."
+  "description": "A lightweight, dark-first, view-only viewer for Word and Excel files.",
+  "category": "Office Viewer",
+  "customEditor.displayName": "Office Viewer",
+  "command.openInOffice": "Open in Office",
+  "command.zoomIn": "Zoom In",
+  "command.zoomOut": "Zoom Out",
+  "command.resetZoom": "Reset Zoom"
 }
