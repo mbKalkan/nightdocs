@@ -76,6 +76,7 @@ export class Shell {
     this.content = find('.ov-content');
     this.footer = find('.ov-footer');
 
+    find('.ov-toolbar').addEventListener('keydown', (event) => this.onToolbarKeyDown(event));
     this.zoomOut.addEventListener('click', handlers.onZoomOut);
     this.zoomIn.addEventListener('click', handlers.onZoomIn);
     this.zoomLabel.addEventListener('click', handlers.onResetZoom);
@@ -107,10 +108,12 @@ export class Shell {
     this.fileName.title = fileName;
     this.fileIcon.dataset.format = format;
     document.title = fileName;
+    this.viewport.setAttribute('aria-label', fileName);
 
     this.label(this.zoomOut, strings.zoomOut);
     this.label(this.zoomIn, strings.zoomIn);
-    this.label(this.zoomLabel, strings.resetZoom);
+    // The zoom label is named by its percentage; what a click does goes in the tooltip.
+    this.zoomLabel.title = strings.resetZoom;
     this.openLabel.textContent = strings.openInOffice;
     this.openButton.title = strings.openInOfficeTooltip;
     this.openButton.hidden = !canOpenInOffice;
@@ -156,6 +159,27 @@ export class Shell {
       button.addEventListener('click', () => this.openButton.click());
       this.content.querySelector('.ov-error')?.append(button);
     }
+  }
+
+  /** Arrow keys, Home and End move between toolbar buttons, as in any toolbar. */
+  private onToolbarKeyDown(event: KeyboardEvent): void {
+    const buttons = [...this.root.querySelectorAll<HTMLButtonElement>('.ov-toolbar button')].filter(
+      (button) => !button.hidden && !button.disabled,
+    );
+    const position = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (position < 0 || buttons.length === 0) return;
+    const count = buttons.length;
+    const target = (
+      {
+        ArrowLeft: (position - 1 + count) % count,
+        ArrowRight: (position + 1) % count,
+        Home: 0,
+        End: count - 1,
+      } as Record<string, number>
+    )[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    buttons[target].focus();
   }
 
   private label(button: HTMLButtonElement, text: string): void {

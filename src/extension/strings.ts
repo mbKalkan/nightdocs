@@ -33,5 +33,6 @@ export function viewerStrings(appName: string): ViewerStrings {
     findClose: vscode.l10n.t('Close (Escape)'),
     chart: vscode.l10n.t('Chart'),
     chartHint: vscode.l10n.t('Open in {0} to see this chart', appName),
+    sheets: vscode.l10n.t('Sheets'),
   };
 }

@@ -92,9 +92,11 @@ class WorkbookView implements RenderedDocument {
     this.tabs = document.createElement('div');
     this.tabs.className = 'ov-sheet-tabs';
     this.tabs.setAttribute('role', 'tablist');
+    this.tabs.setAttribute('aria-label', this.options.strings.sheets);
     this.status = document.createElement('div');
     this.status.className = 'ov-status';
     this.status.setAttribute('aria-live', 'polite');
+    this.tabs.addEventListener('keydown', (event) => this.onTabKeyDown(event));
     footer.replaceChildren(this.tabs, this.status);
     footer.hidden = false;
     // Fill the area around a small sheet with the sheet color.
@@ -235,6 +237,8 @@ class WorkbookView implements RenderedDocument {
           tab.style.setProperty('--tab-color', color);
           tab.classList.add('ov-sheet-tab-colored');
         }
+        // One tab stop for the whole list; arrow keys move between tabs.
+        tab.tabIndex = i === this.index ? 0 : -1;
         tab.addEventListener('click', () => void this.showSheet(i));
         return tab;
       }),
@@ -242,6 +246,25 @@ class WorkbookView implements RenderedDocument {
     this.tabs
       .querySelector('[aria-selected="true"]')
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /** Arrow keys, Home and End move between sheet tabs, as in any tab list. */
+  private onTabKeyDown(event: KeyboardEvent): void {
+    const visible = this.visibleSheets();
+    const position = visible.indexOf(this.index);
+    const target = (
+      {
+        ArrowLeft: position - 1,
+        ArrowRight: position + 1,
+        Home: 0,
+        End: visible.length - 1,
+      } as Record<string, number>
+    )[event.key];
+    if (target === undefined || target < 0 || target >= visible.length) return;
+    event.preventDefault();
+    // Switching re-renders the tabs right away, before the sheet itself loads.
+    void this.showSheet(visible[target]);
+    this.tabs?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
   }
 
   private async showSheet(index: number): Promise<void> {
