@@ -181,6 +181,66 @@ body {
   outline-offset: -1px;
 }
 
+/* Skeleton shown while a document loads for the first time */
+
+.ov-skeleton {
+  opacity: 0;
+  /* Only appears when loading isn't instant, so quick loads don't flash. */
+  animation: ov-skeleton-in 150ms ease-out 250ms forwards;
+  --ov-skeleton: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+}
+
+@keyframes ov-skeleton-in {
+  to {
+    opacity: 1;
+  }
+}
+
+.ov-skeleton-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: min(794px, calc(100% - 64px));
+  height: 1123px;
+  margin: 24px auto;
+  padding: 96px;
+  background: color-mix(in srgb, var(--vscode-foreground) 3%, transparent);
+}
+
+.ov-skeleton-page > span {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--ov-skeleton);
+}
+
+.ov-skeleton-page > span:first-child {
+  width: 55%;
+  height: 22px;
+  margin-bottom: 14px;
+}
+
+.ov-skeleton-page > span:nth-child(4n) {
+  width: 70%;
+  margin-bottom: 14px;
+}
+
+.ov-skeleton-grid {
+  height: 100%;
+  min-height: calc(100vh - var(--ov-toolbar-height));
+  background:
+    linear-gradient(var(--ov-skeleton), var(--ov-skeleton)) 0 0 / 100% 20px no-repeat,
+    linear-gradient(var(--ov-skeleton), var(--ov-skeleton)) 0 0 / 34px 100% no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 19px, var(--ov-skeleton) 19px 20px),
+    repeating-linear-gradient(to right, transparent 0 63px, var(--ov-skeleton) 63px 64px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-skeleton {
+    animation-duration: 0s;
+  }
+}
+
 /* Progress */
 
 .ov-progress {

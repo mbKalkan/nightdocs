@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pages of their paper size, including long tables, instead of showing as one long page.
 - **Open in Word** button that hands the file to its default desktop app for editing.
 - Live reload when the file changes on disk, keeping the scroll position.
+- A placeholder in the shape of a page or a sheet appears while a file takes a moment to load.
 - Zoom with the toolbar, <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>,
   <kbd>Ctrl</kbd>+mouse wheel or pinch; pages fit the window width by default.
 - Find in document with <kbd>Ctrl</kbd>+<kbd>F</kbd>.
