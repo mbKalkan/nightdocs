@@ -6,6 +6,8 @@ export function viewerStrings(appName: string): ViewerStrings {
     zoomIn: vscode.l10n.t('Zoom In'),
     zoomOut: vscode.l10n.t('Zoom Out'),
     resetZoom: vscode.l10n.t('Reset Zoom'),
+    showOriginalColors: vscode.l10n.t('Show Original Colors'),
+    showDarkColors: vscode.l10n.t('Show Dark Colors'),
     openInOffice: vscode.l10n.t('Open in {0}', appName),
     openInOfficeTooltip: vscode.l10n.t('Open the file in its default desktop app to edit it'),
     loading: vscode.l10n.t('Loading…'),

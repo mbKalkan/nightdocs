@@ -11,6 +11,9 @@ export const themes = {
     variables: {
       ...font,
       '--vscode-editor-background': '#1f1f1f',
+      '--vscode-editor-foreground': '#cccccc',
+      '--vscode-inputOption-activeBackground': 'rgba(36, 137, 219, 0.51)',
+      '--vscode-inputOption-activeForeground': '#ffffff',
       '--vscode-foreground': '#cccccc',
       '--vscode-descriptionForeground': '#9d9d9d',
       '--vscode-icon-foreground': '#cccccc',
@@ -35,6 +38,9 @@ export const themes = {
     variables: {
       ...font,
       '--vscode-editor-background': '#ffffff',
+      '--vscode-editor-foreground': '#3b3b3b',
+      '--vscode-inputOption-activeBackground': 'rgba(0, 95, 184, 0.2)',
+      '--vscode-inputOption-activeForeground': '#000000',
       '--vscode-foreground': '#3b3b3b',
       '--vscode-descriptionForeground': '#3b3b3b',
       '--vscode-icon-foreground': '#3b3b3b',

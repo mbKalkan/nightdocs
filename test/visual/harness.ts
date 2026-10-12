@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
-import type { HostToWebviewMessage, ViewerStrings } from '../../src/shared/protocol';
+import type { ColorMode, HostToWebviewMessage, ViewerStrings } from '../../src/shared/protocol';
 import { themes, type ThemeName } from './themes';
 
 const ORIGIN = 'http://webview.test';
@@ -17,6 +17,8 @@ export const strings: ViewerStrings = {
   zoomIn: 'Zoom In',
   zoomOut: 'Zoom Out',
   resetZoom: 'Reset Zoom',
+  showOriginalColors: 'Show Original Colors',
+  showDarkColors: 'Show Dark Colors',
   openInOffice: 'Open in Word',
   openInOfficeTooltip: 'Open the file in its default desktop app to edit it',
   loading: 'Loading…',
@@ -80,6 +82,7 @@ export async function openViewer(page: Page, theme: ThemeName) {
           document.documentElement.style.setProperty(name, value);
         }
         document.body.classList.add(bodyClass);
+        document.body.dataset.vscodeThemeKind = bodyClass;
       });
     },
     { bodyClass, variables },
@@ -106,7 +109,7 @@ export async function openViewer(page: Page, theme: ThemeName) {
         { payload, bytes },
       );
     },
-    async load(fixture: string, reload = false) {
+    async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
       await this.post({
         type: 'load',
         fileName: fixture,
@@ -114,10 +117,26 @@ export async function openViewer(page: Page, theme: ThemeName) {
         data: readFileSync(join('test/fixtures', fixture)),
         reload,
         canOpenInOffice: true,
+        colorMode,
         strings,
       });
       await page.waitForSelector('.docx-wrapper, .ov-error');
       await page.waitForSelector('.ov-progress', { state: 'hidden' });
+    },
+    /** Switches the theme the way VS Code does: CSS variables plus body classes. */
+    async setTheme(name: ThemeName) {
+      const { bodyClass, variables } = themes[name];
+      await page.evaluate(
+        ({ bodyClass, variables }) => {
+          for (const [variable, value] of Object.entries(variables)) {
+            document.documentElement.style.setProperty(variable, value);
+          }
+          document.body.classList.remove('vscode-dark', 'vscode-light');
+          document.body.classList.add(bodyClass);
+          document.body.dataset.vscodeThemeKind = bodyClass;
+        },
+        { bodyClass, variables },
+      );
     },
     sent: () => page.evaluate(() => (window as unknown as { __sent: { type: string }[] }).__sent),
   };
