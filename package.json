@@ -10,6 +10,7 @@
     "type": "git",
     "url": "https://github.com/mbKalkan/nightdocs.git"
   },
+  "homepage": "https://github.com/mbKalkan/nightdocs#readme",
   "bugs": {
     "url": "https://github.com/mbKalkan/nightdocs/issues"
   },
@@ -17,18 +18,29 @@
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
   ],
   "keywords": [
     "docx",
     "xlsx",
+    "xlsm",
     "word",
     "excel",
-    "spreadsheet",
-    "viewer",
     "office",
-    "dark"
+    "spreadsheet",
+    "document",
+    "viewer",
+    "reader",
+    "preview",
+    "dark",
+    "dark mode"
   ],
+  "preview": true,
+  "galleryBanner": {
+    "color": "#1e2033",
+    "theme": "dark"
+  },
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "extensionKind": [
@@ -206,6 +218,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,css}\" \"scripts/**/*.mjs\" \"test/**/*.ts\" \"*.{json,mjs,ts}\" \".github/**/*.yml\" \".vscode/*.json\" \"l10n/*.json\"",
     "test": "vitest run --passWithNoTests",
     "test:visual": "node scripts/build.mjs && playwright test",
+    "screenshots": "node scripts/build.mjs && node scripts/screenshots.mjs",
     "test:smoke": "node scripts/build.mjs && node scripts/smoke.mjs",
     "fixtures": "node scripts/gen-fixtures.mjs",
     "fixtures:large": "node scripts/gen-fixtures.mjs --large",
