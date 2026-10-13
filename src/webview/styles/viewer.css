@@ -525,6 +525,33 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   box-shadow: var(--ov-page-shadow);
 }
 
+/* Speaker notes under their slide, like PowerPoint's notes pane; they scale with the deck. */
+.ov-content .pptx-notes {
+  flex: none;
+  box-sizing: border-box;
+  margin-top: -12px;
+  padding: 10px 16px;
+  border-left: 3px solid var(--vscode-textBlockQuote-border, var(--ov-border));
+  background: var(--vscode-textBlockQuote-background, transparent);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.ov-content .pptx-notes p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ov-content .pptx-notes p + p {
+  margin-top: 6px;
+}
+
+.ov-content .pptx-deck[data-notes-hidden] .pptx-notes {
+  display: none;
+}
+
 /* Slides on a picture keep their colors in dark mode and are dimmed like pictures. */
 .ov-shell[data-colors='dark'] .ov-content .pptx-slide[data-colors='original'] > :first-child {
   filter: brightness(0.8);

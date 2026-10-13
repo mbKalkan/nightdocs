@@ -1000,6 +1000,11 @@ function samplePresentation({ revised = false } = {}) {
     ],
     { x: 0.7, y: 1.3, w: 8.5, h: 3.5, fontSize: 20, color: '262626', valign: 'top' },
   );
+  slide.addNotes(
+    revised
+      ? 'Mention the support backlog numbers and the new portal.\nKeep this under two minutes.'
+      : 'Mention the support backlog numbers.\nKeep this under two minutes.',
+  );
 
   slide = pptx.addSlide();
   slideTitle(slide, 'Regional results');

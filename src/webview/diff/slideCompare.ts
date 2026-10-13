@@ -15,6 +15,8 @@ export interface Slides {
   frames: HTMLElement[];
   /** The charts on each slide, in the order they were drawn. */
   charts: SlideChart[][];
+  /** Each slide's speaker notes, when it has any. */
+  notes: (HTMLElement | undefined)[];
 }
 
 const CHANGED = 'nd-slide-changed';
@@ -27,8 +29,11 @@ const DEFAULT_SIZE = { width: '960px', height: '540px' };
 
 const PICTURES = 'img, image';
 
-/** What each slide is compared by: its text, its pictures, its charts and whether it's hidden. */
-export async function summarizeSlides({ frames, charts }: Slides): Promise<SlideSummary[]> {
+/**
+ * What each slide is compared by: its text, its pictures, its charts, whether it's hidden, and
+ * its speaker notes.
+ */
+export async function summarizeSlides({ frames, charts, notes }: Slides): Promise<SlideSummary[]> {
   const fingerprints = new Map<string, Promise<string>>();
   const fingerprintOf = (url: string) => {
     let fingerprint = fingerprints.get(url);
@@ -37,18 +42,23 @@ export async function summarizeSlides({ frames, charts }: Slides): Promise<Slide
   };
   return Promise.all(
     frames.map(async (frame, index) => ({
-      text: textOf(frame).replace(/\s+/g, ' ').trim(),
+      text: collapse(textOf(frame)),
       pictures: await Promise.all(
         [...frame.querySelectorAll(PICTURES)].map((picture) => fingerprintOf(pictureUrl(picture))),
       ),
       charts: (charts[index] ?? []).map(chartData),
       hidden: frame.dataset.hidden !== undefined,
+      notes: collapse(notes[index] ? textOf(notes[index]) : ''),
     })),
   );
 }
 
+const collapse = (text: string) => text.replace(/\s+/g, ' ').trim();
+
 const key = (slide: SlideSummary) =>
-  [slide.text, slide.pictures.join(' '), slide.charts.join(' '), slide.hidden].join('\u0000');
+  [slide.text, slide.pictures.join(' '), slide.charts.join(' '), slide.hidden, slide.notes].join(
+    '\u0000',
+  );
 
 /** A step through both versions: a slide of each, or a slide of one and nothing of the other. */
 export interface SlideRow {
@@ -139,6 +149,8 @@ export function compareSlides(
     markObjects(pictures, own[mine].pictures, peer[theirs].pictures, mark);
     const charts = (slides.charts[mine] ?? []).map((chart) => chart.getDom());
     markObjects(charts, own[mine].charts, peer[theirs].charts, mark);
+    const notes = slides.notes[mine];
+    if (notes && own[mine].notes !== peer[theirs].notes) markWords(notes, peer[theirs].notes, mark);
   }
 
   // Stand-ins go before the next slide; the slides themselves stay where they are.

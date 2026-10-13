@@ -58,6 +58,11 @@ export interface ViewerStrings {
   markup: string;
   showMarkup: string;
   hideMarkup: string;
+  /** PowerPoint speaker notes. */
+  notes: string;
+  speakerNotes: string;
+  showNotes: string;
+  hideNotes: string;
   /** `Slide {0}`, the accessible name of a slide. */
   slide: string;
   /** `Slide {0} of {1}`, shown in the status bar of presentations. */
@@ -110,6 +115,8 @@ export interface SlideSummary {
   /** Each chart's categories and series values. */
   charts: string[];
   hidden: boolean;
+  /** The speaker notes, whitespace collapsed. */
+  notes: string;
 }
 
 /** Separates cells in `SheetSummary.rows`; not something a cell shows. */

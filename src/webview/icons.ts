@@ -10,6 +10,7 @@ export const icons = {
   arrowDown: svg('<path d="M8 3.5v9M4 8.5l4 4 4-4"/>'),
   chart: svg('<path d="M2.5 13.5h11M4.5 11.5V8M8 11.5V4.5M11.5 11.5V6.5"/>'),
   close: svg('<path d="M4 4l8 8M12 4l-8 8"/>'),
+  notes: svg('<path d="M3.5 2.5h9v11h-9zM5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
   comment: svg('<path d="M2.5 3h11v7.5h-6L5 13v-2.5H2.5z"/>'),
   eye: svg(
     '<path d="M1.5 8S3.8 3.5 8 3.5 14.5 8 14.5 8 12.2 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/>',

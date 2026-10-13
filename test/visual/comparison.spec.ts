@@ -274,6 +274,8 @@ for (const theme of ['dark', 'light'] as ThemeName[]) {
       '55',
       '•',
       'Self-service portal launched in May',
+      // In the speaker notes of the same slide.
+      'and the new portal',
       '1,095',
       '0.9',
     ]);
