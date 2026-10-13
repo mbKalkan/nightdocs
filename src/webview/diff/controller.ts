@@ -1,4 +1,10 @@
-import type { DiffSide, DocumentSummary, ScrollAnchor, ViewerStrings } from '../../shared/protocol';
+import type {
+  CellSelection,
+  DiffSide,
+  DocumentSummary,
+  ScrollAnchor,
+  ViewerStrings,
+} from '../../shared/protocol';
 import { icons } from '../icons';
 import type { Comparison, RenderContext, RenderedDocument } from '../renderers/types';
 import { vscode } from '../vscodeApi';
@@ -60,6 +66,11 @@ export class DiffController {
   detach(): void {
     this.stop();
     this.target = undefined;
+  }
+
+  /** Selects what the other side selected. */
+  async followSelection(selection: CellSelection): Promise<void> {
+    await this.comparison?.select?.(selection);
   }
 
   /** Shares a zoom set on this side (a factor, or `null` for fitting the width). */

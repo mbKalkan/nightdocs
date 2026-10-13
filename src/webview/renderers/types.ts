@@ -1,5 +1,6 @@
 import type { DarkPalette } from '../../shared/color';
 import type {
+  CellSelection,
   DiffSide,
   DocumentSummary,
   ScrollAnchor,
@@ -21,6 +22,8 @@ export interface RenderContext {
   viewport: HTMLElement;
   /** Bar under the viewport, hidden unless a document puts something in it. */
   footer: HTMLElement;
+  /** Row between the viewport and the footer, for sheet tabs; hidden unless used. */
+  tabBar: HTMLElement;
   /** Positioned container for floating widgets. */
   overlay: HTMLElement;
   getZoom(): number;
@@ -63,6 +66,8 @@ export interface Comparison {
   anchor(): ScrollAnchor | undefined;
   /** Scrolls to a position the other side sent. */
   scrollTo(anchor: ScrollAnchor): void | Promise<void>;
+  /** Selects the cells the other side selected, in this side's rows. */
+  select?(selection: CellSelection): void | Promise<void>;
   /** Removes the marks. */
   dispose(): void;
 }

@@ -4,6 +4,7 @@ import type {
   DocumentSummary,
   HostToWebviewMessage,
   PeerScrollMessage,
+  PeerSelectMessage,
   PeerZoomMessage,
 } from '../shared/protocol';
 import { DIFF_LABEL_SEPARATOR, orderSides, type DiffCandidate } from './diffSides';
@@ -29,7 +30,8 @@ interface Waiting {
 
 /**
  * Pairs up the two viewers of a comparison and relays what they share: a summary of each
- * document, to find the differences, and scroll positions and zoom, to move together.
+ * document, to find the differences, and scroll positions, zoom and selected cells, to move
+ * together.
  *
  * VS Code compares files that have a custom editor by opening one editor per version side by
  * side, in a tab whose input the API doesn't expose and whose label reads "a.docx ↔ b.docx".
@@ -69,7 +71,10 @@ export class DiffPairs {
   }
 
   /** Passes on to the other side what it follows this one in. */
-  relay(member: DiffMember, message: PeerScrollMessage | PeerZoomMessage): void {
+  relay(
+    member: DiffMember,
+    message: PeerScrollMessage | PeerZoomMessage | PeerSelectMessage,
+  ): void {
     const { peer } = member;
     if (peer?.ready) void peer.post(message);
   }

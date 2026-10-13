@@ -45,7 +45,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Text spills into empty neighbors the way it's aligned, including center across selection
 - Conditional formatting: highlight rules, color scales and data bars
 - Pictures and text boxes; charts appear as placeholders with their title
-- Select cells with the mouse or keyboard, copy them, and see Sum, Count and Average
+- Select cells with the mouse or keyboard, copy them, and see the cell's text or Sum, Count and
+  Average in the status bar under the sheet tabs
 - Find across the whole sheet, not only the visible cells
 - Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, or pick a sheet
   from **All Sheets** (also **Go to Sheet…** in the Command Palette), where typing filters the list
@@ -73,7 +74,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Word: edited, added and removed paragraphs and table cells are marked, down to the changed words
 - Excel: changed cells and added and removed rows are marked, and sheet tabs with changes get a
   dot; moving between changes goes from sheet to sheet, and switching sheets on one side switches
-  the other
+  the other. Selecting cells on one side selects the same cells on the other, and the status bar
+  marks what changed in the selected cell
 - PowerPoint: edited slides are outlined with their changed words, pictures and charts marked;
   added and removed slides are tinted, with an empty stand-in on the other side so both decks line
   up

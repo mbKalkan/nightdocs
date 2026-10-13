@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test, type BrowserContext } from '@playwright/test';
+import type { CellSelection } from '../../src/shared/protocol';
 import { lastSent, openComparison, relayScroll } from './comparison';
 import { openViewer } from './harness';
 
@@ -77,6 +78,9 @@ async function comparisonShot(
   }
   await modified.page.waitForTimeout(200);
   await relayScroll(modified, original);
+  // A workbook selects the changed cell; the other side selects it too.
+  const selected = await lastSent<{ selection: CellSelection }>(modified.viewer, 'select');
+  if (selected) await original.viewer.post({ type: 'peerSelect', selection: selected.selection });
   await original.page.waitForTimeout(200);
   const shots = await Promise.all([original.page.screenshot(), modified.page.screenshot()]);
 

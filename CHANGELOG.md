@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Zooming one side of a comparison zooms the other side to the same level, in Word, Excel and
   PowerPoint alike.
+- When comparing workbooks, selecting cells on one side selects the same cells on the other, and
+  the status bar marks what changed in the selected cell. Moving to a change selects its cell.
+
+### Changed
+
+- Sheet tabs have a row of their own above the status bar, so a long cell text no longer squeezes
+  them, and both sides of a comparison show the selected cell at the same place.
 
 ## [0.3.0] - 2026-10-13
 

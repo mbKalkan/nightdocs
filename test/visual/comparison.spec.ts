@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { ScrollAnchor } from '../../src/shared/protocol';
+import type { CellSelection, ScrollAnchor } from '../../src/shared/protocol';
 import { lastSent, openComparison, relayScroll } from './comparison';
 import type { ThemeName } from './themes';
 
@@ -372,3 +372,42 @@ for (const files of [
     await expect(label(modified)).toHaveText(await label(original).innerText());
   });
 }
+
+test('selects the same cells on both sides of a workbook comparison', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['orders.xlsx', 'orders-revised.xlsx'],
+  );
+  const statusOf = (side: typeof original) => side.page.locator('.ov-status');
+  /** Hands the cells one side last selected to the other side, as the host does. */
+  const relaySelection = async (from: typeof original, to: typeof original) => {
+    const message = await lastSent<{ selection: CellSelection }>(from.viewer, 'select');
+    await to.viewer.post({ type: 'peerSelect', selection: message!.selection });
+  };
+
+  // Opening at the first change selects its cell: the quantity of SO-1005, changed from 6 to 8.
+  await expect(statusOf(modified)).toContainText('C6');
+  await relaySelection(modified, original);
+  await expect(statusOf(original)).toContainText('C6');
+  // The status bars show what changed in that cell.
+  await expect(original.page.locator('.ov-status .nd-diff-word.nd-diff-removed')).toHaveCount(1);
+  await expect(modified.page.locator('.ov-status .nd-diff-word.nd-diff-added')).toHaveCount(1);
+  await original.page.screenshot({ path: `${SCREENS}/compare-xlsx-selection-original.png` });
+  await modified.page.screenshot({ path: `${SCREENS}/compare-xlsx-selection-modified.png` });
+  // Following a selection doesn't send it back.
+  expect(await lastSent(original.viewer, 'select')).toBeUndefined();
+
+  // Past the removed order, the same order is a row lower on the original side.
+  const header = (side: typeof original, text: string) =>
+    side.page.locator('.ng-left .ng-hr', { hasText: new RegExp(`^${text}$`) });
+  const column = await modified.page.locator('.ng-hc', { hasText: /^A$/ }).first().boundingBox();
+  const row = await header(modified, '15').boundingBox();
+  await modified.page.mouse.click(column!.x + column!.width / 2, row!.y + row!.height / 2);
+  await expect(statusOf(modified)).toContainText('A15');
+  await expect(statusOf(modified)).toContainText('SO-1015');
+  await relaySelection(modified, original);
+  await expect(statusOf(original)).toContainText('A16');
+  await expect(statusOf(original)).toContainText('SO-1015');
+  await expect(original.page.locator('.ov-status .nd-diff-word')).toHaveCount(0);
+});

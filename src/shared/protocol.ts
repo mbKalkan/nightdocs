@@ -162,6 +162,20 @@ export interface PeerScrollMessage {
   anchor: ScrollAnchor;
 }
 
+/** Selected cells of a workbook, in the receiver's rows when sent to the other side. */
+export interface CellSelection {
+  sheet: string;
+  row1: number;
+  col1: number;
+  row2: number;
+  col2: number;
+}
+
+export interface PeerSelectMessage {
+  type: 'peerSelect';
+  selection: CellSelection;
+}
+
 /** The zoom the other side was set to: a factor, or `null` for fitting the width. */
 export interface PeerZoomMessage {
   type: 'peerZoom';
@@ -191,6 +205,7 @@ export type HostToWebviewMessage =
   | PeerSummaryMessage
   | PeerScrollMessage
   | PeerZoomMessage
+  | PeerSelectMessage
   | ShowSheetMessage;
 
 export type WebviewToHostMessage =
@@ -200,6 +215,8 @@ export type WebviewToHostMessage =
   | { type: 'summary'; summary: DocumentSummary }
   /** Where the other side should scroll to, in its own terms. */
   | { type: 'scroll'; anchor: ScrollAnchor }
+  /** Cells the user selected while comparing, for the other side to select too. */
+  | { type: 'select'; selection: CellSelection }
   /** The zoom the user set while comparing, for the other side to match. */
   | { type: 'zoomed'; zoom: number | null }
   /** Asks for a list of the sheets to pick one from; the answer is a `showSheet` message. */

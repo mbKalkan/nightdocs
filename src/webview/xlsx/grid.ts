@@ -315,7 +315,8 @@ export class SheetGrid {
     return { row, col };
   }
 
-  private scrollIntoView(row: number, col: number): void {
+  /** Scrolls just enough to show a cell. */
+  scrollIntoView(row: number, col: number): void {
     const zoom = this.options.getZoom();
     const viewport = this.options.getViewport();
     const viewWidth = viewport.clientWidth / zoom;
