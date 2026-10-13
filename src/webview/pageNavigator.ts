@@ -3,6 +3,9 @@ import type { RenderContext } from './renderers/types';
 /** Canvas left visible above a page that Page Up/Down brings to the top. */
 const MARGIN = 12;
 
+/** How far down the window a page has to reach to count as the one in view. */
+const TOP_BAND = 120;
+
 /**
  * Tracks which page or slide is in view for the status bar, and makes Page Up/Down step from
  * one to the next while a whole one fits in the window.
@@ -70,11 +73,12 @@ export class PageNavigator {
 
   /**
    * The page at the top of the window, as PDF viewers count, so that going to a slide or a
-   * heading shows its own number even when the next page is mostly in view.
+   * heading shows its own number even when the next page is mostly in view. The last bit of the
+   * page before doesn't count.
    */
   private update(): void {
     const { viewport } = this.context;
-    const line = viewport.scrollTop + 2 * MARGIN + 8;
+    const line = viewport.scrollTop + Math.min(viewport.clientHeight / 4, TOP_BAND);
     const tops = this.tops();
     let index = 0;
     while (index + 1 < tops.length && tops[index + 1] <= line) index++;

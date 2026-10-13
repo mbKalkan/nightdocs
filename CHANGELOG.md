@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deletions are marked, commented text is highlighted, and hovering its comment button shows the
   comment. The status bar lists the comments to go to, and **Markup** hides it all to read the
   text with all changes accepted. Comparisons always read the text that way.
+- PowerPoint speaker notes are shown under each slide, as in PowerPoint's notes pane. **Notes** in
+  the status bar hides them. Comparisons include the notes and mark what changed in them.
 
 ## [0.4.0] - 2026-10-13
 

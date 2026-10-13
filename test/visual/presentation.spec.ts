@@ -165,3 +165,41 @@ test('fits slides into a narrow window and pages at that size', async ({ page })
   expect(await slideOffset(page, 1)).toBeCloseTo(12, 0);
   await page.screenshot({ path: `${SCREENS}/presentation-narrow-dark.png` });
 });
+
+test('shows speaker notes under their slides, and hides them on request', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.pptx');
+  const notes = page.locator('.pptx-notes');
+  await expect(notes).toHaveCount(2);
+  await expect(notes.first()).toHaveText(
+    'Mention the support backlog numbers.\nKeep this under two minutes.',
+    { useInnerText: true },
+  );
+  // Each under its own slide: Highlights, and the dark slide.
+  const slides = await notes.evaluateAll((elements) =>
+    elements.map((element) => element.previousElementSibling?.getAttribute('aria-label')),
+  );
+  expect(slides).toEqual(['Slide 2', 'Slide 6']);
+
+  const toggle = page.getByRole('button', { name: 'Notes' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect(notes.first()).toBeHidden();
+  await expect(toggle).toHaveAttribute('title', 'Show Speaker Notes');
+
+  // The choice stays when the file changes.
+  await viewer.load('sample.pptx', true);
+  await expect(page.locator('.pptx-notes').first()).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Notes' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  expect(viewer.problems).toEqual([]);
+});
+
+test('has no notes switch for a deck without notes', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('long.pptx');
+  await expect(page.locator('.ov-status')).toHaveText('Slide 1 of 30');
+  await expect(page.getByRole('button', { name: 'Notes' })).toHaveCount(0);
+});

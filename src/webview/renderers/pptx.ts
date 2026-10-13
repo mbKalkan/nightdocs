@@ -8,11 +8,13 @@ import {
   type SlideRendererOptions,
 } from '@aiden0z/pptx-renderer';
 import type { DarkPalette } from '../../shared/color';
-import type { SlideSummary } from '../../shared/protocol';
+import type { SlideSummary, ViewerStrings } from '../../shared/protocol';
 import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
 import { compareSlides, summarizeSlides } from '../diff/slideCompare';
 import { adaptChartOption, type Chart } from '../pptx/chartColors';
+import { readNotes } from '../pptx/notes';
 import { OBJECT, textOf } from '../diff/marks';
+import { icons } from '../icons';
 import { PageNavigator } from '../pageNavigator';
 import { describe, pick } from '../picker';
 import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
@@ -42,6 +44,10 @@ export const pptxRenderer: Renderer = {
   ): Promise<RenderedDocument> {
     const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
     const presentation = buildPresentation(await parseZip(buffer as ArrayBuffer, ZIP_LIMITS));
+    const notes = readNotes(
+      data,
+      presentation.slides.map((slide) => slide.slidePath),
+    ).catch((): string[][] => []);
     const { strings } = options;
 
     const deck = document.createElement('div');
@@ -80,6 +86,9 @@ export const pptxRenderer: Renderer = {
     }
 
     await Promise.all(handles.map((handle) => handle.ready));
+    const notesShown = (options.previous as { notes?: boolean } | undefined)?.notes ?? true;
+    deck.toggleAttribute('data-notes-hidden', !notesShown);
+    const notesElements = addNotes(frames, await notes, strings.speakerNotes);
     await document.fonts.ready;
 
     const { palette } = options;
@@ -103,14 +112,20 @@ export const pptxRenderer: Renderer = {
     }
 
     // Only needed when comparing.
-    const slides = { deck, frames, charts: slideCharts };
+    const slides = { deck, frames, charts: slideCharts, notes: notesElements };
+    let notesToggle: HTMLButtonElement | undefined;
     let summaries: Promise<SlideSummary[]> | undefined;
     const summarize = () => (summaries ??= summarizeSlides(slides));
     return {
       naturalWidth: presentation.width + DECK_GUTTER,
       activate(context: RenderContext) {
         navigator = new PageNavigator(context, frames, strings.slidePosition);
+        if (notesElements.some(Boolean)) {
+          notesToggle = notesButton(deck, strings);
+          context.footer.append(notesToggle);
+        }
       },
+      state: () => ({ notes: !deck.hasAttribute('data-notes-hidden') }),
       command(command) {
         if (command !== 'goTo' || !navigator) return;
         const current = navigator.current;
@@ -133,6 +148,7 @@ export const pptxRenderer: Renderer = {
           : undefined,
       dispose() {
         navigator?.dispose();
+        notesToggle?.remove();
         for (const handle of handles) handle.dispose();
         for (const chart of charts) if (!chart.isDisposed()) chart.dispose();
         for (const url of mediaUrls.values()) URL.revokeObjectURL(url);
@@ -140,6 +156,50 @@ export const pptxRenderer: Renderer = {
     };
   },
 };
+
+/** Puts each slide's speaker notes under it, as PowerPoint's notes pane does. */
+function addNotes(
+  frames: readonly HTMLElement[],
+  notes: readonly string[][],
+  label: string,
+): (HTMLElement | undefined)[] {
+  return frames.map((frame, index) => {
+    const paragraphs = notes[index] ?? [];
+    if (paragraphs.length === 0) return undefined;
+    const element = document.createElement('div');
+    element.className = 'pptx-notes';
+    element.style.width = frame.style.width;
+    element.setAttribute('role', 'note');
+    element.setAttribute('aria-label', label);
+    for (const text of paragraphs) {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      element.append(paragraph);
+    }
+    frame.after(element);
+    return element;
+  });
+}
+
+/** The status bar switch that shows or hides the speaker notes. */
+function notesButton(deck: HTMLElement, strings: ViewerStrings): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'ov-status-button';
+  button.innerHTML = icons.notes;
+  button.append(strings.notes);
+  const update = () => {
+    const shown = !deck.hasAttribute('data-notes-hidden');
+    button.setAttribute('aria-pressed', String(shown));
+    button.title = shown ? strings.hideNotes : strings.showNotes;
+  };
+  button.addEventListener('click', () => {
+    deck.toggleAttribute('data-notes-hidden');
+    update();
+  });
+  update();
+  return button;
+}
 
 /**
  * A slide's title: the text of its title placeholder, or else its first line of text, as in

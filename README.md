@@ -64,6 +64,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Charts follow your theme too: text and gridlines adapt, data keeps its colors
 - Slides designed dark, or drawn on a picture, keep their look
 - Hidden slides are shown dimmed and marked
+- Speaker notes under each slide, as in PowerPoint's notes pane; **Notes** in the status bar hides
+  them
 - The status bar shows the current slide; <kbd>Page Down</kbd> and <kbd>Page Up</kbd> step from
   slide to slide, **Go to Slide…** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>) lists them by
   title, and links between slides work
@@ -146,7 +148,7 @@ If another extension also opens these files, right-click the file and choose
   text, pictures and chart data, and a moved slide shows as removed in one place and added in
   another. Files in Git LFS compare only when their content is on this machine: Nightdocs doesn't
   download it.
-- PowerPoint animations, transitions, speaker notes and media playback aren't shown. Some pasted
+- PowerPoint animations, transitions and media playback aren't shown. Some pasted
   vector pictures (EMF/WMF) appear as placeholders.
 
 ## Contributing
