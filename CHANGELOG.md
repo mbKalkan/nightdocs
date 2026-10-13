@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The status bar shows the selected cell's formula after its value, as Excel's formula bar does,
   including formulas filled down or across and array formulas.
+- Links in Excel cells work: <kbd>Ctrl</kbd>+click a linked cell, or click the link the status bar
+  shows for it, to open a web or mail link (VS Code asks first) or go to the sheet and cells it
+  points to. Hovering a linked cell shows where it goes. Links made with the `HYPERLINK` function
+  work too.
 
 ## [0.5.0] - 2026-10-13
 

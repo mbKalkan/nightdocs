@@ -198,6 +198,60 @@ test("shows the selected cell's formula like Excel's formula bar", async ({ page
   expect(viewer.problems).toEqual([]);
 });
 
+test('follows links in cells with Ctrl+click or from the status bar', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  // Web links go to VS Code, which asks before opening them; record them instead.
+  await page.evaluate(() => {
+    const followed: string[] = [];
+    Object.assign(window, { __followed: followed });
+    HTMLAnchorElement.prototype.click = function () {
+      followed.push(this.href);
+    };
+  });
+  const followed = () =>
+    page.evaluate(() => (window as unknown as { __followed: string[] }).__followed);
+  const link = page.locator('.ov-status-link');
+
+  // Hovering says where a link goes; a plain click only selects the cell.
+  const { x, y } = await cellCenter(page, 'E', 12);
+  await page.mouse.move(x, y);
+  await expect(page.locator('.ov-viewport')).toHaveAttribute(
+    'title',
+    'https://example.com/budget\nCtrl+click to follow link',
+  );
+  await page.mouse.click(x, y);
+  await expect(link).toHaveText('https://example.com/budget');
+  await expect(link).toHaveAttribute('title', 'Follow Link: https://example.com/budget');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-link-dark.png`);
+  expect(await followed()).toEqual([]);
+
+  await page.keyboard.down('Control');
+  await page.mouse.click(x, y);
+  await page.keyboard.up('Control');
+  expect(await followed()).toEqual(['https://example.com/budget']);
+
+  // HYPERLINK formulas are links too, followed from the status bar.
+  await clickCell(page, 'E', 14);
+  await link.click();
+  expect(await followed()).toEqual(['https://example.com/budget', 'mailto:team@example.com']);
+
+  // A place in the workbook switches sheets and selects it.
+  const inside = await cellCenter(page, 'E', 13);
+  await page.keyboard.down('Control');
+  await page.mouse.click(inside.x, inside.y);
+  await page.keyboard.up('Control');
+  await expect(activeTab(page)).toHaveText('Data');
+  await expect(status(page)).toContainText('B5');
+
+  await page.locator('.ov-sheet-tab', { hasText: 'Budget' }).click();
+  await clickCell(page, 'E', 12);
+  await viewer.setTheme('light');
+  await expect(link).toHaveText('https://example.com/budget');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-link-light.png`);
+  expect(viewer.problems).toEqual([]);
+});
+
 test('moves the selection with the keyboard', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');

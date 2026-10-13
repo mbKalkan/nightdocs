@@ -3,6 +3,7 @@ import { icons } from '../icons';
 import {
   CellKind,
   type CellAnchor,
+  type CellLink,
   type CellOverride,
   type CellRange,
   type CellStyle,
@@ -266,6 +267,14 @@ export class SheetGrid {
   textAt(row: number, col: number): string {
     const index = this.cellIndex(row, col);
     return index < 0 ? '' : this.sheet.texts[this.sheet.cellTexts[index]];
+  }
+
+  /** The hyperlink on a cell, if it has one. */
+  linkAt(row: number, col: number): CellLink | undefined {
+    return this.sheet.links.find(
+      ({ range }) =>
+        row >= range.row1 && row <= range.row2 && col >= range.col1 && col <= range.col2,
+    );
   }
 
   /** The cell's formula as Excel's formula bar shows it, '' when it has none. */

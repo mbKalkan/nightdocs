@@ -16,6 +16,7 @@ import { readNotes } from '../pptx/notes';
 import { slidesPane } from '../pptx/thumbnails';
 import { OBJECT, textOf } from '../diff/marks';
 import { icons } from '../icons';
+import { followLink } from '../links';
 import { PageNavigator } from '../pageNavigator';
 import { describe, pick } from '../picker';
 import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
@@ -264,12 +265,4 @@ function hasPictureBackground(frame: HTMLElement): boolean {
       layer.offsetHeight >= frame.offsetHeight &&
       getComputedStyle(layer).backgroundImage !== 'none',
   );
-}
-
-/** Hands a link to VS Code the way a click on a document link would, so it asks first. */
-function followLink(url: string): void {
-  if (!/^(https?|mailto):/i.test(url)) return;
-  const link = document.createElement('a');
-  link.href = url;
-  link.click();
 }

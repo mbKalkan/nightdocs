@@ -581,6 +581,14 @@ function budgetSheet() {
     { ref: 'B12', value: 'Red text', style: 12 },
     { ref: 'C12', value: 'Boxed', style: 13 },
     { ref: 'D12', value: 'Link style', style: 15 },
+    { ref: 'E12', value: 'Budget guidelines', style: 15 },
+    { ref: 'E13', value: 'See the data', style: 15 },
+    {
+      ref: 'E14',
+      value: 'Email the team',
+      style: 15,
+      formula: 'HYPERLINK("mailto:team@example.com","Email the team")',
+    },
     { ref: 'A13', value: 1234.5, style: 6 },
     { ref: 'B13', value: 45600, style: 14 },
     { ref: 'B14', value: 12345678901, style: 4 },
@@ -599,6 +607,10 @@ function budgetSheet() {
     rowHeights: { 1: 28, 4: 45 },
     merges: ['A1:F1'],
     cells,
+    links: [
+      { ref: 'E12', url: 'https://example.com/budget' },
+      { ref: 'E13', location: "'Data'!B5" },
+    ],
     conditionalFormats: [
       conditional(
         'B3:B8',

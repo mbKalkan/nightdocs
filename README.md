@@ -53,6 +53,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Pictures and text boxes; charts appear as placeholders with their title
 - Select cells with the mouse or keyboard, copy them, and see the cell's text and formula, or Sum,
   Count and Average, in the status bar under the sheet tabs
+- Links in cells: <kbd>Ctrl</kbd>+click a linked cell, or the link in the status bar, to open a web
+  or mail link (VS Code asks first) or go to the place in the workbook it points to
 - Find across the whole sheet, not only the visible cells
 - Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, pick a sheet
   from **All Sheets** (also **Go to Sheet…**, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>), where

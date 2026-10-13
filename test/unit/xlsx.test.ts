@@ -144,6 +144,14 @@ describe('openWorkbook', () => {
     expect(badge).toMatchObject({ kind: 'picture', from: { col: 30, row: 70 }, width: 96 });
   });
 
+  it('reads hyperlinks: web addresses, places in the workbook and HYPERLINK formulas', () => {
+    expect(budget.links).toEqual([
+      { range: { row1: 11, col1: 4, row2: 11, col2: 4 }, url: 'https://example.com/budget' },
+      { range: { row1: 12, col1: 4, row2: 12, col2: 4 }, location: "'Data'!B5" },
+      { range: { row1: 13, col1: 4, row2: 13, col2: 4 }, url: 'mailto:team@example.com' },
+    ]);
+  });
+
   it('grows a sheet to fit drawings past its data', async () => {
     const workbook = await openWorkbook(bytes, 'en-US');
     const sheet = await workbook.readSheet(4);

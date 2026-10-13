@@ -11,12 +11,14 @@ import { markWords } from '../diff/marks';
 import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
 import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
+import { icons } from '../icons';
+import { followLink, isWebLink, LINK_MODIFIER } from '../links';
 import { NavList } from '../navList';
 import { describe, pick } from '../picker';
 import { vscode } from '../vscodeApi';
 import { SheetGrid } from '../xlsx/grid';
-import type { SheetData, WorkbookInfo } from '../xlsx/model';
-import { columnName } from '../xlsx/refs';
+import type { CellLink, SheetData, WorkbookInfo } from '../xlsx/model';
+import { columnName, parseRange } from '../xlsx/refs';
 import { SheetTabs } from '../xlsx/sheetTabs';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
 import { WorkbookClient } from '../xlsx/workerClient';
@@ -147,10 +149,12 @@ class WorkbookView implements RenderedDocument {
     const resize = new ResizeObserver(() => this.grid.render());
     resize.observe(viewport);
     const onMouseDown = (event: MouseEvent) => this.onMouseDown(event);
+    const onHover = (event: MouseEvent) => this.onHover(event);
     const onKeyDown = (event: KeyboardEvent) => this.onKeyDown(event);
     const onCopy = (event: ClipboardEvent) => this.onCopy(event);
     viewport.addEventListener('scroll', onScroll, { passive: true });
     viewport.addEventListener('mousedown', onMouseDown);
+    viewport.addEventListener('mousemove', onHover);
     viewport.addEventListener('keydown', onKeyDown);
     document.addEventListener('copy', onCopy);
     this.cleanup.push(() => {
@@ -160,6 +164,9 @@ class WorkbookView implements RenderedDocument {
       resize.disconnect();
       viewport.removeEventListener('scroll', onScroll);
       viewport.removeEventListener('mousedown', onMouseDown);
+      viewport.removeEventListener('mousemove', onHover);
+      viewport.removeAttribute('title');
+      viewport.classList.remove('ov-over-link');
       viewport.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('copy', onCopy);
     });
@@ -552,6 +559,14 @@ class WorkbookView implements RenderedDocument {
       this.grid.selectRange({ row1: hit.row, col1: 0, row2: hit.row, col2: lastCol });
       return;
     }
+    // Ctrl+click follows a link, as in VS Code's editor.
+    const link = event.ctrlKey || event.metaKey ? this.grid.linkAt(hit.row, hit.col) : undefined;
+    if (link && canFollow(link)) {
+      event.preventDefault();
+      this.grid.select(hit.row, hit.col, false);
+      void this.followCellLink(link);
+      return;
+    }
     this.grid.select(hit.row, hit.col, event.shiftKey);
     const onMove = (move: MouseEvent) => {
       const over = this.grid.hitTest(move.clientX, move.clientY);
@@ -566,6 +581,57 @@ class WorkbookView implements RenderedDocument {
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+  }
+
+  /** Over a linked cell, says where it goes and how to follow it. */
+  private onHover(event: MouseEvent): void {
+    const viewport = this.context?.viewport;
+    if (!viewport || event.buttons) return;
+    const hit = this.grid.hitTest(event.clientX, event.clientY);
+    const link = hit.row >= 0 && hit.col >= 0 ? this.grid.linkAt(hit.row, hit.col) : undefined;
+    const target = link && (link.url ?? link.location);
+    if (link && target) {
+      const hint = this.options.strings.followLinkHint.replace('{0}', LINK_MODIFIER);
+      viewport.title = canFollow(link) ? `${target}\n${hint}` : target;
+    } else {
+      viewport.removeAttribute('title');
+    }
+    viewport.classList.toggle(
+      'ov-over-link',
+      Boolean(link && canFollow(link)) && (event.ctrlKey || event.metaKey),
+    );
+  }
+
+  /** Opens a web or mail link (VS Code asks first), or goes to a place in the workbook. */
+  private async followCellLink(link: CellLink): Promise<void> {
+    if (link.url) followLink(link.url);
+    else if (link.location) await this.goToLocation(link.location);
+  }
+
+  /** Selects a place like `Sheet2!A1`, `'Q3 Plan'!B2:C4` or `C5` (on this sheet). */
+  private async goToLocation(location: string): Promise<void> {
+    const bang = location.lastIndexOf('!');
+    const name = bang < 0 ? undefined : location.slice(0, bang).replace(/^'(.*)'$/, '$1');
+    const range = parseRange(location.slice(bang + 1));
+    if (!range) return;
+    if (name !== undefined) {
+      const sheetName = name.replace(/''/g, "'").toLowerCase();
+      const index = this.info.sheets.findIndex(
+        (sheet) => sheet.name.toLowerCase() === sheetName && !sheet.hidden,
+      );
+      if (index < 0) return;
+      await this.showSheet(index);
+    }
+    const row = (r: number) => Math.max(0, Math.min(r, this.grid.rowCount - 1));
+    const col = (c: number) => Math.max(0, Math.min(c, this.grid.colCount - 1));
+    this.grid.selectRange({
+      row1: row(range.row1),
+      col1: col(range.col1),
+      row2: row(range.row2),
+      col2: col(range.col2),
+    });
+    this.grid.scrollIntoView(row(range.row1), col(range.col1));
+    this.context?.viewport.focus();
   }
 
   private onKeyDown(event: KeyboardEvent): void {
@@ -651,6 +717,7 @@ class WorkbookView implements RenderedDocument {
     const parts = [address];
     let value: HTMLElement | undefined;
     let formula: HTMLElement | undefined;
+    let link: HTMLElement | undefined;
     if (single) {
       const text = this.grid.textAt(range.row1, range.col1);
       if (text) {
@@ -664,6 +731,7 @@ class WorkbookView implements RenderedDocument {
         if (other !== undefined && own) markWords(value, other, `nd-diff-${own}`);
       }
       formula = this.formulaStatus(this.grid.formulaAt(range.row1, range.col1));
+      link = this.linkStatus(this.grid.linkAt(range.row1, range.col1));
     } else {
       let count = 0;
       let numbers = 0;
@@ -691,7 +759,24 @@ class WorkbookView implements RenderedDocument {
       }),
       ...(value ? [value] : []),
       ...(formula ? [formula] : []),
+      ...(link ? [link] : []),
     );
+  }
+
+  /** The selected cell's link, as a button that follows it. */
+  private linkStatus(link: CellLink | undefined): HTMLElement | undefined {
+    const target = link && (link.url ?? link.location);
+    if (!link || !target || !canFollow(link)) return undefined;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ov-status-button ov-status-link';
+    button.title = `${this.options.strings.followLink}: ${target}`;
+    button.innerHTML = icons.link;
+    const text = document.createElement('span');
+    text.textContent = target;
+    button.append(text);
+    button.addEventListener('click', () => void this.followCellLink(link));
+    return button;
   }
 
   /** The selected cell's formula, after its value, as Excel's formula bar shows it. */
@@ -710,6 +795,11 @@ class WorkbookView implements RenderedDocument {
     element.append(label, name, formula.length > 200 ? `${formula.slice(0, 200)}…` : formula);
     return element;
   }
+}
+
+/** Web and mail links, and places in the workbook; not other files. */
+function canFollow(link: CellLink): boolean {
+  return link.location !== undefined || (link.url !== undefined && isWebLink(link.url));
 }
 
 function cellName(row: number, col: number): string {
