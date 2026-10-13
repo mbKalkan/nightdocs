@@ -77,7 +77,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - PowerPoint: edited slides are outlined with their changed words, pictures and charts marked;
   added and removed slides are tinted, with an empty stand-in on the other side so both decks line
   up
-- Both sides scroll together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
+- Both sides scroll and zoom together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes
 
 ![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)

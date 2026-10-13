@@ -54,6 +54,12 @@ export class ZoomController {
     this.apply(this.fitZoom());
   }
 
+  /** Takes on a zoom set elsewhere: a factor, or `null` to fit the width. */
+  set(zoom: number | null): void {
+    if (zoom === null) this.reset();
+    else this.setFixed(clampZoom(zoom));
+  }
+
   private setFixed(zoom: number, anchor?: { x: number; y: number }): void {
     this.fixed = zoom;
     this.apply(zoom, anchor);

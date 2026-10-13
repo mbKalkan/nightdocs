@@ -162,6 +162,12 @@ export interface PeerScrollMessage {
   anchor: ScrollAnchor;
 }
 
+/** The zoom the other side was set to: a factor, or `null` for fitting the width. */
+export interface PeerZoomMessage {
+  type: 'peerZoom';
+  zoom: number | null;
+}
+
 /** The sheet picked from the list `pickSheet` asked for. */
 export interface ShowSheetMessage {
   type: 'showSheet';
@@ -184,6 +190,7 @@ export type HostToWebviewMessage =
   | DiffMessage
   | PeerSummaryMessage
   | PeerScrollMessage
+  | PeerZoomMessage
   | ShowSheetMessage;
 
 export type WebviewToHostMessage =
@@ -193,5 +200,7 @@ export type WebviewToHostMessage =
   | { type: 'summary'; summary: DocumentSummary }
   /** Where the other side should scroll to, in its own terms. */
   | { type: 'scroll'; anchor: ScrollAnchor }
+  /** The zoom the user set while comparing, for the other side to match. */
+  | { type: 'zoomed'; zoom: number | null }
   /** Asks for a list of the sheets to pick one from; the answer is a `showSheet` message. */
   | { type: 'pickSheet'; sheets: SheetChoice[] };

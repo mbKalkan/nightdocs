@@ -40,6 +40,7 @@ const zoom = new ZoomController(
       shell.setZoom(value);
       current?.refresh?.();
       saveState();
+      diff.zoomed(fixed);
     },
   },
   saved.zoom,
@@ -75,6 +76,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       break;
     case 'peerScroll':
       diff.follow(message.anchor);
+      break;
+    case 'peerZoom':
+      if (hasContent) diff.followZoom(message.zoom, (value) => zoom.set(value));
       break;
   }
 });
