@@ -830,6 +830,51 @@ function ordersWorkbook({ revised = false } = {}) {
   return { styles: BASE_STYLES, sheets };
 }
 
+/**
+ * A price list in two versions for comparing columns: the revised one has a Discount column
+ * inserted before the price, one price changed and one product added.
+ */
+function pricesWorkbook({ revised = false } = {}) {
+  const products = [
+    ['P-100', 'Desk', 'Furniture', 240],
+    ['P-101', 'Chair', 'Furniture', 120],
+    ['P-102', 'Lamp', 'Lighting', 45],
+    ['P-103', 'Shelf', 'Furniture', 90],
+    ['P-104', 'Monitor arm', 'Accessories', 75],
+    ['P-105', 'Cable tray', 'Accessories', 25],
+  ];
+  const discounts = ['0%', '5%', '10%', '0%', '15%', '0%'];
+  if (revised) {
+    products[3][3] = 95;
+    products.push(['P-106', 'Footrest', 'Accessories', 35]);
+    discounts.push('0%');
+  }
+  const headers = revised
+    ? ['Code', 'Product', 'Category', 'Discount', 'Price']
+    : ['Code', 'Product', 'Category', 'Price'];
+  const cells = headers.map((value, c) => ({ ref: `${'ABCDE'[c]}1`, value, style: 2 }));
+  products.forEach(([code, product, category, price], i) => {
+    const r = i + 2;
+    const values = revised
+      ? [code, product, category, discounts[i], price]
+      : [code, product, category, price];
+    values.forEach((value, c) => cells.push({ ref: `${'ABCDE'[c]}${r}`, value }));
+  });
+  return {
+    styles: BASE_STYLES,
+    sheets: [
+      {
+        name: 'Prices',
+        cols: [
+          { min: 1, max: 1, width: 10 },
+          { min: 2, max: 3, width: 16 },
+        ],
+        cells,
+      },
+    ],
+  };
+}
+
 /** More sheets than tabs fit in the footer, opened on one in the middle. */
 function manySheetsWorkbook() {
   const months = [
@@ -898,6 +943,9 @@ if (!LARGE_ONLY) {
   writeFileSync(`${OUT}/orders.xlsx`, await writeXlsx(ordersWorkbook()));
   writeFileSync(`${OUT}/orders-revised.xlsx`, await writeXlsx(ordersWorkbook({ revised: true })));
   console.log(`wrote ${OUT}/orders.xlsx and orders-revised.xlsx`);
+  writeFileSync(`${OUT}/prices.xlsx`, await writeXlsx(pricesWorkbook()));
+  writeFileSync(`${OUT}/prices-revised.xlsx`, await writeXlsx(pricesWorkbook({ revised: true })));
+  console.log(`wrote ${OUT}/prices.xlsx and prices-revised.xlsx`);
 }
 
 // 100k rows for performance checks; large, so it isn't committed.

@@ -87,8 +87,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
   shows both versions side by side. There is nothing to set up: VS Code uses Nightdocs for both
   sides.
 - Word: edited, added and removed paragraphs and table cells are marked, down to the changed words
-- Excel: changed cells and added and removed rows are marked, and sheet tabs with changes get a
-  dot; moving between changes goes from sheet to sheet, and switching sheets on one side switches
+- Excel: changed cells and added and removed rows and columns are marked, and sheet tabs with
+  changes get a dot; moving between changes goes from sheet to sheet, and switching sheets on one side switches
   the other. Selecting cells on one side selects the same cells on the other, and the status bar
   marks what changed in the selected cell
 - PowerPoint: edited slides are outlined with their changed words, pictures and charts marked;
@@ -152,9 +152,9 @@ If another extension also opens these files, right-click the file and choose
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
 - Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
-- Comparisons go by content, not formatting: a changed font or color isn't marked. In Excel an
-  inserted column marks the cells to its right as changed; in PowerPoint slides compare by their
-  text, pictures and chart data, and a moved slide shows as removed in one place and added in
+- Comparisons go by content, not formatting: a changed font or color isn't marked. In Excel a
+  formula that changed but gives the same value isn't marked; in PowerPoint slides compare by
+  their text, pictures and chart data, and a moved slide shows as removed in one place and added in
   another. Files in Git LFS compare only when their content is on this machine: Nightdocs doesn't
   download it.
 - PowerPoint animations, transitions and media playback aren't shown. Some pasted

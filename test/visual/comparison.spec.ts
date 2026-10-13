@@ -413,3 +413,51 @@ test('selects the same cells on both sides of a workbook comparison', async ({ c
   await expect(statusOf(original)).toContainText('SO-1015');
   await expect(original.page.locator('.ov-status .nd-diff-word')).toHaveCount(0);
 });
+
+test('lines up columns when one was inserted', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['prices.xlsx', 'prices-revised.xlsx'],
+  );
+  const statusOf = (side: typeof original) => side.page.locator('.ov-status');
+  const relaySelection = async (from: typeof original, to: typeof original) => {
+    const message = await lastSent<{ selection: CellSelection }>(from.viewer, 'select');
+    await to.viewer.post({ type: 'peerSelect', selection: message!.selection });
+  };
+
+  // A Discount column inserted, a price changed and a product added: three changes, not every
+  // price marked as changed.
+  await expect(original.page.locator('.ov-diff-status')).toHaveText('3 changes');
+  await expect(modified.page.locator('.ov-diff-status')).toHaveText('3 changes');
+  await expect(modified.page.locator('.ng-hc.ng-diff-added')).toHaveText('D');
+  await expect(modified.page.locator('.ng-diff-cell.ng-diff-added')).toHaveCount(1);
+  await expect(original.page.locator('.ng-diff-cell.ng-diff-removed')).toHaveCount(1);
+  // On the original side, a line where the column would be, and one where the row would be.
+  await expect(original.page.locator('.ng-diff-gap.ng-diff-added')).toHaveCount(2);
+
+  // Opening at the first change selects the new column.
+  await expect(statusOf(modified).locator('span').first()).toHaveText('D1:D8');
+  await original.page.screenshot({ path: `${SCREENS}/compare-xlsx-columns-original-dark.png` });
+  await modified.page.screenshot({ path: `${SCREENS}/compare-xlsx-columns-modified-dark.png` });
+
+  // The changed price is in column E on the right and D on the left.
+  await modified.page.keyboard.press('F7');
+  await expect(modified.page.locator('.ov-diff-status')).toHaveText('Change 2 of 3');
+  await expect(statusOf(modified)).toContainText('E5');
+  await relaySelection(modified, original);
+  await expect(statusOf(original)).toContainText('D5');
+  await expect(original.page.locator('.ov-status .nd-diff-word.nd-diff-removed')).toHaveCount(1);
+
+  for (const side of [original, modified]) {
+    await side.viewer.setTheme('light');
+    // Redrawn for the light theme, which has no dark colors to switch.
+    await expect(side.page.locator('[data-action="colors"]')).toBeHidden();
+  }
+  await expect(original.page.locator('.ng-diff-gap.ng-diff-added')).toHaveCount(2);
+  await expect(modified.page.locator('.ng-hc.ng-diff-added')).toHaveText('D');
+  await original.page.screenshot({ path: `${SCREENS}/compare-xlsx-columns-original-light.png` });
+  await modified.page.screenshot({ path: `${SCREENS}/compare-xlsx-columns-modified-light.png` });
+  expect(original.viewer.problems).toEqual([]);
+  expect(modified.viewer.problems).toEqual([]);
+});

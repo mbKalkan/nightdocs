@@ -256,7 +256,7 @@ class WorkbookView implements RenderedDocument {
     this.renderTabs();
     this.updateStatus();
     const changes = own.sheets.flatMap((sheet) =>
-      (diff.get(sheet.name)?.changes ?? []).map((row) => ({ sheet: sheet.name, row })),
+      (diff.get(sheet.name)?.changes ?? []).map((change) => ({ sheet: sheet.name, ...change })),
     );
     return {
       count: changes.length,
@@ -327,7 +327,7 @@ class WorkbookView implements RenderedDocument {
   }
 
   private async goToChange(
-    changes: { sheet: string; row: number }[],
+    changes: { sheet: string; row: number; col?: number }[],
     direction: 1 | -1,
   ): Promise<number | undefined> {
     const viewport = this.context?.viewport;
@@ -351,7 +351,18 @@ class WorkbookView implements RenderedDocument {
       if (index < 0 || index >= changes.length) index = direction > 0 ? 0 : changes.length - 1;
     }
     const change = changes[index];
-    await this.showSheet(this.info.sheets.findIndex((sheet) => sheet.name === change.sheet));
+    const sheet = this.info.sheets.findIndex(({ name }) => name === change.sheet);
+    await this.showSheet(sheet);
+    // Another sheet may have been picked while this one loaded.
+    if (this.index !== sheet) return undefined;
+    // A column only one side has is selected whole, as far as there is data.
+    if (change.col !== undefined) {
+      const lastRow = Math.max(0, this.grid.lastDataRow);
+      this.grid.reveal(0, change.col);
+      this.grid.selectRange({ row1: 0, col1: change.col, row2: lastRow, col2: change.col });
+      this.lastChange = { index, at: at() };
+      return index;
+    }
     const col = this.diff?.get(change.sheet)?.marks.cells.get(change.row)?.[0];
     this.grid.reveal(change.row, col);
     // Selecting the change shows its text, and the other side selects it too.
@@ -371,9 +382,9 @@ class WorkbookView implements RenderedDocument {
       selection: {
         sheet: this.sheetName,
         row1: comparison.toPeer(row1),
-        col1,
+        col1: comparison.toPeerColumn(col1),
         row2: comparison.toPeer(row2),
-        col2,
+        col2: comparison.toPeerColumn(col2),
       },
     });
   }
@@ -408,18 +419,19 @@ class WorkbookView implements RenderedDocument {
 
   /**
    * What the selected cell has instead on the other side, when it changed: the other version's
-   * text, or '' for a row or sheet only this side has.
+   * text, or '' for a row, column or sheet only this side has.
    */
   private otherText(row: number, col: number): string | undefined {
     const comparison = this.diff?.get(this.sheetName);
     if (!comparison) return undefined;
-    if (comparison.onlyHere || comparison.marks.rows.has(row)) return '';
-    if (!comparison.marks.cells.get(row)?.includes(col)) return undefined;
+    const { marks } = comparison;
+    if (comparison.onlyHere || marks.rows.has(row) || marks.cols.has(col)) return '';
+    if (!marks.cells.get(row)?.includes(col)) return undefined;
     const peerRow = this.peerRows?.get(this.sheetName)?.[comparison.toPeer(row)];
-    return peerRow?.split(CELL_SEPARATOR)[col] ?? '';
+    return peerRow?.split(CELL_SEPARATOR)[comparison.toPeerColumn(col)] ?? '';
   }
 
-  /** Where this side is, in the other side's rows. */
+  /** Where this side is, in the other side's rows and columns. */
   private scrollAnchor(): ScrollAnchor {
     const { row, fraction } = this.grid.topRow();
     const { col, fraction: columnFraction } = this.grid.leftColumn();
@@ -428,7 +440,7 @@ class WorkbookView implements RenderedDocument {
       sheet: this.sheetName,
       index: comparison ? comparison.toPeer(row) : row,
       fraction,
-      column: col,
+      column: comparison ? comparison.toPeerColumn(col) : col,
       columnFraction,
     };
   }

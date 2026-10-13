@@ -413,8 +413,8 @@ export class SheetGrid {
   }
 
   /**
-   * Differences from the other version over a region: rows only this side has, changed cells,
-   * and lines where the other side has rows this one doesn't.
+   * Differences from the other version over a region: rows and columns only this side has,
+   * changed cells, and lines where the other side has rows or columns this one doesn't.
    */
   private marksHtml(range: CellRange): string {
     const marks = this.marks;
@@ -425,6 +425,26 @@ export class SheetGrid {
     const box = (x: number, y: number, w: number, h: number) =>
       `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
     const parts: string[] = [];
+    const top = HEADER_HEIGHT + rowTop[range.row1];
+    const height = rowTop[range.row2 + 1] - rowTop[range.row1];
+    for (let c = range.col1; c <= range.col2 + 1; c++) {
+      const x = headerWidth + colLeft[c];
+      if (c <= range.col2 && marks.cols.has(c) && sheet.colWidths[c] > 0) {
+        parts.push(
+          `<div class="ng-diff ng-diff-${marks.own}" style="${box(x, top, sheet.colWidths[c], height)}"></div>`,
+        );
+      }
+      // The line right of the last column is drawn by the region that has it.
+      const last = c === range.col2 + 1;
+      const gap = last
+        ? c === sheet.colCount && [...marks.colGaps].some((g) => g >= c)
+        : marks.colGaps.has(c);
+      if (gap) {
+        parts.push(
+          `<div class="ng-diff-gap ng-diff-${marks.other}" style="${box(x - 1, top, 2, height)}"></div>`,
+        );
+      }
+    }
     for (let r = range.row1; r <= range.row2; r++) {
       const height = sheet.rowHeights[r];
       if (height === 0) continue;
@@ -839,8 +859,9 @@ export class SheetGrid {
       const width = this.sheet.colWidths[c];
       if (width === 0) continue;
       const active = c >= sel.col1 && c <= sel.col2 ? ' ng-sel' : '';
+      const mark = this.marks?.cols.has(c) ? ` ng-diff-${this.marks.own}` : '';
       parts.push(
-        `<div class="ng-h ng-hc${active}" style="left:${this.headerWidth + this.colLeft[c]}px;top:0;width:${width}px;height:${HEADER_HEIGHT}px">${columnName(c)}</div>`,
+        `<div class="ng-h ng-hc${active}${mark}" style="left:${this.headerWidth + this.colLeft[c]}px;top:0;width:${width}px;height:${HEADER_HEIGHT}px">${columnName(c)}</div>`,
       );
     }
     return parts.join('');

@@ -29,9 +29,12 @@ const SHORT_WORDS = 3;
 export interface AlignOptions {
   /**
    * When as many items are replaced as replace them, which count as edited in place: only
-   * short ones like table cells (`short`), or all, like the rows of a sheet (`all`).
+   * short ones like table cells (`short`), all that line up by likeness, like the rows of a
+   * sheet (`all`), or all of them without comparing, like the columns of a sheet (`always`).
    */
-  inPlace?: 'short' | 'all';
+  inPlace?: 'short' | 'all' | 'always';
+  /** How alike two items are, from 0 to 1, by index; words in common by default. */
+  score?: (aIndex: number, bIndex: number) => number;
 }
 
 /**
@@ -41,7 +44,7 @@ export interface AlignOptions {
 export function align(
   a: readonly string[],
   b: readonly string[],
-  { inPlace = 'short' }: AlignOptions = {},
+  { inPlace = 'short', score = (x, y) => similarity(a[x], b[y]) }: AlignOptions = {},
 ): Alignment {
   const aToB = new Array<number>(a.length).fill(0);
   const bToA = new Array<number>(b.length).fill(0);
@@ -64,7 +67,14 @@ export function align(
       hunk.bEnd = next.bEnd;
       i++;
     }
-    hunk.pairs = pairEdited(a, b, hunk, inPlace === 'all' ? Infinity : SHORT_WORDS);
+    const sameSize = hunk.aEnd - hunk.aStart === hunk.bEnd - hunk.bStart;
+    hunk.pairs =
+      inPlace === 'always' && sameSize
+        ? Array.from({ length: hunk.aEnd - hunk.aStart }, (_, k): [number, number] => [
+            hunk.aStart + k,
+            hunk.bStart + k,
+          ])
+        : pairEdited(a, b, hunk, score, inPlace === 'short' ? SHORT_WORDS : Infinity);
     hunks.push(hunk);
 
     // Unpaired items point at the closest paired item before them, or the hunk's start.
@@ -91,6 +101,7 @@ function pairEdited(
   a: readonly string[],
   b: readonly string[],
   hunk: Hunk,
+  similar: (x: number, y: number) => number,
   shortWords: number,
 ): [number, number][] {
   const pairs: [number, number][] = [];
@@ -99,7 +110,7 @@ function pairEdited(
     let best = -1;
     let bestScore = 0;
     for (let y = from; y < Math.min(hunk.bEnd, from + LOOKAHEAD); y++) {
-      const score = similarity(a[x], b[y]);
+      const score = similar(x, y);
       if (score >= EDITED && score > bestScore) {
         best = y;
         bestScore = score;
