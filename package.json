@@ -350,6 +350,7 @@
     "test": "vitest run --passWithNoTests",
     "test:visual": "node scripts/build.mjs && playwright test",
     "screenshots": "node scripts/build.mjs && node scripts/screenshots.mjs",
+    "corpus": "node scripts/build.mjs && node scripts/corpus.mjs",
     "icon": "node scripts/render-icon.mjs",
     "test:smoke": "node scripts/build.mjs && node scripts/smoke.mjs",
     "fixtures": "node scripts/gen-fixtures.mjs",
