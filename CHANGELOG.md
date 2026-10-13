@@ -6,8 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-13
+
+More of Excel: charts are drawn, the status bar shows formulas, links in cells work, cells copy
+as a Markdown table, and comparisons line up inserted and deleted columns.
+
 ### Added
 
+- Excel charts are drawn instead of placeholders, by the same renderer as PowerPoint charts:
+  in a dark theme their text, gridlines and chart area follow it while the data keeps its
+  colors.
 - The status bar shows the selected cell's formula after its value, as Excel's formula bar does,
   including formulas filled down or across and array formulas.
 - Links in Excel cells work: <kbd>Ctrl</kbd>+click a linked cell, or click the link the status bar
@@ -18,9 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   right-click menu or the Command Palette. Columns of numbers are aligned right, hidden rows and
   columns are left out, and with one cell selected it copies the block of data around it.
   Right-clicking a cell outside the selection now selects it first, as in Excel.
-- Excel charts are drawn instead of placeholders, by the same renderer as PowerPoint charts:
-  in a dark theme their text, gridlines and chart area follow it while the data keeps its
-  colors.
 
 ### Changed
 
@@ -169,7 +174,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/mbKalkan/nightdocs/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mbKalkan/nightdocs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbKalkan/nightdocs/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mbKalkan/nightdocs/compare/v0.2.0...v0.3.0
