@@ -1,6 +1,6 @@
 {
-  "displayName": "Nightdocs",
-  "description": "Word, Excel ve PowerPoint dosyaları için hafif, koyu tema öncelikli, salt okunur görüntüleyici.",
+  "displayName": "Nightdocs — Word, Excel ve PowerPoint Görüntüleyici",
+  "description": "Word, Excel ve PowerPoint dosyalarını (.docx, .xlsx, .pptx) koyu temada görüntüleyin, sürümlerini yan yana karşılaştırın. Hızlı, çevrimdışı ve salt okunur.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Office'te Aç",

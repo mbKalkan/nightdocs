@@ -7,9 +7,10 @@
 
 **Read Word, Excel and PowerPoint files in VS Code, in your dark theme.**
 
-Nightdocs is a lightweight, view-only viewer for `.docx`, `.xlsx` and `.pptx` files. Documents take
-on your editor's colors so a white page doesn't light up a dark room, and when you need to edit, one
-click opens the file in Word, Excel or PowerPoint.
+Nightdocs is a lightweight, view-only Office viewer for Word (`.docx`), Excel (`.xlsx`, `.xlsm`)
+and PowerPoint (`.pptx`, `.pptm`, `.ppsx`) files. Documents take on your editor's colors so a white
+page doesn't light up a dark room. Changed files from Git open side by side with the differences
+marked, and when you need to edit, one click opens the file in Word, Excel or PowerPoint.
 
 > **Status:** preview. Feedback is very welcome.
 
@@ -22,6 +23,8 @@ click opens the file in Word, Excel or PowerPoint.
   ◐ shows the original colors.
 - **Fast and view-only.** Files open in about a second, and sheets with 100,000 rows scroll
   smoothly. Nothing can be changed by accident.
+- **See what changed.** Compare two versions of a document, workbook or presentation side by side,
+  straight from Source Control, with the changes marked down to the word or cell.
 - **Edit in Office when you need to.** **Open in Word**, **Open in Excel** or **Open in
   PowerPoint** hands the file to its desktop app. The view refreshes when the file is saved.
 - **Private.** No telemetry and no network access. Your files never leave your machine.
