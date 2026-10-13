@@ -40,6 +40,8 @@ export const strings: ViewerStrings = {
   statusSum: 'Sum: {0}',
   statusAverage: 'Average: {0}',
   formula: 'Formula',
+  followLink: 'Follow Link',
+  followLinkHint: '{0}+click to follow link',
   find: 'Find',
   findNoResults: 'No results',
   findCount: '{0} of {1}',

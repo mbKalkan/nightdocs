@@ -9,7 +9,8 @@ import JSZip from 'jszip';
  *   showGridLines?: boolean, cols?: { min: number, max: number, width: number, hidden?: boolean, style?: number }[],
  *   rowHeights?: Record<number, number>, rowStyles?: Record<number, number>, hiddenRows?: number[],
  *   merges?: string[], cells: Cell[],
- *   conditionalFormats?: string[], drawings?: Drawing[] }} Sheet
+ *   conditionalFormats?: string[], drawings?: Drawing[], links?: Link[] }} Sheet
+ * @typedef {{ ref: string, url?: string, location?: string }} Link a web address or a place in the workbook
  * @typedef {{ numFmts?: string[], fonts: string[], fills: string[], borders: string[], cellXfs: string[], dxfs?: string[] }} Styles
  * @typedef {{ col: number, row: number }} Point 0-based
  * @typedef {{ width: number, height: number }} Size pixels
@@ -96,6 +97,8 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
               return `<c r="${cell.ref}"${s} t="b">${f}<v>${cell.value ? 1 : 0}</v></c>`;
             if (typeof cell.value === 'number')
               return `<c r="${cell.ref}"${s}>${f}<v>${cell.value}</v></c>`;
+            // Text from a formula is stored in the cell, not in the shared strings.
+            if (f) return `<c r="${cell.ref}"${s} t="str">${f}<v>${escape(cell.value)}</v></c>`;
             return `<c r="${cell.ref}"${s} t="s"><v>${shared(cell.value)}</v></c>`;
           })
           .join('');
@@ -130,17 +133,34 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
     const tab = sheet.tabColor ? `<sheetPr><tabColor rgb="FF${sheet.tabColor}"/></sheetPr>` : '';
     const conditional = sheet.conditionalFormats?.join('') ?? '';
     const drawing = sheet.drawings?.length ? '<drawing r:id="rId1"/>' : '';
+    // Web addresses live in the sheet's relationships, places in the workbook in the link.
+    const links = sheet.links ?? [];
+    const linkRels = links.flatMap((link, n) => (link.url ? [[`rIdLink${n}`, link.url]] : []));
+    const hyperlinks = links.length
+      ? `<hyperlinks>${links
+          .map((link, n) =>
+            link.url
+              ? `<hyperlink ref="${link.ref}" r:id="rIdLink${n}"/>`
+              : `<hyperlink ref="${link.ref}" location="${escape(link.location)}" display="${escape(link.location)}"/>`,
+          )
+          .join('')}</hyperlinks>`
+      : '';
     zip.file(
       `xl/worksheets/sheet${i + 1}.xml`,
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="${NS}" xmlns:r="${REL_NS}">${tab}` +
         `<sheetViews><sheetView workbookViewId="0"${gridLines}${i === activeSheet ? ' tabSelected="1"' : ''}>${pane}</sheetView></sheetViews>` +
-        `<sheetFormatPr defaultRowHeight="15"/>${cols}<sheetData>${rowXml}</sheetData>${merges}${conditional}${drawing}</worksheet>`,
+        `<sheetFormatPr defaultRowHeight="15"/>${cols}<sheetData>${rowXml}</sheetData>${merges}${conditional}${hyperlinks}${drawing}</worksheet>`,
     );
-    if (drawing) {
+    if (drawing || linkRels.length) {
       zip.file(
         `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
-        relationships([['rId1', 'drawing', `../drawings/drawing${i + 1}.xml`]]),
+        relationships([
+          ...(drawing ? [['rId1', 'drawing', `../drawings/drawing${i + 1}.xml`]] : []),
+          ...linkRels.map(([id, url]) => [id, 'hyperlink', url, 'External']),
+        ]),
       );
+    }
+    if (drawing) {
       writeDrawing(zip, `drawing${i + 1}.xml`, sheet.drawings, parts);
       parts.drawings.push(i + 1);
     }
@@ -218,14 +238,14 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 
-/** @param {string[][]} items [id, relationship type, target] */
+/** @param {string[][]} items [id, relationship type, target, target mode] */
 function relationships(items) {
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${PACKAGE_REL_NS}">` +
     items
       .map(
-        ([id, type, target]) =>
-          `<Relationship Id="${id}" Type="${REL}/${type}" Target="${target}"/>`,
+        ([id, type, target, mode]) =>
+          `<Relationship Id="${id}" Type="${REL}/${type}" Target="${escape(target)}"${mode ? ` TargetMode="${mode}"` : ''}/>`,
       )
       .join('') +
     '</Relationships>'

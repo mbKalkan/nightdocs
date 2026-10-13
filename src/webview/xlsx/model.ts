@@ -93,6 +93,15 @@ export interface Drawing {
   color?: string;
 }
 
+/** A hyperlink on a range of cells: a web or mail address, or a place in the workbook. */
+export interface CellLink {
+  range: CellRange;
+  /** Web or mail address, or another file. */
+  url?: string;
+  /** Place in the workbook, like `Sheet2!A1` or `'Q3 Plan'!B2:C4`. */
+  location?: string;
+}
+
 export interface SheetData {
   /** Rows and columns that contain data, merges or formatting. */
   rowCount: number;
@@ -120,6 +129,8 @@ export interface SheetData {
   frozenCols: number;
   showGridLines: boolean;
   drawings: Drawing[];
+  /** Hyperlinks, in the order the sheet lists them. */
+  links: CellLink[];
   /** Formulas as Excel's formula bar shows them ("=SUM(A1:A3)"), by cell index. */
   formulas: Map<number, string>;
   /** Conditional formatting results, by cell index. */

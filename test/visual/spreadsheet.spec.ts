@@ -5,18 +5,25 @@ import { answerPick, lastPick } from './picks';
 
 const SCREENS = 'test-results/screens';
 
-/** Center of a cell on screen, located through its row and column headers. */
+/**
+ * Center of a cell on screen, located through its row and column headers. The grid redraws its
+ * headers as it scrolls, so a header found just before a redraw is measured again.
+ */
 async function cellCenter(page: Page, column: string, row: number) {
-  const col = await page
-    .locator('.ng-hc', { hasText: new RegExp(`^${column}$`) })
-    .first()
-    .boundingBox();
-  const header = await page
-    .locator('.ng-hr', { hasText: new RegExp(`^${row}$`) })
-    .first()
-    .boundingBox();
-  if (!col || !header) throw new Error(`Cell ${column}${row} is not on screen`);
-  return { x: col.x + col.width / 2, y: header.y + header.height / 2 };
+  let center: { x: number; y: number } | undefined;
+  await expect(async () => {
+    const col = await page
+      .locator('.ng-hc', { hasText: new RegExp(`^${column}$`) })
+      .first()
+      .boundingBox();
+    const header = await page
+      .locator('.ng-hr', { hasText: new RegExp(`^${row}$`) })
+      .first()
+      .boundingBox();
+    if (!col || !header) throw new Error(`Cell ${column}${row} is not on screen`);
+    center = { x: col.x + col.width / 2, y: header.y + header.height / 2 };
+  }).toPass({ timeout: 2000 });
+  return center!;
 }
 
 async function clickCell(page: Page, column: string, row: number, modifiers: 'Shift'[] = []) {
@@ -195,6 +202,79 @@ test("shows the selected cell's formula like Excel's formula bar", async ({ page
   await viewer.setTheme('light');
   await expect(formula).toHaveText('fxFormula =C5/B5-1');
   await shootBottomBars(page, `${SCREENS}/spreadsheet-formula-light.png`);
+  expect(viewer.problems).toEqual([]);
+});
+
+test('follows links in cells with Ctrl+click or from the status bar', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  // Web links go to VS Code, which asks before opening them; record them instead.
+  await page.evaluate(() => {
+    const followed: string[] = [];
+    Object.assign(window, { __followed: followed });
+    HTMLAnchorElement.prototype.click = function () {
+      followed.push(this.href);
+    };
+  });
+  const followed = () =>
+    page.evaluate(() => (window as unknown as { __followed: string[] }).__followed);
+  const link = page.locator('.ov-status-link');
+
+  // Hovering says where a link goes; a plain click only selects the cell.
+  const { x, y } = await cellCenter(page, 'E', 12);
+  await page.mouse.move(x, y);
+  await expect(page.locator('.ov-viewport')).toHaveAttribute(
+    'title',
+    'https://example.com/budget\nCtrl+click to follow link',
+  );
+  await page.mouse.click(x, y);
+  await expect(link).toHaveText('https://example.com/budget');
+  await expect(link).toHaveAttribute('title', 'Follow Link: https://example.com/budget');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-link-dark.png`);
+  expect(await followed()).toEqual([]);
+
+  await page.keyboard.down('Control');
+  await page.mouse.click(x, y);
+  await page.keyboard.up('Control');
+  expect(await followed()).toEqual(['https://example.com/budget']);
+
+  // HYPERLINK formulas are links too, followed from the status bar.
+  await clickCell(page, 'E', 14);
+  await link.click();
+  expect(await followed()).toEqual(['https://example.com/budget', 'mailto:team@example.com']);
+
+  // A place in the workbook switches sheets and selects it.
+  const inside = await cellCenter(page, 'E', 13);
+  await page.keyboard.down('Control');
+  await page.mouse.click(inside.x, inside.y);
+  await page.keyboard.up('Control');
+  await expect(activeTab(page)).toHaveText('Data');
+  await expect(status(page).locator('span').first()).toHaveText('B5');
+
+  await page.locator('.ov-sheet-tab', { hasText: 'Budget' }).click();
+  await expect(activeTab(page)).toHaveText('Budget');
+  await expect(status(page)).toContainText('A1');
+  await clickCell(page, 'E', 12);
+  await expect(link).toHaveText('https://example.com/budget');
+  await viewer.setTheme('light');
+  await expect(link).toHaveText('https://example.com/budget');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-link-light.png`);
+  expect(viewer.problems).toEqual([]);
+});
+
+test('stays on the sheet picked while a linked sheet is still loading', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  const { x, y } = await cellCenter(page, 'E', 13);
+  await page.keyboard.down('Control');
+  await page.mouse.click(x, y);
+  await page.keyboard.up('Control');
+  // The Data sheet has 2,000 rows to read; going back before it is shown wins.
+  await page.locator('.ov-sheet-tab', { hasText: 'Budget' }).click();
+  await expect(activeTab(page)).toHaveText('Budget');
+  await page.waitForTimeout(500);
+  await expect(activeTab(page)).toHaveText('Budget');
+  await expect(status(page).locator('span').first()).toHaveText('A1');
   expect(viewer.problems).toEqual([]);
 });
 

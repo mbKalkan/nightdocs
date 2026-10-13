@@ -6,6 +6,7 @@ import {
   CellKind,
   type BorderSide,
   type CellAnchor,
+  type CellLink,
   type CellRange,
   type CellStyle,
   type Drawing,
@@ -110,6 +111,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
         throw new Error(`Missing sheet ${index}`);
       }
       const sheet = parseSheet(xml, { sharedStrings, styles, formats, date1904 });
+      sheet.links = [...(await readLinks(read, path!, xml)), ...sheet.links];
       sheet.conditional = evaluateConditionalFormats(xml, sheet, dxfs, theme);
       sheet.drawings = await readDrawings(zip, read, path!, xml, theme);
       fitDrawings(sheet);
@@ -120,7 +122,9 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
 
 interface Relationship {
   type: string;
+  /** A part path, or an address as written for links outside the package. */
   target: string;
+  external: boolean;
 }
 
 async function relationships(
@@ -132,10 +136,12 @@ async function relationships(
   const xml = await read(relsPath);
   const result = new Map<string, Relationship>();
   for (const rel of elements(xml ?? '', 'Relationship')) {
-    if (rel.attrs.TargetMode === 'External') continue;
+    const external = rel.attrs.TargetMode === 'External';
+    const target = rel.attrs.Target ?? '';
     result.set(rel.attrs.Id, {
       type: rel.attrs.Type ?? '',
-      target: resolvePath(folder, rel.attrs.Target ?? ''),
+      target: external ? target : resolvePath(folder, target),
+      external,
     });
   }
   return result;
@@ -481,12 +487,58 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     frozenCols,
     showGridLines: view?.attrs.showGridLines !== '0' && view?.attrs.showGridLines !== 'false',
     drawings: [],
+    links: formulaLinks(cellFormulas, rowStarts, cellCols),
     formulas: cellFormulas,
     conditional: new Map(),
     rowStyles,
     colStyles,
   };
 }
+
+/** The sheet's hyperlinks; addresses outside the file are kept in its relationships. */
+async function readLinks(
+  read: (path: string) => Promise<string | undefined>,
+  sheetPath: string,
+  sheetXml: string,
+): Promise<CellLink[]> {
+  const list = firstElement(sheetXml, 'hyperlinks');
+  if (!list) return [];
+  const rels = await relationships(read, sheetPath);
+  const links: CellLink[] = [];
+  for (const { attrs } of elements(list.body, 'hyperlink')) {
+    const range = parseRange(attrs.ref ?? '');
+    const rel = attrs.id ? rels.get(attrs.id) : undefined;
+    const url = rel?.external ? rel.target : undefined;
+    if (!range) continue;
+    if (url) links.push({ range, url: attrs.location ? `${url}#${attrs.location}` : url });
+    else if (attrs.location) links.push({ range, location: attrs.location });
+  }
+  return links;
+}
+
+/** Links made with the HYPERLINK function, when the address is written out in the formula. */
+function formulaLinks(
+  formulas: Map<number, string>,
+  rowStarts: Uint32Array,
+  cellCols: Uint16Array,
+): CellLink[] {
+  const links: CellLink[] = [];
+  if (![...formulas.values()].some((formula) => formula.includes('HYPERLINK('))) return links;
+  for (let row = 0; row < rowStarts.length - 1; row++) {
+    for (let i = rowStarts[row]; i < rowStarts[row + 1]; i++) {
+      const address = HYPERLINK.exec(formulas.get(i) ?? '')?.[1]?.replace(/""/g, '"');
+      if (!address) continue;
+      const range = { row1: row, col1: cellCols[i], row2: row, col2: cellCols[i] };
+      // "#Sheet2!A1" is a place in this workbook.
+      links.push(
+        address.startsWith('#') ? { range, location: address.slice(1) } : { range, url: address },
+      );
+    }
+  }
+  return links;
+}
+
+const HYPERLINK = /^=HYPERLINK\(\s*"((?:[^"]|"")*)"/i;
 
 const FORMULA = /<(?:[\w.-]+:)?f(?=[\s/>])([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:[\w.-]+:)?f>)/;
 

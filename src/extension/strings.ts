@@ -27,6 +27,8 @@ export function viewerStrings(appName: string): ViewerStrings {
     statusSum: vscode.l10n.t('Sum: {0}'),
     statusAverage: vscode.l10n.t('Average: {0}'),
     formula: vscode.l10n.t('Formula'),
+    followLink: vscode.l10n.t('Follow Link'),
+    followLinkHint: vscode.l10n.t('{0}+click to follow link'),
     find: vscode.l10n.t('Find'),
     findNoResults: vscode.l10n.t('No results'),
     findCount: vscode.l10n.t('{0} of {1}'),

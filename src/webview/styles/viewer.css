@@ -1209,6 +1209,28 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   font-style: italic;
 }
 
+/* The selected cell's link; clicking it follows the link. */
+.ov-status > .ov-status-link {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  color: var(--vscode-textLink-foreground);
+}
+
+.ov-status-link > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-status-link:hover {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+/* Holding Ctrl over a linked cell. */
+.ov-viewport.ov-over-link .ng-canvas {
+  cursor: pointer;
+}
+
 /* Read by screen readers only. */
 .ov-sr-only {
   position: absolute;

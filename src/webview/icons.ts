@@ -13,6 +13,9 @@ export const icons = {
   sidebar: svg('<rect x="2" y="3" width="12" height="10" rx="1"/><path d="M6 3v10"/>'),
   chevronDown: svg('<path d="M3.5 6 8 10.5 12.5 6"/>'),
   notes: svg('<path d="M3.5 2.5h9v11h-9zM5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
+  link: svg(
+    '<path d="M6.5 9.5a2.5 2.5 0 0 0 3.5 0l2.5-2.5a2.5 2.5 0 0 0-3.5-3.5L8.5 4M9.5 6.5a2.5 2.5 0 0 0-3.5 0L3.5 9a2.5 2.5 0 0 0 3.5 3.5l.5-.5"/>',
+  ),
   comment: svg('<path d="M2.5 3h11v7.5h-6L5 13v-2.5H2.5z"/>'),
   eye: svg(
     '<path d="M1.5 8S3.8 3.5 8 3.5 14.5 8 14.5 8 12.2 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/>',

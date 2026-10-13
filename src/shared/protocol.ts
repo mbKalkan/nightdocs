@@ -27,6 +27,9 @@ export interface ViewerStrings {
   statusAverage: string;
   /** Names the selected cell's formula for screen readers. */
   formula: string;
+  followLink: string;
+  /** `{0}` is the key to hold: Ctrl, or Cmd on macOS. */
+  followLinkHint: string;
   find: string;
   findNoResults: string;
   /** `{0} of {1}` */
