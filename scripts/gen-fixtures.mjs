@@ -775,11 +775,11 @@ const REGIONS = ['North', 'South', 'East', 'West'];
 /** The Office theme accents, which PowerPoint gives new charts. */
 const ACCENTS = ['4472C4', 'ED7D31', 'A5A5A5', 'FFC000'];
 
-function photo() {
+function photo({ warm = false } = {}) {
   return png(320, 200, (x, y) => [
     Math.round(80 + (x / 320) * 150),
     Math.round(120 + (y / 200) * 100),
-    200,
+    warm ? 90 : 200,
     255,
   ]);
 }
@@ -788,7 +788,7 @@ function slideTitle(slide, text) {
   slide.addText(text, { x: 0.5, y: 0.3, w: 9, h: 0.8, fontSize: 30, bold: true, color: BRAND });
 }
 
-function addResultsTable(slide, y) {
+function addResultsTable(slide, y, { revised = false } = {}) {
   const head = ['Region', 'Q2', 'Q3', 'Change'].map((text) => ({
     text,
     options: { bold: true, color: 'FFFFFF', fill: { color: BRAND } },
@@ -796,7 +796,7 @@ function addResultsTable(slide, y) {
   const rows = [
     ['North', '1,240', '1,385', '+11.7%'],
     ['South', '980', '1,012', '+3.3%'],
-    ['East', '1,105', '1,060', '-4.1%'],
+    ['East', '1,105', revised ? '1,095' : '1,060', revised ? '-0.9%' : '-4.1%'],
     ['West', '1,430', '1,598', '+11.7%'],
   ].map((row, i) =>
     row.map((text) => ({ text, options: { fill: { color: i % 2 ? 'DEEAF6' : 'FFFFFF' } } })),
@@ -813,7 +813,9 @@ function addResultsTable(slide, y) {
   });
 }
 
-function samplePresentation() {
+/** With `revised`, a later version: edited text, table and chart, a slide added, a picture
+ * replaced and a slide removed, for comparing versions. */
+function samplePresentation({ revised = false } = {}) {
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_16x9';
   pptx.title = 'Quarterly Review';
@@ -847,7 +849,13 @@ function samplePresentation() {
       { text: 'Revenue grew in three of four regions', options: { bullet: true } },
       { text: 'North and West led the growth', options: { bullet: true, indentLevel: 1 } },
       { text: 'Customer retention reached an all-time high', options: { bullet: true } },
-      { text: 'Support backlog down 40%', options: { bullet: true, color: 'C00000', bold: true } },
+      {
+        text: `Support backlog down ${revised ? '55' : '40'}%`,
+        options: { bullet: true, color: 'C00000', bold: true },
+      },
+      ...(revised
+        ? [{ text: 'Self-service portal launched in May', options: { bullet: true } }]
+        : []),
       {
         text: 'Details are on the regional results slide',
         options: { bullet: true, hyperlink: { slide: 3 } },
@@ -862,7 +870,7 @@ function samplePresentation() {
 
   slide = pptx.addSlide();
   slideTitle(slide, 'Regional results');
-  addResultsTable(slide, 1.3);
+  addResultsTable(slide, 1.3, { revised });
 
   slide = pptx.addSlide();
   slideTitle(slide, 'Revenue by region');
@@ -870,7 +878,7 @@ function samplePresentation() {
     pptx.ChartType.bar,
     [
       { name: 'Q2', labels: REGIONS, values: [1240, 980, 1105, 1430] },
-      { name: 'Q3', labels: REGIONS, values: [1385, 1012, 1060, 1598] },
+      { name: 'Q3', labels: REGIONS, values: [1385, 1012, revised ? 1095 : 1060, 1598] },
     ],
     {
       x: 0.5,
@@ -908,6 +916,19 @@ function samplePresentation() {
       valAxisLabelColor: '404040',
     },
   );
+
+  if (revised) {
+    slide = pptx.addSlide();
+    slideTitle(slide, 'Next steps');
+    slide.addText(
+      [
+        { text: 'Open two more offices in the South', options: { bullet: true } },
+        { text: 'Hire a support lead for the East', options: { bullet: true } },
+        { text: 'Review pricing before the Q4 launch', options: { bullet: true } },
+      ],
+      { x: 0.7, y: 1.3, w: 8.5, h: 3.5, fontSize: 20, color: '262626', valign: 'top' },
+    );
+  }
 
   slide = pptx.addSlide();
   slideTitle(slide, 'Shapes and pictures');
@@ -950,7 +971,7 @@ function samplePresentation() {
     line: { color: '7F7F7F', width: 2, dashType: 'dash' },
   });
   slide.addImage({
-    data: `data:image/png;base64,${photo().toString('base64')}`,
+    data: `data:image/png;base64,${photo({ warm: revised }).toString('base64')}`,
     x: 7.2,
     y: 1.4,
     w: 2.4,
@@ -973,28 +994,30 @@ function samplePresentation() {
     color: '7F6000',
   });
 
-  slide = pptx.addSlide();
-  slide.background = { color: '1B1B2F' };
-  slide.addText('Already dark', {
-    x: 0.5,
-    y: 1.8,
-    w: 9,
-    h: 1,
-    fontSize: 36,
-    bold: true,
-    color: 'FFFFFF',
-    align: 'center',
-  });
-  slide.addText('Slides designed dark stay as they are.', {
-    x: 0.5,
-    y: 2.8,
-    w: 9,
-    h: 0.6,
-    fontSize: 18,
-    color: 'BFBFBF',
-    align: 'center',
-  });
-  slide.addNotes('Speaker notes for the dark slide.');
+  if (!revised) {
+    slide = pptx.addSlide();
+    slide.background = { color: '1B1B2F' };
+    slide.addText('Already dark', {
+      x: 0.5,
+      y: 1.8,
+      w: 9,
+      h: 1,
+      fontSize: 36,
+      bold: true,
+      color: 'FFFFFF',
+      align: 'center',
+    });
+    slide.addText('Slides designed dark stay as they are.', {
+      x: 0.5,
+      y: 2.8,
+      w: 9,
+      h: 0.6,
+      fontSize: 18,
+      color: 'BFBFBF',
+      align: 'center',
+    });
+    slide.addNotes('Speaker notes for the dark slide.');
+  }
 
   slide = pptx.addSlide();
   slide.background = { data: `image/png;base64,${photo().toString('base64')}` };
@@ -1089,6 +1112,7 @@ async function writePresentation(path, pptx) {
 
 if (!LARGE_ONLY) {
   await writePresentation(`${OUT}/sample.pptx`, samplePresentation());
+  await writePresentation(`${OUT}/sample-revised.pptx`, samplePresentation({ revised: true }));
   await writePresentation(`${OUT}/long.pptx`, longPresentation(30));
 }
 await writePresentation(`${OUT}/generated/large.pptx`, longPresentation(200));

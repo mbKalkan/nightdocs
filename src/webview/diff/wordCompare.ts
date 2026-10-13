@@ -1,8 +1,7 @@
-import { diff, sameToken, tokenize } from '../../shared/diff';
 import type { DiffSide, WordSummary } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
 import { align } from './align';
-import { clearMarks, markRanges, otherChange, ownChange, textOf } from './marks';
+import { clearMarks, markWords, otherChange, ownChange, textOf } from './marks';
 import { revealByTops, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
 
 export interface WordBlocks {
@@ -94,24 +93,4 @@ export function compareWord(
     scrollTo: (anchor) => scrollToAnchor(context.viewport, elements, anchor),
     dispose: () => clearMarks(root, CLASSES),
   };
-}
-
-/** Marks the words of `element` that aren't in `other`, its counterpart on the other side. */
-function markWords(element: HTMLElement, other: string, className: string): void {
-  const mine = tokenize(textOf(element));
-  const theirs = tokenize(other);
-  const ranges: [number, number][] = [];
-  const blank = (index: number) => /^\s+$/.test(mine[index].text);
-  for (const range of diff(mine, theirs, sameToken)) {
-    if (range.kind !== 'delete') continue;
-    let from = range.aStart;
-    let to = range.aEnd;
-    while (from < to && blank(from)) from++;
-    while (to > from && blank(to - 1)) to--;
-    if (from < to) {
-      const last = mine[to - 1];
-      ranges.push([mine[from].start, last.start + last.text.length]);
-    }
-  }
-  markRanges(element, ranges, className);
 }
