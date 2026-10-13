@@ -3,6 +3,10 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { crc32, deflateSync } from 'node:zlib';
 import {
   AlignmentType,
+  CommentRangeEnd,
+  CommentRangeStart,
+  CommentReference,
+  DeletedTextRun,
   Document,
   ExternalHyperlink,
   Footer,
@@ -10,6 +14,7 @@ import {
   Header,
   HeadingLevel,
   ImageRun,
+  InsertedTextRun,
   LevelFormat,
   Packer,
   PageBreak,
@@ -317,6 +322,71 @@ function sampleDocument({ revised = false } = {}) {
   });
 }
 
+/** A document under review: comments and tracked changes, as a colleague sends it back. */
+function reviewDocument() {
+  const date = new Date(Date.UTC(2026, 9, 1, 9, 30));
+  const author = 'Alex Morgan';
+  const revision = { author, date: '2026-10-01T09:30:00Z' };
+  const comment = (id, text) => ({
+    id,
+    author,
+    initials: 'AM',
+    date,
+    children: [new Paragraph(text)],
+  });
+  const commented = (id, text) => [
+    new CommentRangeStart(id),
+    new TextRun(text),
+    new CommentRangeEnd(id),
+    new TextRun({ children: [new CommentReference(id)] }),
+  ];
+  return new Document({
+    creator: 'Nightdocs',
+    title: 'Supply Agreement',
+    comments: {
+      children: [
+        comment(0, 'Can we commit to 20 days? Sales asked for it.'),
+        comment(1, 'Legal wants this reviewed before signing.'),
+      ],
+    },
+    sections: [
+      {
+        children: [
+          new Paragraph({ text: 'Supply Agreement', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({
+            children: [
+              new TextRun('The supplier delivers the goods '),
+              ...commented(0, 'within 30 days'),
+              new TextRun(' of each order.'),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun('Payment is due within '),
+              new DeletedTextRun({ id: 10, ...revision, text: '60' }),
+              new InsertedTextRun({ id: 11, ...revision, text: '45' }),
+              new TextRun(' days of the invoice date.'),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun('Either party may end this agreement with '),
+              new InsertedTextRun({ id: 12, ...revision, text: 'three months of ' }),
+              new TextRun('written notice.'),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              ...commented(1, 'The liability of each party is limited'),
+              new TextRun(' to the value of the orders of the last twelve months.'),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+}
+
 function longDocument() {
   const random = makeRandom(42);
   const children = [];
@@ -371,6 +441,7 @@ if (!LARGE_ONLY) {
   await write('sample.docx', sampleDocument());
   await write('sample-revised.docx', sampleDocument({ revised: true }));
   await write('long.docx', longDocument());
+  await write('review.docx', reviewDocument());
 }
 
 if (!LARGE_ONLY) {

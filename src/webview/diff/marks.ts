@@ -19,6 +19,12 @@ interface Segment {
   length: number;
 }
 
+/**
+ * Marks an element that isn't part of the document's text, such as a deleted tracked change or
+ * a comment's popup; comparisons leave it out.
+ */
+export const NOT_TEXT = 'data-nd-not-text';
+
 /** Elements that start a new block of text, so their words don't run into the ones before. */
 const BLOCKS = new Set(['DIV', 'P', 'LI', 'TR', 'TD', 'TH', 'BR', 'TABLE', 'SECTION']);
 
@@ -32,6 +38,7 @@ function segments(root: Element): Segment[] {
   };
   const walk = (node: Node) => {
     for (const child of node.childNodes) {
+      if (child instanceof Element && child.hasAttribute(NOT_TEXT)) continue;
       if (child instanceof Text) {
         push(child, child.data.length);
       } else if (child instanceof HTMLImageElement || child instanceof SVGSVGElement) {

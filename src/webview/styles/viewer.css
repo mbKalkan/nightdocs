@@ -366,6 +366,145 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   outline: 1px solid var(--vscode-contrastBorder);
 }
 
+/* Word comments and tracked changes, as Word's "All Markup" shows them. Insertions and
+   deletions take the diff colors; commented text takes VS Code's comment range colors. */
+
+.ov-content section.docx ins {
+  background-color: var(--ov-diff-added-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ov-diff-added-bar);
+}
+
+.ov-content section.docx del {
+  background-color: var(--ov-diff-removed-text);
+  text-decoration: line-through;
+  text-decoration-color: var(--ov-diff-removed-bar);
+}
+
+.ov-content [data-markup-hidden] section.docx ins {
+  background: none;
+  text-decoration: none;
+}
+
+.ov-content [data-markup-hidden] section.docx del,
+.ov-content [data-markup-hidden] .nd-comment,
+.ov-content .docx-comment-popover {
+  display: none !important;
+}
+
+::highlight(nd-comment) {
+  background-color: var(--vscode-editorCommentsWidget-rangeBackground, rgb(255 196 0 / 18%));
+}
+
+::highlight(nd-comment-active) {
+  background-color: var(--vscode-editorCommentsWidget-rangeActiveBackground, rgb(255 196 0 / 35%));
+}
+
+.ov-content .nd-comment {
+  display: inline-flex;
+  width: 1.1em;
+  height: 1.1em;
+  margin: 0 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--vscode-editorCommentsWidget-unresolvedBorder, var(--vscode-textLink-foreground));
+  vertical-align: -0.15em;
+  cursor: pointer;
+}
+
+.ov-content .nd-comment svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ov-content .nd-comment:hover,
+.ov-content .nd-comment[aria-expanded] {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.ov-content .nd-comment:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+.nd-comment-popup {
+  position: absolute;
+  z-index: 20;
+  max-width: min(360px, calc(100% - 16px));
+  padding: 6px 10px;
+  border: 1px solid var(--vscode-editorHoverWidget-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
+  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 0.36));
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: text;
+}
+
+.nd-comment-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.nd-comment-author {
+  font-weight: 600;
+}
+
+.nd-comment-date {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.nd-comment-popup p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.nd-comment-popup p + p {
+  margin-top: 4px;
+}
+
+/* Text buttons in the status bar, like VS Code's own status bar items. */
+.ov-status-button {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  margin: 3px 2px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ov-status-button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.ov-status-button[aria-pressed='true'] {
+  color: var(--vscode-foreground);
+}
+
+.ov-status-button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.ov-status-button svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* Presentations (rendered by pptx-renderer) */
 
 .ov-content .pptx-deck {

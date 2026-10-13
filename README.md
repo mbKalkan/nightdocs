@@ -34,6 +34,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 ### Word (`.docx`)
 
 - Page layout with headers, footers, footnotes, tables, lists, images and links
+- Comments and tracked changes, as Word's "All Markup" shows them: hover a comment to read it,
+  list them all from the status bar, or hide the markup to read the text with all changes accepted
 - Documents that Word never paginated (exports from other apps, generated files) are split into
   pages
 - The status bar shows the current page; **Go to Heading…** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
