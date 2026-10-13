@@ -2,7 +2,7 @@
   "name": "nightdocs",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "publisher": "MBKDevStudio",
   "icon": "assets/icon.png",
   "license": "MIT",
@@ -54,7 +54,6 @@
     "compare",
     "git diff"
   ],
-  "preview": true,
   "pricing": "Free",
   "galleryBanner": {
     "color": "#1e2033",

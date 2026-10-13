@@ -6,9 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-14
+
+First stable release: Nightdocs is no longer marked as a preview. Checked against hundreds of
+real-world documents, it now opens large workbooks faster and says when a file is damaged.
+
 ### Added
 
 - Audio and video embedded in presentations play, in the formats VS Code can decode.
+
+### Changed
+
+- No longer marked as a preview on the Marketplace.
 
 ### Fixed
 
@@ -191,7 +200,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/mbKalkan/nightdocs/compare/v0.6.0...v1.0.0
 [0.6.0]: https://github.com/mbKalkan/nightdocs/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mbKalkan/nightdocs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbKalkan/nightdocs/compare/v0.3.0...v0.4.0
