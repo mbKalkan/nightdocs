@@ -130,6 +130,8 @@ describe('openWorkbook', () => {
       to: { col: 8, row: 17 },
       text: 'Q3 revenue by region',
     });
+    // The chart part itself, to draw the chart with.
+    expect(chart.chart?.xml).toContain('<c:barChart>');
     expect(picture).toMatchObject({ kind: 'picture', mime: 'image/png', from: { col: 9, row: 0 } });
     expect([...picture.image!.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     expect(text).toMatchObject({

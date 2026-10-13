@@ -7,11 +7,10 @@ import {
   type SlideHandle,
   type SlideRendererOptions,
 } from '@aiden0z/pptx-renderer';
-import type { DarkPalette } from '../../shared/color';
 import type { SlideSummary, ViewerStrings } from '../../shared/protocol';
 import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
 import { compareSlides, summarizeSlides } from '../diff/slideCompare';
-import { adaptChartOption, type Chart } from '../pptx/chartColors';
+import { settleChart, type Chart } from '../pptx/chartColors';
 import { readNotes } from '../pptx/notes';
 import { slidesPane } from '../pptx/thumbnails';
 import { OBJECT, textOf } from '../diff/marks';
@@ -237,17 +236,6 @@ function slideTitle(slide: SlideData, frame: HTMLElement | undefined): string {
   return (
     lines.map((line) => line.replaceAll(OBJECT, '').replace(/\s+/g, ' ').trim()).find(Boolean) ?? ''
   );
-}
-
-/**
- * Draws a chart once more without its opening animation, which only delays reading it,
- * and with colors for a dark theme when `palette` is given. Series data is replaced rather
- * than merged by `setOption`, so the whole option goes back.
- */
-function settleChart(chart: Chart, palette: DarkPalette | undefined): void {
-  const option = chart.getOption();
-  const next = palette ? adaptChartOption(option, palette) : { ...option };
-  chart.setOption({ ...next, animation: false }, { notMerge: true });
 }
 
 /**
