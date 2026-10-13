@@ -7,6 +7,7 @@ import type {
   ReadErrorMessage,
   ViewerStrings,
 } from '../shared/protocol';
+import { isDamaged } from './damaged';
 import { isDarkTheme, readPalette } from './darkColors';
 import { DiffController } from './diff/controller';
 import { picked } from './picker';
@@ -211,7 +212,8 @@ async function show(message: LoadMessage): Promise<void> {
   } catch (error) {
     console.error(error);
     if (id === renderId && !keepOnFailure) {
-      showError(message, message.strings.errorRender);
+      const { errorDamaged, errorRender } = message.strings;
+      showError(message, isDamaged(error) ? errorDamaged : errorRender);
     }
   } finally {
     stage.remove();

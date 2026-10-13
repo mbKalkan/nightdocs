@@ -44,9 +44,9 @@ interface SheetEntry extends SheetInfo {
 }
 
 export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<OpenedWorkbook> {
-  const zip = await JSZip.loadAsync(bytes);
+  const fileAt = partFinder(await JSZip.loadAsync(bytes));
   const read = async (path: string | undefined) =>
-    path ? ((await zip.file(path)?.async('string')) ?? undefined) : undefined;
+    path ? ((await fileAt(path)?.async('string')) ?? undefined) : undefined;
 
   const rootRels = await relationships(read, '');
   const workbookPath =
@@ -75,7 +75,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
   const sheetsXml = firstElement(workbookXml, 'sheets')?.body ?? '';
   for (const sheet of elements(sheetsXml, 'sheet')) {
     const path = rels.get(sheet.attrs.id)?.target;
-    if (path && zip.file(path)) {
+    if (path && fileAt(path)) {
       sheets.push({
         name: sheet.attrs.name ?? `Sheet${sheets.length + 1}`,
         hidden: sheet.attrs.state === 'hidden' || sheet.attrs.state === 'veryHidden',
@@ -88,7 +88,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
   }
   await Promise.all(
     sheets.map(async (sheet) => {
-      sheet.tabColor = await readTabColor(zip, sheet.path, theme);
+      sheet.tabColor = await readTabColor(fileAt, sheet.path, theme);
     }),
   );
 
@@ -116,7 +116,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
       const sheet = parseSheet(xml, { sharedStrings, styles, formats, date1904 });
       sheet.links = [...(await readLinks(read, path!, xml)), ...sheet.links];
       sheet.conditional = evaluateConditionalFormats(xml, sheet, dxfs, theme);
-      sheet.drawings = await readDrawings(zip, read, path!, xml, theme);
+      sheet.drawings = await readDrawings(fileAt, read, path!, xml, theme);
       fitDrawings(sheet);
       return sheet;
     },
@@ -163,13 +163,36 @@ function resolvePath(folder: string, target: string): string {
   return resolved.join('/');
 }
 
+type PartFinder = (path: string) => JSZip.JSZipObject | null;
+
+/**
+ * Finds a part by its path. Some tools write the zip's entries with backslashes or in another
+ * case, as `xl\Workbook.xml`; Excel opens such files, so their parts are found too.
+ */
+function partFinder(zip: JSZip): PartFinder {
+  let loose: Map<string, JSZip.JSZipObject> | undefined;
+  const key = (path: string) => path.replace(/\\/g, '/').toLowerCase();
+  return (path) => {
+    const exact = zip.file(path);
+    if (exact) return exact;
+    if (!loose) {
+      const entries = new Map<string, JSZip.JSZipObject>();
+      zip.forEach((name, file) => {
+        if (!file.dir) entries.set(key(name), file);
+      });
+      loose = entries;
+    }
+    return loose.get(key(path)) ?? null;
+  };
+}
+
 /** Reads just the start of a sheet part, where `<sheetPr><tabColor>` lives. */
 async function readTabColor(
-  zip: JSZip,
+  fileAt: PartFinder,
   path: string,
   theme: string[],
 ): Promise<string | undefined> {
-  const file = zip.file(path);
+  const file = fileAt(path);
   if (!file) return undefined;
   const head = await new Promise<string>((resolve) => {
     let text = '';
@@ -366,6 +389,8 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   let rowNumber = -1;
   for (const row of elements(sheetData, 'row')) {
     rowNumber = row.attrs.r ? parseInt(row.attrs.r, 10) - 1 : rowNumber + 1;
+    // Rows past Excel's last one can't be shown; Excel leaves them out too.
+    if (!(rowNumber >= 0 && rowNumber < MAX_ROWS)) continue;
     if (row.attrs.hidden === '1' || row.attrs.hidden === 'true') {
       rowHeightOverrides.set(rowNumber, 0);
     } else if (row.attrs.ht) {
@@ -379,6 +404,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     for (const cell of elements(row.body, 'c')) {
       const ref = cell.attrs.r ? parseCellRef(cell.attrs.r) : undefined;
       colNumber = ref ? ref.col : colNumber + 1;
+      if (!(colNumber >= 0 && colNumber < MAX_COLS)) continue;
       const style = parseInt(cell.attrs.s ?? '0', 10) || 0;
       const value = valueOf(cell.body, cell.attrs.t, context, style);
       if (
@@ -402,7 +428,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   const merges: number[] = [];
   for (const merge of elements(firstElement(xml, 'mergeCells')?.body ?? '', 'mergeCell')) {
     const [from, to] = (merge.attrs.ref ?? '').split(':').map(parseCellRef);
-    if (from && to) {
+    if (from && to && to.row < MAX_ROWS && to.col < MAX_COLS) {
       merges.push(from.row, from.col, to.row, to.col);
     }
   }
@@ -417,8 +443,10 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     lastRow = Math.max(lastRow, merges[i + 2]);
     lastCol = Math.max(lastCol, merges[i + 3]);
   }
-  const frozenRows = frozen ? parseInt(pane?.attrs.ySplit ?? '0', 10) || 0 : 0;
-  const frozenCols = frozen ? parseInt(pane?.attrs.xSplit ?? '0', 10) || 0 : 0;
+  const split = (value: string | undefined, limit: number) =>
+    Math.min(Math.max(parseInt(value ?? '0', 10) || 0, 0), limit);
+  const frozenRows = frozen ? split(pane?.attrs.ySplit, MAX_ROWS) : 0;
+  const frozenCols = frozen ? split(pane?.attrs.xSplit, MAX_COLS) : 0;
   const rowCount = Math.max(lastRow + 1, frozenRows, MIN_ROWS);
   const colCount = Math.max(lastCol + 1, frozenCols, MIN_COLS);
 
@@ -691,7 +719,7 @@ const MEDIA_TYPES: Record<string, string> = {
 
 /** Pictures, chart placeholders and text boxes from the sheet's drawing part. */
 async function readDrawings(
-  zip: JSZip,
+  fileAt: PartFinder,
   read: (path: string | undefined) => Promise<string | undefined>,
   sheetPath: string,
   sheetXml: string,
@@ -719,7 +747,7 @@ async function readDrawings(
     const chart = /<(?:[\w.-]+:)?chart\b[^>]*\bid="([^"]+)"/.exec(anchor.body);
     if (blip?.attrs.embed) {
       const target = rels.get(blip.attrs.embed)?.target;
-      const file = target ? zip.file(target) : null;
+      const file = target ? fileAt(target) : null;
       const mime = target && MEDIA_TYPES[target.slice(target.lastIndexOf('.') + 1).toLowerCase()];
       if (file && mime) {
         const image = new Uint8Array(await file.async('arraybuffer'));

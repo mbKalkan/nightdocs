@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import JSZip from 'jszip';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { readThemeColors, resolveColor } from '../../src/webview/xlsx/excelColors';
 import { CellKind, type SheetData, type WorkbookInfo } from '../../src/webview/xlsx/model';
@@ -163,6 +164,20 @@ describe('openWorkbook', () => {
     expect(sheet.rowHeights).toHaveLength(sheet.rowCount);
     expect(sheet.colWidths).toHaveLength(sheet.colCount);
     expect(sheet.rowHeights[sheet.rowCount - 1]).toBe(sheet.defaultRowHeight);
+  });
+
+  it('finds parts written with backslashes and in another case, as Excel does', async () => {
+    const original = await JSZip.loadAsync(bytes);
+    const loose = new JSZip();
+    for (const file of Object.values(original.files)) {
+      if (file.dir) continue;
+      const name = file.name.replace(/\//g, '\\').toUpperCase();
+      loose.file(name, await file.async('uint8array'), { createFolders: false });
+    }
+    const workbook = await openWorkbook(await loose.generateAsync({ type: 'uint8array' }), 'en-US');
+    expect(workbook.info.sheets.map((sheet) => sheet.name)).toContain('Budget');
+    const sheet = await workbook.readSheet(0);
+    expect(cell(sheet, 'A1')?.text).toBe('Q3 Budget Overview');
   });
 
   it('rejects files that are not workbooks', async () => {

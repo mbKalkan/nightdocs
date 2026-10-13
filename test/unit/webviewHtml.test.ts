@@ -16,6 +16,10 @@ describe('buildContentSecurityPolicy', () => {
     expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
   });
 
+  it('plays embedded media only from the document itself', () => {
+    expect(csp).toContain('media-src blob:;');
+  });
+
   it('does not allow network or frame access', () => {
     expect(csp).not.toMatch(/connect-src|frame-src|child-src/);
     // No scheme-wide sources such as a bare `https:` or `*`.

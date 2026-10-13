@@ -187,7 +187,8 @@ class WorkbookView implements RenderedDocument {
   }
 
   refresh(): void {
-    this.grid.render(true);
+    // Before it is shown, the grid has no viewport to fit and would draw every cell.
+    if (this.context) this.grid.render(true);
   }
 
   /** The sheets in the navigation pane, for workbooks with more than the tabs show at once. */
@@ -558,6 +559,7 @@ class WorkbookView implements RenderedDocument {
 
   private async showSheet(index: number): Promise<void> {
     if (index === this.index || !this.context) return;
+    const previous = this.index;
     this.index = index;
     this.renderTabs();
     let sheet = this.sheets.get(index);
@@ -568,6 +570,11 @@ class WorkbookView implements RenderedDocument {
         this.sheets.set(index, sheet);
       } catch (error) {
         console.error(error);
+        // A sheet that can't be read leaves the one on screen selected, so the tabs match it.
+        if (this.index === index) {
+          this.index = previous;
+          this.renderTabs();
+        }
         return;
       } finally {
         this.context.setBusy(false);
