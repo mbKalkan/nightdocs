@@ -1193,6 +1193,32 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   color: var(--vscode-foreground);
 }
 
+/* The selected cell's formula, after its value, marked "fx" like Excel's formula bar. */
+.ov-status > .ov-status-formula {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--vscode-foreground);
+}
+
+.ov-status-fx {
+  margin-right: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+}
+
+/* Read by screen readers only. */
+.ov-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* When comparing, what changed in the selected cell from the other version. */
 .ov-status .nd-diff-word {
   border-radius: 2px;

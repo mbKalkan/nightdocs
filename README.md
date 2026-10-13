@@ -51,8 +51,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Text spills into empty neighbors the way it's aligned, including center across selection
 - Conditional formatting: highlight rules, color scales and data bars
 - Pictures and text boxes; charts appear as placeholders with their title
-- Select cells with the mouse or keyboard, copy them, and see the cell's text or Sum, Count and
-  Average in the status bar under the sheet tabs
+- Select cells with the mouse or keyboard, copy them, and see the cell's text and formula, or Sum,
+  Count and Average, in the status bar under the sheet tabs
 - Find across the whole sheet, not only the visible cells
 - Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, pick a sheet
   from **All Sheets** (also **Go to Sheet…**, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>), where

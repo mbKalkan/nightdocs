@@ -9,6 +9,7 @@ import {
   type Drawing,
   type SheetData,
 } from './model';
+import { columnName } from './refs';
 import type { CellColors } from './styleSheet';
 import { fontStack } from './styleSheet';
 
@@ -265,6 +266,12 @@ export class SheetGrid {
   textAt(row: number, col: number): string {
     const index = this.cellIndex(row, col);
     return index < 0 ? '' : this.sheet.texts[this.sheet.cellTexts[index]];
+  }
+
+  /** The cell's formula as Excel's formula bar shows it, '' when it has none. */
+  formulaAt(row: number, col: number): string {
+    const index = this.cellIndex(row, col);
+    return index < 0 ? '' : (this.sheet.formulas.get(index) ?? '');
   }
 
   numberAt(row: number, col: number): number {
@@ -881,14 +888,6 @@ export class SheetGrid {
     }
     return low;
   }
-}
-
-export function columnName(col: number): string {
-  let name = '';
-  for (let n = col + 1; n > 0; n = Math.floor((n - 1) / 26)) {
-    name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
-  }
-  return name;
 }
 
 function alignClass(horizontal: string): string {

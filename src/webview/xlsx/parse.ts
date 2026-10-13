@@ -1,10 +1,12 @@
 import JSZip from 'jszip';
 import { evaluateConditionalFormats, parseDxfs } from './conditional';
 import { firstColor, readThemeColors, resolveColor } from './excelColors';
+import { displayFormula } from './formula';
 import {
   CellKind,
   type BorderSide,
   type CellAnchor,
+  type CellRange,
   type CellStyle,
   type Drawing,
   type SheetData,
@@ -12,8 +14,8 @@ import {
   type WorkbookInfo,
 } from './model';
 import { builtInFormats, formatNumber, formatText } from './numberFormat';
-import { parseCellRef } from './refs';
-import { decodeEntities, elements, firstElement, textRuns } from './xml';
+import { parseCellRef, parseRange } from './refs';
+import { decodeEntities, elements, firstElement, parseAttributes, textRuns } from './xml';
 
 const REL_OFFICE_DOCUMENT = /\/officeDocument$/;
 const REL_STYLES = /\/styles$/;
@@ -345,6 +347,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   const rowHeightOverrides = new Map<number, number>();
   const rowStyles = new Map<number, number>();
   const colStyles: SheetData['colStyles'] = [];
+  const formulas = new FormulaReader();
 
   const dataStart = xml.search(/<(?:[\w.-]+:)?sheetData[\s>]/);
   const dataEnd = xml.search(/<\/(?:[\w.-]+:)?sheetData>/);
@@ -376,6 +379,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
       ) {
         ordered = false;
       }
+      formulas.read(cell, rows.length, rowNumber, colNumber);
       rows.push(rowNumber);
       cols.push(colNumber);
       styleIds.push(style < context.styles.length ? style : 0);
@@ -422,7 +426,9 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   const cellTexts = new Uint32Array(count);
   const cellNumbers = new Float64Array(count);
   const cellFormatColors = new Uint8Array(count);
+  const targets = new Uint32Array(count);
   order.forEach((source, target) => {
+    targets[source] = target;
     rowStarts[rows[source] + 1]++;
     cellCols[target] = cols[source];
     cellStyles[target] = styleIds[source];
@@ -434,6 +440,7 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
   for (let r = 0; r < rowCount; r++) {
     rowStarts[r + 1] += rowStarts[r];
   }
+  const cellFormulas = formulas.byCell(targets, rowStarts, cellCols);
 
   const rowHeights = new Float32Array(rowCount).fill(defaultRowHeight);
   for (const [row, height] of rowHeightOverrides) {
@@ -474,10 +481,69 @@ export function parseSheet(xml: string, context: SheetContext): SheetData {
     frozenCols,
     showGridLines: view?.attrs.showGridLines !== '0' && view?.attrs.showGridLines !== 'false',
     drawings: [],
+    formulas: cellFormulas,
     conditional: new Map(),
     rowStyles,
     colStyles,
   };
+}
+
+const FORMULA = /<(?:[\w.-]+:)?f(?=[\s/>])([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:[\w.-]+:)?f>)/;
+
+/**
+ * Collects cell formulas as Excel shows them. Files store a formula filled down or across once,
+ * as a shared formula, and an array formula once for its whole range.
+ */
+class FormulaReader {
+  private readonly formulas = new Map<number, string>();
+  private readonly shared = new Map<string, { formula: string; row: number; col: number }>();
+  private readonly sharedUses: { cell: number; id: string; row: number; col: number }[] = [];
+  private readonly arrays: { range: CellRange; formula: string }[] = [];
+
+  /** Reads the formula of the cell at `cell`, in file order, if it has one. */
+  read(
+    element: { attrs: Record<string, string>; body: string },
+    cell: number,
+    row: number,
+    col: number,
+  ): void {
+    const match = element.body.includes('f') ? FORMULA.exec(element.body) : null;
+    if (!match) return;
+    const attrs = parseAttributes(match[1]);
+    const text = decodeEntities(match[2] ?? '');
+    if (attrs.t === 'shared' && attrs.si !== undefined) {
+      if (text) this.shared.set(attrs.si, { formula: text, row, col });
+      this.sharedUses.push({ cell, id: attrs.si, row, col });
+    } else if (attrs.t === 'array' && text) {
+      const range = parseRange(attrs.ref ?? '') ?? { row1: row, col1: col, row2: row, col2: col };
+      // Dynamic arrays (marked by cell metadata) spill without braces; older ones show them.
+      const formula = `=${displayFormula(text)}`;
+      this.arrays.push({ range, formula: element.attrs.cm ? formula : `{${formula}}` });
+    } else if (text && attrs.t !== 'dataTable') {
+      this.formulas.set(cell, `=${displayFormula(text)}`);
+    }
+  }
+
+  /** The formulas by the cells' final indices, once the cells are sorted. */
+  byCell(targets: Uint32Array, rowStarts: Uint32Array, cellCols: Uint16Array): Map<number, string> {
+    for (const use of this.sharedUses) {
+      const first = this.shared.get(use.id);
+      if (!first) continue;
+      const moved = displayFormula(first.formula, use.row - first.row, use.col - first.col);
+      this.formulas.set(use.cell, `=${moved}`);
+    }
+    const result = new Map<number, string>();
+    for (const [cell, formula] of this.formulas) result.set(targets[cell], formula);
+    const rowCount = rowStarts.length - 1;
+    for (const { range, formula } of this.arrays) {
+      for (let r = range.row1; r <= Math.min(range.row2, rowCount - 1); r++) {
+        for (let i = rowStarts[r]; i < rowStarts[r + 1]; i++) {
+          if (cellCols[i] >= range.col1 && cellCols[i] <= range.col2) result.set(i, formula);
+        }
+      }
+    }
+    return result;
+  }
 }
 
 function isTrue(value: string | undefined): boolean {

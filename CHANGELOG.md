@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The status bar shows the selected cell's formula after its value, as Excel's formula bar does,
+  including formulas filled down or across and array formulas.
+
 ## [0.5.0] - 2026-10-13
 
 Find your way around a document as in Office: a navigation pane, Go to Heading and Go to Slide,

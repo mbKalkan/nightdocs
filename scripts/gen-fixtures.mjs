@@ -549,7 +549,10 @@ function budgetSheet() {
         ref: `D${r}`,
         value: Math.round(((q3 - q2) / q2) * 1000) / 1000,
         style: 5,
-        formula: `C${r}/B${r}-1`,
+        // Filled down from D3, so stored once as a shared formula.
+        ...(i === 0
+          ? { formula: 'C3/B3-1', shared: { si: 0, ref: 'D3:D8' } }
+          : { shared: { si: 0 } }),
       },
       { ref: `F${r}`, value: date, style: 7 },
     );
@@ -561,7 +564,7 @@ function budgetSheet() {
     { ref: 'A9', value: 'Total', style: 9 },
     { ref: 'B9', value: q2, style: 10, formula: 'SUM(B3:B8)' },
     { ref: 'C9', value: q3, style: 10, formula: 'SUM(C3:C8)' },
-    { ref: 'D9', value: Math.round(((q3 - q2) / q2) * 1000) / 1000, style: 5 },
+    { ref: 'D9', value: Math.round(((q3 - q2) / q2) * 1000) / 1000, style: 5, formula: 'C9/B9-1' },
     { ref: 'E9', value: null, style: 9 },
     { ref: 'F9', value: null, style: 9 },
     { ref: 'A10', value: 'Note:', style: 0 },

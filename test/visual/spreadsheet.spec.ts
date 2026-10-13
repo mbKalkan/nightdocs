@@ -170,6 +170,34 @@ test('selects cells and sums ranges in the status bar', async ({ page }) => {
   expect(await copied(page)).toBe('1,240\t1,385\n980\t1,012\n1,105\t1,060');
 });
 
+test("shows the selected cell's formula like Excel's formula bar", async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  const formula = page.locator('.ov-status-formula');
+
+  await clickCell(page, 'B', 9);
+  await expect(status(page)).toContainText('7,725');
+  await expect(formula).toHaveText('fxFormula =SUM(B3:B8)');
+  // Filled down, so stored once: each cell shows its own references.
+  await clickCell(page, 'D', 5);
+  await expect(status(page)).toContainText('-4.1%');
+  await expect(formula).toHaveText('fxFormula =C5/B5-1');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-formula-dark.png`);
+
+  // Plain values and ranges show none.
+  await clickCell(page, 'B', 5);
+  await expect(formula).toHaveCount(0);
+  await clickCell(page, 'D', 8, ['Shift']);
+  await expect(status(page)).toContainText('Sum:');
+  await expect(formula).toHaveCount(0);
+
+  await clickCell(page, 'D', 5);
+  await viewer.setTheme('light');
+  await expect(formula).toHaveText('fxFormula =C5/B5-1');
+  await shootBottomBars(page, `${SCREENS}/spreadsheet-formula-light.png`);
+  expect(viewer.problems).toEqual([]);
+});
+
 test('moves the selection with the keyboard', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');

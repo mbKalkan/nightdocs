@@ -4,7 +4,7 @@
 import JSZip from 'jszip';
 
 /**
- * @typedef {{ ref: string, value: string | number | boolean | null, style?: number, error?: boolean, formula?: string }} Cell
+ * @typedef {{ ref: string, value: string | number | boolean | null, style?: number, error?: boolean, formula?: string, shared?: { si: number, ref?: string } }} Cell
  * @typedef {{ name: string, hidden?: boolean, tabColor?: string, frozen?: { rows: number, cols: number },
  *   showGridLines?: boolean, cols?: { min: number, max: number, width: number, hidden?: boolean, style?: number }[],
  *   rowHeights?: Record<number, number>, rowStyles?: Record<number, number>, hiddenRows?: number[],
@@ -81,7 +81,14 @@ export async function writeXlsx({ sheets, styles, activeSheet = 0 }) {
           .sort((a, b) => colOf(a.ref) - colOf(b.ref))
           .map((cell) => {
             const s = cell.style ? ` s="${cell.style}"` : '';
-            const f = cell.formula ? `<f>${escape(cell.formula)}</f>` : '';
+            // A shared formula is written once, on the first cell of its range, as Excel does.
+            const f = cell.shared
+              ? cell.shared.ref
+                ? `<f t="shared" ref="${cell.shared.ref}" si="${cell.shared.si}">${escape(cell.formula)}</f>`
+                : `<f t="shared" si="${cell.shared.si}"/>`
+              : cell.formula
+                ? `<f>${escape(cell.formula)}</f>`
+                : '';
             if (cell.value === null || cell.value === undefined) return `<c r="${cell.ref}"${s}/>`;
             if (cell.error)
               return `<c r="${cell.ref}"${s} t="e">${f}<v>${escape(cell.value)}</v></c>`;
