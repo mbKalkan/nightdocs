@@ -27,6 +27,8 @@ export class DiffController {
   /** Scroll position set to follow the other side; its scroll event isn't passed back. */
   private following: number | undefined;
   private revealed = false;
+  /** The last move between changes, which the next one waits for. */
+  private moving: Promise<void> = Promise.resolve();
   private readonly cleanup: (() => void)[] = [];
 
   setSide(side: DiffSide | undefined): void {
@@ -185,8 +187,17 @@ export class DiffController {
     vscode.postMessage({ type: 'scroll', anchor });
   }
 
-  /** Moves to the next (1) or previous (-1) change, wrapping around at the ends. */
-  private async go(direction: 1 | -1, announce = true): Promise<void> {
+  /**
+   * Moves to the next (1) or previous (-1) change, wrapping around at the ends. A move can take a
+   * while (switching sheets), so moves run one after another and quick presses add up in order.
+   */
+  private go(direction: 1 | -1, announce = true): Promise<void> {
+    const move = this.moving.then(() => this.step(direction, announce));
+    this.moving = move.catch(() => undefined);
+    return move;
+  }
+
+  private async step(direction: 1 | -1, announce: boolean): Promise<void> {
     const { comparison, target } = this;
     if (!comparison || !target || comparison.count === 0) return;
     const index = await comparison.go(direction);
