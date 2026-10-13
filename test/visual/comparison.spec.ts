@@ -188,7 +188,17 @@ test('moves between changes across sheets and switches sheets together', async (
   await modified.page.keyboard.press('F7');
   await expect(status).toHaveText('Change 5 of 6');
   await expect(selectedTab(modified.page)).toHaveText('Summary');
+  // Going on to a sheet that is still loading and straight back lands where it was aimed: both
+  // presses arrive before the sheet does.
+  await modified.page.evaluate(() => {
+    for (const shiftKey of [false, true]) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F7', shiftKey }));
+    }
+  });
+  await expect(status).toHaveText('Change 5 of 6');
+  await expect(selectedTab(modified.page)).toHaveText('Summary');
   await modified.page.keyboard.press('F7');
+  await expect(status).toHaveText('Change 6 of 6');
   await expect(selectedTab(modified.page)).toHaveText('Notes');
   await modified.page.keyboard.press('Shift+F7');
   await expect(status).toHaveText('Change 5 of 6');
