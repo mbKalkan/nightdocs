@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { lastSent } from './comparison';
 import { openViewer } from './harness';
 import { answerPick, lastPick } from './picks';
 
@@ -275,6 +276,38 @@ test('stays on the sheet picked while a linked sheet is still loading', async ({
   await page.waitForTimeout(500);
   await expect(activeTab(page)).toHaveText('Budget');
   await expect(status(page).locator('span').first()).toHaveText('A1');
+  expect(viewer.problems).toEqual([]);
+});
+
+test('copies the selection as a Markdown table', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  const copied = async () => (await lastSent<{ text: string; rows: number }>(viewer, 'copy'))!;
+
+  await clickCell(page, 'A', 2);
+  await clickCell(page, 'D', 5, ['Shift']);
+  await viewer.post({ type: 'command', command: 'copyAsMarkdown' });
+  await expect
+    .poll(async () => (await copied())?.text)
+    .toBe(
+      [
+        '| Region | Q2 | Q3 | Change |',
+        '| --- | ---: | ---: | ---: |',
+        '| North | 1,240 | 1,385 | 11.7% |',
+        '| South | 980 | 1,012 | 3.3% |',
+        '| East | 1,105 | 1,060 | -4.1% |',
+      ].join('\n'),
+    );
+  expect((await copied()).rows).toBe(4);
+
+  // Right-clicking another cell selects it for the context menu; a single cell copies the
+  // block of data around it.
+  const { x, y } = await cellCenter(page, 'B', 7);
+  await page.mouse.click(x, y, { button: 'right' });
+  await expect(status(page).locator('span').first()).toHaveText('B7');
+  await viewer.post({ type: 'command', command: 'copyAsMarkdown' });
+  await expect.poll(async () => (await copied()).rows).toBe(14);
+  expect((await copied()).text.split('\n')[0]).toBe('| Q3 Budget Overview |  |  |  |  |  |');
   expect(viewer.problems).toEqual([]);
 });
 

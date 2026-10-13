@@ -305,6 +305,15 @@ export class SheetGrid {
     return this.sheet.rowCount;
   }
 
+  /** Whether a row or column is shown; hidden ones have no size. */
+  rowShown(row: number): boolean {
+    return row >= this.sheet.rowHeights.length || this.sheet.rowHeights[row] > 0;
+  }
+
+  colShown(col: number): boolean {
+    return col >= this.sheet.colWidths.length || this.sheet.colWidths[col] > 0;
+  }
+
   get colCount(): number {
     return this.sheet.colCount;
   }

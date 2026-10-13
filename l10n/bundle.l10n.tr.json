@@ -17,6 +17,8 @@
   "Count: {0}": "Sayı: {0}",
   "Sum: {0}": "Toplam: {0}",
   "Formula": "Formül",
+  "Copied 1 row as a Markdown table": "1 satır Markdown tablosu olarak kopyalandı",
+  "Copied {0} rows as a Markdown table": "{0} satır Markdown tablosu olarak kopyalandı",
   "Follow Link": "Bağlantıyı Aç",
   "{0}+click to follow link": "Bağlantıyı açmak için {0}+tıklayın",
   "Average: {0}": "Ortalama: {0}",

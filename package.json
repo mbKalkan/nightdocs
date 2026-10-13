@@ -189,6 +189,11 @@
         "command": "nightdocs.toggleNavigation",
         "title": "%command.toggleNavigation%",
         "category": "%category%"
+      },
+      {
+        "command": "nightdocs.copyAsMarkdown",
+        "title": "%command.copyAsMarkdown%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -236,6 +241,17 @@
         {
           "command": "nightdocs.toggleNavigation",
           "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.copyAsMarkdown",
+          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "nightdocs.copyAsMarkdown",
+          "when": "webviewId == 'nightdocs.viewer' && nightdocs.activeFormat == xlsx",
+          "group": "9_cutcopypaste"
         }
       ]
     },

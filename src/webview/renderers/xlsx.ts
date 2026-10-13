@@ -17,7 +17,8 @@ import { NavList } from '../navList';
 import { describe, pick } from '../picker';
 import { vscode } from '../vscodeApi';
 import { SheetGrid } from '../xlsx/grid';
-import type { CellLink, SheetData, WorkbookInfo } from '../xlsx/model';
+import type { CellLink, CellRange, SheetData, WorkbookInfo } from '../xlsx/model';
+import { markdownTable } from '../xlsx/markdown';
 import { columnName, parseRange } from '../xlsx/refs';
 import { SheetTabs } from '../xlsx/sheetTabs';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
@@ -220,6 +221,10 @@ class WorkbookView implements RenderedDocument {
     }
     if (command === 'goTo') {
       void this.pickSheet();
+      return;
+    }
+    if (command === 'copyAsMarkdown') {
+      this.copyAsMarkdown();
       return;
     }
     const visible = this.visibleSheets();
@@ -547,6 +552,10 @@ class WorkbookView implements RenderedDocument {
   }
 
   private onMouseDown(event: MouseEvent): void {
+    if (event.button === 2) {
+      this.selectForContextMenu(event);
+      return;
+    }
     if (event.button !== 0) return;
     const hit = this.grid.hitTest(event.clientX, event.clientY);
     const lastRow = this.grid.rowCount - 1;
@@ -585,6 +594,14 @@ class WorkbookView implements RenderedDocument {
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+  }
+
+  /** As in Excel, right-clicking outside the selection selects the cell, so the menu acts on it. */
+  private selectForContextMenu(event: MouseEvent): void {
+    const { row, col } = this.grid.hitTest(event.clientX, event.clientY);
+    const { row1, col1, row2, col2 } = this.grid.selection;
+    if (row < 0 || col < 0 || (row >= row1 && row <= row2 && col >= col1 && col <= col2)) return;
+    this.grid.select(row, col, false);
   }
 
   /** Over a linked cell, says where it goes and how to follow it. */
@@ -695,6 +712,65 @@ class WorkbookView implements RenderedDocument {
     i += step;
     while (i > 0 && i < limit && !filled(i)) i += step;
     return Math.max(0, Math.min(limit, i));
+  }
+
+  /**
+   * Copies the selection as a Markdown table, as shown: hidden rows and columns are left out. A
+   * single cell stands for the block of data around it, as Ctrl+A picks it in Excel.
+   */
+  private copyAsMarkdown(): void {
+    const selection = this.grid.selection;
+    const single = selection.row1 === selection.row2 && selection.col1 === selection.col2;
+    const range = single ? this.dataBlock(selection.row1, selection.col1) : selection;
+    const lastRow = Math.max(range.row1, Math.min(range.row2, this.grid.lastDataRow));
+    const lastCol = Math.max(range.col1, Math.min(range.col2, this.grid.lastDataCol));
+    const rows = [];
+    for (let r = range.row1; r <= lastRow; r++) {
+      if (!this.grid.rowShown(r)) continue;
+      const cells = [];
+      for (let c = range.col1; c <= lastCol; c++) {
+        if (!this.grid.colShown(c)) continue;
+        const text = this.grid.textAt(r, c);
+        cells.push({ text, number: !Number.isNaN(this.grid.numberAt(r, c)) });
+      }
+      rows.push(cells);
+    }
+    if (rows.every((row) => row.every((cell) => !cell.text))) return;
+    vscode.postMessage({ type: 'copy', text: markdownTable(rows), rows: rows.length });
+  }
+
+  /** The cells around one that hold data with no empty row or column between them. */
+  private dataBlock(row: number, col: number): CellRange {
+    const block = { row1: row, col1: col, row2: row, col2: col };
+    const filled = (r1: number, c1: number, r2: number, c2: number) => {
+      for (let r = Math.max(0, r1); r <= Math.min(r2, this.grid.lastDataRow); r++) {
+        for (let c = Math.max(0, c1); c <= Math.min(c2, this.grid.lastDataCol); c++) {
+          if (this.grid.textAt(r, c)) return true;
+        }
+      }
+      return false;
+    };
+    for (let grown = true; grown;) {
+      grown = false;
+      const { row1, col1, row2, col2 } = block;
+      if (row1 > 0 && filled(row1 - 1, col1 - 1, row1 - 1, col2 + 1)) {
+        block.row1--;
+        grown = true;
+      }
+      if (row2 < this.grid.lastDataRow && filled(row2 + 1, col1 - 1, row2 + 1, col2 + 1)) {
+        block.row2++;
+        grown = true;
+      }
+      if (col1 > 0 && filled(row1 - 1, col1 - 1, row2 + 1, col1 - 1)) {
+        block.col1--;
+        grown = true;
+      }
+      if (col2 < this.grid.lastDataCol && filled(row1 - 1, col2 + 1, row2 + 1, col2 + 1)) {
+        block.col2++;
+        grown = true;
+      }
+    }
+    return block;
   }
 
   private onCopy(event: ClipboardEvent): void {
