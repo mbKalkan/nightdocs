@@ -21,12 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   other side shows an empty stand-in for them, so both decks line up slide for slide.
 - Versions from Git open as committed. That includes Word files that Git for Windows turns into
   plain text for diffs, and files kept in Git LFS whose content is on this machine.
+- **Go to Sheet…** lists every sheet of a workbook in VS Code's quick pick, where typing filters
+  them. Open it with the list button next to the sheet tabs or from the Command Palette.
 
 ### Changed
 
 - The extension is now called **Nightdocs — Office Viewer for Word, Excel & PowerPoint** in the
   Marketplace and the Extensions view. Word, Excel and PowerPoint files are registered as file
   types of their own, so searching the Marketplace by file type (`ext:docx`) finds Nightdocs.
+
+### Fixed
+
+- In workbooks with more sheets than fit, the sheets past the visible tabs can be reached with a
+  mouse. The tabs scroll with the mouse wheel and with arrow buttons that appear when they don't
+  fit, faded edges show there are more, and the current sheet's tab stays in view.
 
 ## [0.2.0] - 2026-10-12
 

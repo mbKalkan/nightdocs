@@ -8,8 +8,10 @@ import type {
 import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
 import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
+import { vscode } from '../vscodeApi';
 import { columnName, SheetGrid } from '../xlsx/grid';
 import type { SheetData, WorkbookInfo } from '../xlsx/model';
+import { SheetTabs } from '../xlsx/sheetTabs';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
 import { WorkbookClient } from '../xlsx/workerClient';
 import type { Comparison, RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
@@ -54,7 +56,7 @@ class WorkbookView implements RenderedDocument {
   private readonly colors: CellColors;
   private readonly host: HTMLElement;
   private context: RenderContext | undefined;
-  private tabs: HTMLElement | undefined;
+  private tabs: SheetTabs | undefined;
   private status: HTMLElement | undefined;
   private readonly cleanup: (() => void)[] = [];
   private readonly numberFormat: Intl.NumberFormat;
@@ -102,15 +104,15 @@ class WorkbookView implements RenderedDocument {
     this.context = context;
     const { viewport, footer } = context;
 
-    this.tabs = document.createElement('div');
-    this.tabs.className = 'ov-sheet-tabs';
-    this.tabs.setAttribute('role', 'tablist');
-    this.tabs.setAttribute('aria-label', this.options.strings.sheets);
+    const tabs = new SheetTabs(this.options.strings, {
+      select: (index) => void this.showSheet(index),
+      pickFromList: () => this.pickSheet(),
+    });
+    this.tabs = tabs;
     this.status = document.createElement('div');
     this.status.className = 'ov-status';
     this.status.setAttribute('aria-live', 'polite');
-    this.tabs.addEventListener('keydown', (event) => this.onTabKeyDown(event));
-    footer.replaceChildren(this.tabs, this.status);
+    footer.replaceChildren(tabs.element, this.status);
     footer.hidden = false;
     // Fill the area around a small sheet with the sheet color.
     viewport.style.background = gridColors(this.options.palette).sheet;
@@ -131,6 +133,7 @@ class WorkbookView implements RenderedDocument {
     viewport.addEventListener('keydown', onKeyDown);
     document.addEventListener('copy', onCopy);
     this.cleanup.push(() => {
+      tabs.dispose();
       viewport.style.background = '';
       cancelAnimationFrame(frame);
       resize.disconnect();
@@ -162,12 +165,21 @@ class WorkbookView implements RenderedDocument {
       this.openFind();
       return;
     }
+    if (command === 'goToSheet') {
+      this.pickSheet();
+      return;
+    }
     const visible = this.visibleSheets();
     const position = visible.indexOf(this.index);
     const next = command === 'nextSheet' ? position + 1 : position - 1;
     if (next >= 0 && next < visible.length) {
       void this.showSheet(visible[next]);
     }
+  }
+
+  goToSheet(name: string): void {
+    const index = this.info.sheets.findIndex((sheet) => sheet.name === name && !sheet.hidden);
+    if (index >= 0) void this.showSheet(index);
   }
 
   /** The displayed values of every visible sheet; the worker reads them all. */
@@ -343,55 +355,35 @@ class WorkbookView implements RenderedDocument {
   }
 
   private renderTabs(): void {
-    if (!this.tabs) return;
-    this.tabs.replaceChildren(
-      ...this.visibleSheets().map((i) => {
-        const sheet = this.info.sheets[i];
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'ov-sheet-tab';
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', String(i === this.index));
-        tab.textContent = sheet.name;
-        tab.title = sheet.name;
-        if (sheet.tabColor) {
-          const color = this.colors.fill(sheet.tabColor) ?? sheet.tabColor;
-          tab.style.setProperty('--tab-color', color);
-          tab.classList.add('ov-sheet-tab-colored');
-        }
+    this.tabs?.render(
+      this.visibleSheets().map((index) => {
+        const sheet = this.info.sheets[index];
         // When comparing, sheets with changes get a dot in the color of this side's changes.
         const comparison = this.diff?.get(sheet.name);
-        if (comparison && comparison.changes.length > 0) {
-          tab.dataset.change = comparison.marks.own;
-        }
-        // One tab stop for the whole list; arrow keys move between tabs.
-        tab.tabIndex = i === this.index ? 0 : -1;
-        tab.addEventListener('click', () => void this.showSheet(i));
-        return tab;
+        return {
+          index,
+          name: sheet.name,
+          color: sheet.tabColor && (this.colors.fill(sheet.tabColor) ?? sheet.tabColor),
+          change: comparison?.changes.length ? comparison.marks.own : undefined,
+        };
       }),
+      this.index,
     );
-    this.tabs
-      .querySelector('[aria-selected="true"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
-  /** Arrow keys, Home and End move between sheet tabs, as in any tab list. */
-  private onTabKeyDown(event: KeyboardEvent): void {
-    const visible = this.visibleSheets();
-    const position = visible.indexOf(this.index);
-    const target = (
-      {
-        ArrowLeft: position - 1,
-        ArrowRight: position + 1,
-        Home: 0,
-        End: visible.length - 1,
-      } as Record<string, number>
-    )[event.key];
-    if (target === undefined || target < 0 || target >= visible.length) return;
-    event.preventDefault();
-    // Switching re-renders the tabs right away, before the sheet itself loads.
-    void this.showSheet(visible[target]);
-    this.tabs?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
+  /** Has VS Code list the sheets to pick from, for workbooks with more tabs than fit. */
+  private pickSheet(): void {
+    vscode.postMessage({
+      type: 'pickSheet',
+      sheets: this.visibleSheets().map((index) => {
+        const { name } = this.info.sheets[index];
+        return {
+          name,
+          current: index === this.index,
+          changed: (this.diff?.get(name)?.changes.length ?? 0) > 0,
+        };
+      }),
+    });
   }
 
   private async showSheet(index: number): Promise<void> {

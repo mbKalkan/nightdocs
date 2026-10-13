@@ -744,7 +744,58 @@ function ordersWorkbook({ revised = false } = {}) {
   return { styles: BASE_STYLES, sheets };
 }
 
+/** More sheets than tabs fit in the footer, opened on one in the middle. */
+function manySheetsWorkbook() {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  const names = [
+    'Summary',
+    ...[2024, 2025].flatMap((year) => months.map((month) => `${month} ${year}`)),
+    ...['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => `${quarter} 2026 Forecast`),
+    'Assumptions',
+    'Customers',
+    'Products',
+    'Regions',
+    'Raw data export from the billing system',
+    'Notes',
+  ];
+  const random = makeRandom(9);
+  const sheets = names.map((name) => {
+    const revenue = 800 + Math.floor(random() * 400);
+    const costs = 500 + Math.floor(random() * 300);
+    return {
+      name,
+      tabColor: name === 'Summary' ? '70AD47' : name.endsWith('Forecast') ? 'ED7D31' : undefined,
+      cols: [{ min: 1, max: 1, width: 14 }],
+      cells: [
+        { ref: 'A1', value: name, style: 2 },
+        { ref: 'A3', value: 'Revenue' },
+        { ref: 'B3', value: revenue, style: 4 },
+        { ref: 'A4', value: 'Costs' },
+        { ref: 'B4', value: costs, style: 4 },
+        { ref: 'A5', value: 'Profit', style: 2 },
+        { ref: 'B5', value: revenue - costs, style: 4, formula: 'B3-B4' },
+      ],
+    };
+  });
+  return { styles: BASE_STYLES, sheets, activeSheet: names.indexOf('Jun 2025') };
+}
+
 if (!LARGE_ONLY) {
+  writeFileSync(`${OUT}/many-sheets.xlsx`, await writeXlsx(manySheetsWorkbook()));
+  console.log(`wrote ${OUT}/many-sheets.xlsx`);
   writeFileSync(`${OUT}/sample.xlsx`, await writeXlsx(sampleWorkbook(2000)));
   console.log(`wrote ${OUT}/sample.xlsx`);
   writeFileSync(`${OUT}/orders.xlsx`, await writeXlsx(ordersWorkbook()));

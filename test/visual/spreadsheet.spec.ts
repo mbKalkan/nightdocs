@@ -214,6 +214,86 @@ test('moves between sheet tabs with the keyboard', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Budget' })).toBeFocused();
 });
 
+/** How far the sheet tabs are scrolled. */
+const tabsScroll = (page: Page) =>
+  page.getByRole('tablist').evaluate((list) => Math.round(list.scrollLeft));
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`reaches every sheet when the tabs don't fit, in the ${theme} theme`, async ({ page }) => {
+    const viewer = await openViewer(page, theme);
+    await viewer.load('many-sheets.xlsx');
+
+    // Opened on a sheet in the middle: its tab is in view, with more tabs on both sides.
+    await expect(activeTab(page)).toHaveText('Jun 2025');
+    await expect(activeTab(page)).toBeInViewport({ ratio: 1 });
+    const left = page.getByRole('button', { name: 'Scroll Sheet Tabs Left' });
+    const right = page.getByRole('button', { name: 'Scroll Sheet Tabs Right' });
+    await expect(left).toBeEnabled();
+    await expect(right).toBeEnabled();
+    await page
+      .locator('.ov-footer')
+      .screenshot({ path: `${SCREENS}/xlsx-many-sheets-${theme}.png` });
+
+    // The arrows page through the tabs to either end.
+    while (await right.isEnabled()) await right.click();
+    // Tab widths are fractional, so the last one can stay a hair short of the edge.
+    await expect(page.getByRole('tab', { name: 'Notes' })).toBeInViewport({ ratio: 0.95 });
+    while (await left.isEnabled()) await left.click();
+    await expect(page.getByRole('tab', { name: 'Summary' })).toBeInViewport({ ratio: 0.95 });
+    await expect(left).toBeDisabled();
+    expect(viewer.problems).toEqual([]);
+  });
+}
+
+test('scrolls the sheet tabs with the mouse wheel', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('many-sheets.xlsx');
+  const before = await tabsScroll(page);
+  await page.getByRole('tab', { name: 'Jun 2025' }).hover();
+  await page.mouse.wheel(0, 300);
+  await expect.poll(() => tabsScroll(page)).toBeGreaterThan(before);
+  // The page itself doesn't move, and the sheet stays the same.
+  await expect(activeTab(page)).toHaveText('Jun 2025');
+});
+
+test('lists every sheet to pick from', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('many-sheets.xlsx');
+
+  await page.getByRole('button', { name: 'All Sheets' }).click();
+  const sent = (await viewer.sent()) as {
+    type: string;
+    sheets?: { name: string; current: boolean; changed: boolean }[];
+  }[];
+  const request = sent.filter((message) => message.type === 'pickSheet').pop();
+  expect(request?.sheets).toHaveLength(35);
+  expect(request?.sheets?.filter((sheet) => sheet.current).map((sheet) => sheet.name)).toEqual([
+    'Jun 2025',
+  ]);
+
+  // VS Code lists them; the one picked comes back and its tab scrolls into view.
+  await viewer.post({ type: 'showSheet', sheet: 'Raw data export from the billing system' });
+  await expect(activeTab(page)).toHaveText('Raw data export from the billing system');
+  await expect(activeTab(page)).toBeInViewport({ ratio: 1 });
+  await expect(page.locator('.ng-c', { hasText: 'Raw data export' }).first()).toBeVisible();
+
+  // The command palette's "Go to Sheet…" asks for the same list.
+  await viewer.post({ type: 'command', command: 'goToSheet' });
+  await expect
+    .poll(async () =>
+      (await viewer.sent()).filter((m) => (m as { type: string }).type === 'pickSheet'),
+    )
+    .toHaveLength(2);
+});
+
+test('shows no tab scrolling buttons when every tab fits', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.xlsx');
+  await expect(page.getByRole('tab')).toHaveCount(4);
+  await expect(page.getByRole('button', { name: 'All Sheets' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Scroll Sheet Tabs Right' })).toBeHidden();
+});
+
 test('switches sheets and keeps frozen headers in view', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');

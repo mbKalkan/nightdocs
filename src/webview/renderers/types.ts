@@ -35,6 +35,8 @@ export interface RenderedDocument {
   /** Called when the zoom level changes. */
   refresh?(): void;
   command?(command: ViewerCommand): void;
+  /** Shows a sheet of a workbook, picked by name from the list VS Code showed. */
+  goToSheet?(name: string): void;
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */

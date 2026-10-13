@@ -47,6 +47,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Pictures and text boxes; charts appear as placeholders with their title
 - Select cells with the mouse or keyboard, copy them, and see Sum, Count and Average
 - Find across the whole sheet, not only the visible cells
+- Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, or pick a sheet
+  from **All Sheets** (also **Go to Sheet…** in the Command Palette), where typing filters the list
 
 ![An Excel workbook in Nightdocs with conditional formatting and a selection summed in the status bar](docs/images/excel-dark.png)
 

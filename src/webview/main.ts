@@ -64,6 +64,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'command':
       current?.command?.(message.command);
       break;
+    case 'showSheet':
+      current?.goToSheet?.(message.sheet);
+      break;
     case 'diff':
       diff.setSide(message.side);
       break;
