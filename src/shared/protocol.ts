@@ -180,7 +180,8 @@ export interface ZoomMessage {
 export type ZoomAction = 'in' | 'out' | 'reset';
 
 /** `goTo` lists what the document can go to: sheets, slides or headings. */
-export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goTo' | 'find' | 'toggleNavigation';
+export type ViewerCommand =
+  'nextSheet' | 'previousSheet' | 'goTo' | 'find' | 'toggleNavigation' | 'copyAsMarkdown';
 
 export interface CommandMessage {
   type: 'command';
@@ -262,4 +263,6 @@ export type WebviewToHostMessage =
   /** The zoom the user set while comparing, for the other side to match. */
   | { type: 'zoomed'; zoom: number | null }
   /** Asks VS Code to list items to pick one from; the answer is a `picked` message. */
-  | { type: 'pick'; placeholder: string; items: PickItem[] };
+  | { type: 'pick'; placeholder: string; items: PickItem[] }
+  /** Puts text on the clipboard; `rows` says how much, for the confirmation. */
+  | { type: 'copy'; text: string; rows: number };

@@ -13,5 +13,6 @@
   "command.goToSlide": "Slayta Git…",
   "command.goToHeading": "Başlığa Git…",
   "command.find": "Sayfada Bul",
-  "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat"
+  "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat",
+  "command.copyAsMarkdown": "Markdown Tablosu Olarak Kopyala"
 }

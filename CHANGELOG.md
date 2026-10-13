@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows for it, to open a web or mail link (VS Code asks first) or go to the sheet and cells it
   points to. Hovering a linked cell shows where it goes. Links made with the `HYPERLINK` function
   work too.
+- **Copy as Markdown Table** copies the selected cells of a workbook as a Markdown table, from the
+  right-click menu or the Command Palette. Columns of numbers are aligned right, hidden rows and
+  columns are left out, and with one cell selected it copies the block of data around it.
+  Right-clicking a cell outside the selection now selects it first, as in Excel.
 
 ### Fixed
 

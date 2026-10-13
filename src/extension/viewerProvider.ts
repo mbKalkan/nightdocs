@@ -60,6 +60,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       vscode.commands.registerCommand('nightdocs.toggleNavigation', () =>
         provider.sendCommand('toggleNavigation'),
       ),
+      vscode.commands.registerCommand('nightdocs.copyAsMarkdown', () =>
+        provider.sendCommand('copyAsMarkdown'),
+      ),
     );
   }
 
@@ -120,6 +123,19 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             void pick(message.placeholder, message.items).then((index) =>
               post({ type: 'picked', index }),
             );
+            break;
+          case 'copy':
+            // The webview may not have focus (the command palette does), so the host copies.
+            void vscode.env.clipboard
+              .writeText(message.text)
+              .then(() =>
+                vscode.window.setStatusBarMessage(
+                  message.rows === 1
+                    ? vscode.l10n.t('Copied 1 row as a Markdown table')
+                    : vscode.l10n.t('Copied {0} rows as a Markdown table', message.rows),
+                  3000,
+                ),
+              );
             break;
         }
       }),
