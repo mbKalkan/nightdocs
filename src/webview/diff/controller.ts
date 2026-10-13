@@ -2,13 +2,7 @@ import type { DiffSide, DocumentSummary, ScrollAnchor, ViewerStrings } from '../
 import { icons } from '../icons';
 import type { Comparison, RenderContext, RenderedDocument } from '../renderers/types';
 import { vscode } from '../vscodeApi';
-
-/** Canvas left visible above a change brought into view. */
-const REVEAL_MARGIN = 48;
-
-/** Scroll positions both sides share as they are, whatever the content. */
-const TOP = -1;
-const BOTTOM = -2;
+import { BOTTOM, TOP } from './scrolling';
 
 interface Target {
   document: RenderedDocument;
@@ -26,6 +20,8 @@ export class DiffController {
   private peer: DocumentSummary | undefined;
   private target: Target | undefined;
   private comparison: Comparison | undefined;
+  /** Bumped whenever the comparison is redone, so late async results are dropped. */
+  private generation = 0;
   /** Change last moved to, for the status bar. */
   private position = -1;
   /** Scroll position set to follow the other side; its scroll event isn't passed back. */
@@ -36,21 +32,21 @@ export class DiffController {
   setSide(side: DiffSide | undefined): void {
     this.side = side;
     if (!side) this.peer = undefined;
-    this.publish();
-    this.update();
+    void this.publish();
+    void this.update();
   }
 
   setPeer(summary: DocumentSummary): void {
     this.peer = summary;
-    this.update();
+    void this.update();
   }
 
   /** Takes over a document once it is on screen. */
   attach(document: RenderedDocument, context: RenderContext, strings: ViewerStrings): void {
     this.detach();
     this.target = { document, context, strings };
-    this.publish();
-    this.update();
+    void this.publish();
+    void this.update();
   }
 
   /** Lets go of the document before it is replaced. */
@@ -60,36 +56,43 @@ export class DiffController {
   }
 
   /** Scrolls to where the other side is. */
-  follow(anchor: ScrollAnchor): void {
-    const viewport = this.target?.context.viewport;
-    if (!viewport || !this.comparison) return;
-    if (anchor.index === TOP) viewport.scrollTop = 0;
-    else if (anchor.index === BOTTOM) viewport.scrollTop = viewport.scrollHeight;
-    else this.comparison.scrollTo(anchor);
-    this.following = viewport.scrollTop;
+  async follow(anchor: ScrollAnchor): Promise<void> {
+    const { comparison, target } = this;
+    if (!comparison || !target) return;
+    await comparison.scrollTo(anchor);
+    if (comparison === this.comparison) this.following = target.context.viewport.scrollTop;
   }
 
-  private publish(): void {
-    const summary = this.side ? this.target?.document.summary?.() : undefined;
-    if (summary) vscode.postMessage({ type: 'summary', summary });
+  private async publish(): Promise<void> {
+    const target = this.target;
+    if (!this.side || !target?.document.summary) return;
+    const summary = await target.document.summary();
+    if (target === this.target && this.side) vscode.postMessage({ type: 'summary', summary });
   }
 
-  private update(): void {
+  private async update(): Promise<void> {
     this.stop();
     const { side, peer, target } = this;
     if (!side || !peer || !target) return;
-    this.comparison = target.document.compare?.(peer, side, target.context);
-    if (!this.comparison) return;
+    const generation = this.generation;
+    const comparison = await target.document.compare?.(peer, side, target.context);
+    if (generation !== this.generation) {
+      comparison?.dispose();
+      return;
+    }
+    this.comparison = comparison;
+    if (!comparison) return;
     this.showBar(target);
     this.listen(target.context.viewport);
     // Like VS Code's diff editor, open at the first change. The other side follows.
     if (side === 'modified' && !this.revealed && target.context.viewport.scrollTop === 0) {
       this.revealed = true;
-      this.go(1, false);
+      void this.go(1, false);
     }
   }
 
   private stop(): void {
+    this.generation++;
     this.cleanup.splice(0).forEach((fn) => fn());
     this.comparison?.dispose();
     this.comparison = undefined;
@@ -100,14 +103,14 @@ export class DiffController {
     const bar = document.createElement('div');
     bar.className = 'ov-diff';
     bar.setAttribute('role', 'group');
-    const button = (label: string, icon: string, direction: number) => {
+    const button = (label: string, icon: string, direction: 1 | -1) => {
       const element = document.createElement('button');
       element.type = 'button';
       element.className = 'ov-icon-button';
       element.innerHTML = icon;
       element.title = label;
       element.setAttribute('aria-label', label);
-      element.addEventListener('click', () => this.go(direction));
+      element.addEventListener('click', () => void this.go(direction));
       return element;
     };
     const status = document.createElement('span');
@@ -129,7 +132,7 @@ export class DiffController {
   }
 
   private renderStatus(status: HTMLElement, strings: ViewerStrings): void {
-    const count = this.comparison?.changeTops().length ?? 0;
+    const count = this.comparison?.count ?? 0;
     status.textContent =
       count === 0
         ? strings.noChanges
@@ -156,7 +159,7 @@ export class DiffController {
       const next = event.key === 'F7' || (event.key === 'F5' && event.altKey);
       if (!next || event.ctrlKey || event.metaKey) return;
       event.preventDefault();
-      this.go(event.shiftKey ? -1 : 1);
+      void this.go(event.shiftKey ? -1 : 1);
     };
     viewport.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('keydown', onKeyDown);
@@ -174,31 +177,22 @@ export class DiffController {
       this.following = undefined;
       if (followed) return;
     }
+    const anchor = this.comparison?.anchor();
+    if (!anchor) return;
     const max = viewport.scrollHeight - viewport.clientHeight;
-    const anchor =
-      viewport.scrollTop <= 0
-        ? { index: TOP, fraction: 0 }
-        : viewport.scrollTop >= max - 1
-          ? { index: BOTTOM, fraction: 0 }
-          : this.comparison?.anchor();
-    if (anchor) vscode.postMessage({ type: 'scroll', anchor });
+    if (viewport.scrollTop <= 0) anchor.index = TOP;
+    else if (viewport.scrollTop >= max - 1) anchor.index = BOTTOM;
+    vscode.postMessage({ type: 'scroll', anchor });
   }
 
-  /** Scrolls to the next (1) or previous (-1) change, wrapping around at the ends. */
-  private go(direction: number, announce = true): void {
-    const target = this.target;
-    const tops = this.comparison?.changeTops() ?? [];
-    if (!target || tops.length === 0) return;
-    const { viewport, footer } = target.context;
-    const at = viewport.scrollTop + REVEAL_MARGIN;
-    let index =
-      direction > 0
-        ? tops.findIndex((top) => top > at + 1)
-        : tops.length - 1 - [...tops].reverse().findIndex((top) => top < at - 1);
-    if (index < 0 || index >= tops.length) index = direction > 0 ? 0 : tops.length - 1;
+  /** Moves to the next (1) or previous (-1) change, wrapping around at the ends. */
+  private async go(direction: 1 | -1, announce = true): Promise<void> {
+    const { comparison, target } = this;
+    if (!comparison || !target || comparison.count === 0) return;
+    const index = await comparison.go(direction);
+    if (comparison !== this.comparison || index === undefined) return;
     this.position = index;
-    viewport.scrollTop = Math.max(0, tops[index] - REVEAL_MARGIN);
-    const status = footer.querySelector<HTMLElement>('.ov-diff-status');
+    const status = target.context.footer.querySelector<HTMLElement>('.ov-diff-status');
     if (status && announce) this.renderStatus(status, target.strings);
   }
 }

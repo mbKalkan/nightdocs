@@ -1,3 +1,4 @@
+import type { SheetMarks } from '../diff/sheetCompare';
 import { icons } from '../icons';
 import {
   CellKind,
@@ -66,6 +67,8 @@ export class SheetGrid {
   private anchor = { row: 0, col: 0 };
   /** Cells matching the current search, as row * 16384 + col. */
   private highlights: Set<number> | undefined;
+  /** What differs from the other version, when comparing. */
+  private marks: SheetMarks | undefined;
   private focus = { row: 0, col: 0 };
   private readonly measure = document.createElement('canvas').getContext('2d');
   /** Last row and column holding a value, or -1 for an empty sheet. */
@@ -207,6 +210,57 @@ export class SheetGrid {
     this.paint();
   }
 
+  /** Marks the differences from another version; `undefined` clears them. */
+  setMarks(marks: SheetMarks | undefined): void {
+    this.marks = marks;
+    this.paint();
+  }
+
+  /** The first scrolling row at the top of the window, and how far it is scrolled into. */
+  topRow(): { row: number; fraction: number } {
+    const y = this.options.getViewport().scrollTop / this.options.getZoom() + this.frozenHeight;
+    const row = indexAt(this.rowTop, y);
+    const height = this.sheet.rowHeights[row] ?? 0;
+    return { row, fraction: height > 0 ? (y - this.rowTop[row]) / height : 0 };
+  }
+
+  /** The first scrolling column at the left of the window, and how far it is scrolled into. */
+  leftColumn(): { col: number; fraction: number } {
+    const x = this.options.getViewport().scrollLeft / this.options.getZoom() + this.frozenWidth;
+    const col = indexAt(this.colLeft, x);
+    const width = this.sheet.colWidths[col] ?? 0;
+    return { col, fraction: width > 0 ? (x - this.colLeft[col]) / width : 0 };
+  }
+
+  /** Scrolls so that `fraction` of the way into `row` is at the top, under frozen rows. */
+  scrollToRow(row: number, fraction = 0): void {
+    const r = clamp(row, 0, Math.max(0, this.sheet.rowCount - 1));
+    const y = (this.rowTop[r] ?? 0) + fraction * (this.sheet.rowHeights[r] ?? 0);
+    this.options.getViewport().scrollTop =
+      Math.max(0, y - this.frozenHeight) * this.options.getZoom();
+  }
+
+  scrollToColumn(col: number, fraction = 0): void {
+    const c = clamp(col, 0, Math.max(0, this.sheet.colCount - 1));
+    const x = (this.colLeft[c] ?? 0) + fraction * (this.sheet.colWidths[c] ?? 0);
+    this.options.getViewport().scrollLeft =
+      Math.max(0, x - this.frozenWidth) * this.options.getZoom();
+  }
+
+  /** Brings a change into view: its row near the top, and its first column if given. */
+  reveal(row: number, col?: number): void {
+    this.scrollToRow(Math.max(this.sheet.frozenRows, row - 2));
+    if (col !== undefined && col < this.sheet.colCount) {
+      const zoom = this.options.getZoom();
+      const viewport = this.options.getViewport();
+      const x1 = this.colLeft[col];
+      const x2 = this.colLeft[col + 1];
+      const left = viewport.scrollLeft / zoom + this.frozenWidth;
+      const right = (viewport.scrollLeft + viewport.clientWidth) / zoom - this.headerWidth;
+      if (x1 < left || x2 > right) this.scrollToColumn(Math.max(this.sheet.frozenCols, col - 1));
+    }
+  }
+
   /** Displayed text of a cell, '' when empty. */
   textAt(row: number, col: number): string {
     const index = this.cellIndex(row, col);
@@ -312,7 +366,8 @@ export class SheetGrid {
     const frozenColRange = { col1: 0, col2: frozenCols - 1 };
 
     // Each pane draws its own part of the drawings that cross it, as Excel splits them.
-    const pane = (range: CellRange) => this.region(range) + this.drawingsHtml(range);
+    const pane = (range: CellRange) =>
+      this.region(range) + this.marksHtml(range) + this.drawingsHtml(range);
 
     this.layers.main.innerHTML = pane({ ...regionRows, ...regionCols }) + selection;
     this.layers.top.innerHTML =
@@ -329,6 +384,50 @@ export class SheetGrid {
       (frozenCols ? this.columnHeaders(0, frozenCols - 1) : '') +
       (frozenRows ? this.rowHeaders(0, frozenRows - 1) : '') +
       `<div class="ng-h ng-hx" style="left:0;top:0;width:${this.headerWidth}px;height:${HEADER_HEIGHT}px"></div>`;
+  }
+
+  /**
+   * Differences from the other version over a region: rows only this side has, changed cells,
+   * and lines where the other side has rows this one doesn't.
+   */
+  private marksHtml(range: CellRange): string {
+    const marks = this.marks;
+    if (!marks || range.row2 < range.row1 || range.col2 < range.col1) return '';
+    const { sheet, colLeft, rowTop, headerWidth } = this;
+    const left = headerWidth + colLeft[range.col1];
+    const width = colLeft[range.col2 + 1] - colLeft[range.col1];
+    const box = (x: number, y: number, w: number, h: number) =>
+      `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+    const parts: string[] = [];
+    for (let r = range.row1; r <= range.row2; r++) {
+      const height = sheet.rowHeights[r];
+      if (height === 0) continue;
+      const top = HEADER_HEIGHT + rowTop[r];
+      if (marks.rows.has(r)) {
+        parts.push(
+          `<div class="ng-diff ng-diff-${marks.own}" style="${box(left, top, width, height)}"></div>`,
+        );
+      }
+      for (const c of marks.cells.get(r) ?? []) {
+        if (c < range.col1 || c > range.col2 || sheet.colWidths[c] === 0) continue;
+        const x = headerWidth + colLeft[c];
+        parts.push(
+          `<div class="ng-diff ng-diff-cell ng-diff-${marks.own}" style="${box(x, top, sheet.colWidths[c], height)}"></div>`,
+        );
+      }
+      if (marks.gaps.has(r)) {
+        parts.push(
+          `<div class="ng-diff-gap ng-diff-${marks.other}" style="${box(left, top - 1, width, 2)}"></div>`,
+        );
+      }
+    }
+    if (range.row2 === sheet.rowCount - 1 && [...marks.gaps].some((r) => r >= sheet.rowCount)) {
+      const bottom = HEADER_HEIGHT + rowTop[sheet.rowCount];
+      parts.push(
+        `<div class="ng-diff-gap ng-diff-${marks.other}" style="${box(left, bottom - 1, width, 2)}"></div>`,
+      );
+    }
+    return parts.join('');
   }
 
   /** Pictures, chart placeholders and text boxes overlapping a region, as HTML. */
@@ -728,8 +827,10 @@ export class SheetGrid {
       const height = this.sheet.rowHeights[r];
       if (height === 0) continue;
       const active = r >= sel.row1 && r <= sel.row2 ? ' ng-sel' : '';
+      const changed = this.marks?.rows.has(r) || this.marks?.cells.has(r);
+      const mark = changed ? ` ng-diff-${this.marks?.own}` : '';
       parts.push(
-        `<div class="ng-h ng-hr${active}" style="left:0;top:${HEADER_HEIGHT + this.rowTop[r]}px;width:${this.headerWidth}px;height:${height}px">${r + 1}</div>`,
+        `<div class="ng-h ng-hr${active}${mark}" style="left:0;top:${HEADER_HEIGHT + this.rowTop[r]}px;width:${this.headerWidth}px;height:${height}px">${r + 1}</div>`,
       );
     }
     return parts.join('');

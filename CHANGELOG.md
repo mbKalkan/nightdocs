@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added and removed paragraphs down to the changed words, and scrolls both sides together.
   <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the status bar move between
   changes.
+- Compare two versions of an Excel workbook the same way: changed cells and added and removed rows
+  are marked, sheet tabs with changes get a dot, and moving between changes goes from sheet to
+  sheet. Switching sheets or scrolling on one side moves the other side along.
 - Versions from Git open as committed. That includes Word files that Git for Windows turns into
   plain text for diffs, and files kept in Git LFS whose content is on this machine.
 

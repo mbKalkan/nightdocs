@@ -38,20 +38,29 @@ export interface RenderedDocument {
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */
-  summary?(): DocumentSummary;
+  summary?(): DocumentSummary | Promise<DocumentSummary>;
   /** Marks where this document differs from the other side's, once it is on screen. */
-  compare?(peer: DocumentSummary, side: DiffSide, context: RenderContext): Comparison | undefined;
+  compare?(
+    peer: DocumentSummary,
+    side: DiffSide,
+    context: RenderContext,
+  ): Comparison | undefined | Promise<Comparison | undefined>;
   dispose?(): void;
 }
 
 /** The differences marked in one side of a comparison. */
 export interface Comparison {
-  /** Scroll position of each change in this document, top to bottom. */
-  changeTops(): number[];
+  /** How many changes there are; each is a run of edits next to each other. */
+  readonly count: number;
+  /**
+   * Brings the next (1) or previous (-1) change from where the view is into view, wrapping
+   * around at the ends, and returns its number (0-based).
+   */
+  go(direction: 1 | -1): number | undefined | Promise<number | undefined>;
   /** Where the other side should scroll to so that the same content is at the top. */
   anchor(): ScrollAnchor | undefined;
   /** Scrolls to a position the other side sent. */
-  scrollTo(anchor: ScrollAnchor): void;
+  scrollTo(anchor: ScrollAnchor): void | Promise<void>;
   /** Removes the marks. */
   dispose(): void;
 }

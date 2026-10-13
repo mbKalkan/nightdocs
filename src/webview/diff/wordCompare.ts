@@ -3,7 +3,7 @@ import type { DiffSide, WordSummary } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
 import { align } from './align';
 import { clearMarks, markRanges, otherChange, ownChange, textOf } from './marks';
-import { scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
+import { revealByTops, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
 
 export interface WordBlocks {
   /** The element holding the whole document, for clearing marks. */
@@ -82,12 +82,14 @@ export function compareWord(
     }
   }
 
+  const tops = () =>
+    changes.map(({ element, after }) => {
+      const rect = element.getBoundingClientRect();
+      return scrollTopOf(context.viewport, after ? rect.bottom : rect.top);
+    });
   return {
-    changeTops: () =>
-      changes.map(({ element, after }) => {
-        const rect = element.getBoundingClientRect();
-        return scrollTopOf(context.viewport, after ? rect.bottom : rect.top);
-      }),
+    count: changes.length,
+    go: (direction) => revealByTops(context.viewport, tops(), direction),
     anchor: () => scrollAnchor(context.viewport, elements, toPeer),
     scrollTo: (anchor) => scrollToAnchor(context.viewport, elements, anchor),
     dispose: () => clearMarks(root, CLASSES),

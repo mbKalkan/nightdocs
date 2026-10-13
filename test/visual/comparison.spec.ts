@@ -80,8 +80,11 @@ test('moves between changes and scrolls both sides together', async ({ context }
   // And back to the top.
   await original.page.locator('.ov-viewport').evaluate((viewport) => (viewport.scrollTop = 0));
   await expect
-    .poll(async () => (await lastSent<{ anchor: ScrollAnchor }>(original.viewer, 'scroll'))?.anchor)
-    .toEqual({ index: -1, fraction: 0 });
+    .poll(
+      async () =>
+        (await lastSent<{ anchor: ScrollAnchor }>(original.viewer, 'scroll'))?.anchor.index,
+    )
+    .toBe(-1);
   await relayScroll(original, modified);
   await expect.poll(() => scrollTop(modified.page)).toBe(0);
 });
@@ -109,4 +112,114 @@ test('stops comparing when the other side closes', async ({ context }) => {
   await expect(original.page.locator('.ov-diff')).toHaveCount(0);
   await expect(original.page.locator('.nd-diff-line, .nd-diff-word')).toHaveCount(0);
   await expect(original.page.getByText('Prepared for the leadership team.')).toBeVisible();
+});
+
+/** Tabs with a change dot, as `name: added|removed`. */
+const changedTabs = (page: Page) =>
+  page
+    .locator('.ov-sheet-tab[data-change]')
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => `${tab.textContent}: ${(tab as HTMLElement).dataset.change}`),
+    );
+
+const selectedTab = (page: Page) => page.locator('.ov-sheet-tab[aria-selected="true"]');
+
+for (const theme of ['dark', 'light'] as ThemeName[]) {
+  test(`compares two versions of an Excel workbook in the ${theme} theme`, async ({ context }) => {
+    const [original, modified] = await openComparison(
+      [await context.newPage(), await context.newPage()],
+      theme,
+      ['orders.xlsx', 'orders-revised.xlsx'],
+    );
+
+    // The revised list has a quantity changed, an order removed and one added on screen, a
+    // price changed far down, a status changed on another sheet, and a new sheet.
+    await expect(original.page.locator('.ov-diff-status')).toHaveText('5 changes');
+    await expect(modified.page.locator('.ov-diff-status')).toHaveText('6 changes');
+    expect(await changedTabs(original.page)).toEqual(['Orders: removed', 'Summary: removed']);
+    expect(await changedTabs(modified.page)).toEqual([
+      'Orders: added',
+      'Summary: added',
+      'Notes: added',
+    ]);
+
+    // Quantity and total of SO-1005 changed; SO-1012 is only on the left, SO-1099 on the right.
+    await expect(original.page.locator('.ng-diff-cell.ng-diff-removed').first()).toBeVisible();
+    await expect(modified.page.locator('.ng-diff-cell.ng-diff-added').first()).toBeVisible();
+    await expect(original.page.locator('.ng-diff:not(.ng-diff-cell).ng-diff-removed')).toHaveCount(
+      1,
+    );
+    await expect(modified.page.locator('.ng-diff:not(.ng-diff-cell).ng-diff-added')).toHaveCount(1);
+    await expect(original.page.locator('.ng-diff-gap.ng-diff-added')).toHaveCount(1);
+    await expect(modified.page.locator('.ng-diff-gap.ng-diff-removed')).toHaveCount(1);
+    const removedRows = original.page.locator('.ng-hr.ng-diff-removed');
+    await expect(removedRows.nth(0)).toHaveText('6');
+    await expect(removedRows.nth(1)).toHaveText('13');
+
+    // Like VS Code's diff editor, the modified side opens at the first change.
+    expect(await scrollTop(modified.page)).toBeGreaterThan(0);
+    await expect.poll(() => lastSent(modified.viewer, 'scroll')).toBeTruthy();
+    await relayScroll(modified, original);
+    await original.page.screenshot({ path: `${SCREENS}/compare-xlsx-original-${theme}.png` });
+    await modified.page.screenshot({ path: `${SCREENS}/compare-xlsx-modified-${theme}.png` });
+    expect(original.viewer.problems).toEqual([]);
+    expect(modified.viewer.problems).toEqual([]);
+  });
+}
+
+test('moves between changes across sheets and switches sheets together', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['orders.xlsx', 'orders-revised.xlsx'],
+  );
+  const status = modified.page.locator('.ov-diff-status');
+
+  // Opened at the first change; the far-down price change is the fourth.
+  await expect.poll(() => scrollTop(modified.page)).toBeGreaterThan(0);
+  for (const position of [2, 3, 4]) {
+    await modified.page.keyboard.press('F7');
+    await expect(status).toHaveText(`Change ${position} of 6`);
+  }
+  await expect(modified.page.locator('.ng-hr', { hasText: /^54$/ })).toBeInViewport();
+  await expect(modified.page.locator('.ng-diff-cell.ng-diff-added')).not.toHaveCount(0);
+
+  // The next changes are on the other sheets.
+  await modified.page.keyboard.press('F7');
+  await expect(status).toHaveText('Change 5 of 6');
+  await expect(selectedTab(modified.page)).toHaveText('Summary');
+  await modified.page.keyboard.press('F7');
+  await expect(selectedTab(modified.page)).toHaveText('Notes');
+  await modified.page.keyboard.press('Shift+F7');
+  await expect(status).toHaveText('Change 5 of 6');
+
+  // The other side follows to the same sheet, and stays put for a sheet it doesn't have.
+  await relayScroll(modified, original);
+  await expect(selectedTab(original.page)).toHaveText('Summary');
+  await modified.page.getByRole('tab', { name: 'Notes' }).click();
+  await relayScroll(modified, original);
+  await expect(selectedTab(original.page)).toHaveText('Summary');
+
+  // Back on the first sheet, rows scroll together past the removed order.
+  await modified.page.getByRole('tab', { name: 'Orders' }).click();
+  await relayScroll(modified, original);
+  await expect(selectedTab(original.page)).toHaveText('Orders');
+  await modified.page.locator('.ov-viewport').evaluate((viewport) => (viewport.scrollTop = 450));
+  await expect
+    .poll(
+      async () =>
+        (await lastSent<{ anchor: ScrollAnchor }>(modified.viewer, 'scroll'))?.anchor.index,
+    )
+    .toBeGreaterThan(20);
+  await relayScroll(modified, original);
+  /** The first row number below the column headers and the frozen header row. */
+  const topRow = (page: Page) =>
+    page.evaluate(() => {
+      const viewport = document.querySelector('.ov-viewport') as HTMLElement;
+      const top = viewport.getBoundingClientRect().top + 41;
+      const headers = [...document.querySelectorAll<HTMLElement>('.ng-left .ng-hr')];
+      return headers.find((header) => header.getBoundingClientRect().bottom > top)?.textContent;
+    });
+  // One order was removed above and one added: past both, the same rows line up.
+  await expect.poll(() => topRow(original.page)).toBe(await topRow(modified.page));
 });

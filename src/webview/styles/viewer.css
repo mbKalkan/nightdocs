@@ -940,3 +940,80 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   outline: 3px solid var(--ov-diff-added-bar);
   outline-offset: 2px;
 }
+
+/* Differences in a sheet: rows only this side has, changed cells, and a line where the other
+   side has rows this one doesn't. Over the cells, so they show through cell fills. */
+
+.ng-diff,
+.ng-diff-gap {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ng-diff.ng-diff-removed {
+  background: var(--ov-diff-removed-line);
+}
+
+.ng-diff.ng-diff-added {
+  background: var(--ov-diff-added-line);
+}
+
+.ng-diff-cell.ng-diff-removed {
+  background: var(--ov-diff-removed-text);
+  outline: 1px dashed var(--vscode-diffEditor-removedTextBorder, transparent);
+  outline-offset: -2px;
+}
+
+.ng-diff-cell.ng-diff-added {
+  background: var(--ov-diff-added-text);
+  outline: 1px dashed var(--vscode-diffEditor-insertedTextBorder, transparent);
+  outline-offset: -2px;
+}
+
+.ng-diff-gap.ng-diff-removed {
+  background: var(--ov-diff-removed-bar);
+}
+
+.ng-diff-gap.ng-diff-added {
+  background: var(--ov-diff-added-bar);
+}
+
+/* Row numbers of changed rows get a bar like VS Code's change markers in the gutter. */
+.ng-hr.ng-diff-removed {
+  box-shadow: inset 3px 0 0 var(--ov-diff-removed-bar);
+}
+
+.ng-hr.ng-diff-added {
+  box-shadow: inset 3px 0 0 var(--ov-diff-added-bar);
+}
+
+.ng-hr.ng-sel.ng-diff-removed {
+  box-shadow:
+    inset 3px 0 0 var(--ov-diff-removed-bar),
+    inset -2px 0 0 var(--ng-accent);
+}
+
+.ng-hr.ng-sel.ng-diff-added {
+  box-shadow:
+    inset 3px 0 0 var(--ov-diff-added-bar),
+    inset -2px 0 0 var(--ng-accent);
+}
+
+/* Sheets with changes have a dot on their tab. */
+.ov-sheet-tab[data-change]::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ov-sheet-tab[data-change='removed']::before {
+  background: var(--ov-diff-removed-bar);
+}
+
+.ov-sheet-tab[data-change='added']::before {
+  background: var(--ov-diff-added-bar);
+}

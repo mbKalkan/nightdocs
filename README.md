@@ -61,14 +61,19 @@ click opens the file in Word, Excel or PowerPoint.
 
 ### Comparing versions
 
-- Open a changed Word document from **Source Control** (changes or staged changes), or compare two
-  files with **Select for Compare**, and Nightdocs shows both versions side by side. There is
-  nothing to set up: VS Code uses Nightdocs for both sides.
-- Edited, added and removed paragraphs and table cells are marked, down to the changed words
+- Open a changed Word document or Excel workbook from **Source Control** (changes or staged
+  changes), or compare two files with **Select for Compare**, and Nightdocs shows both versions
+  side by side. There is nothing to set up: VS Code uses Nightdocs for both sides.
+- Word: edited, added and removed paragraphs and table cells are marked, down to the changed words
+- Excel: changed cells and added and removed rows are marked, and sheet tabs with changes get a
+  dot; moving between changes goes from sheet to sheet, and switching sheets on one side switches
+  the other
 - Both sides scroll together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes
 
 ![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)
+
+![Two versions of an Excel workbook side by side in Nightdocs, with changed cells and rows marked](docs/images/excel-compare-dark.png)
 
 ### Everywhere
 
@@ -116,8 +121,9 @@ If another extension also opens these files, right-click the file and choose
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
 - Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
-- Comparing versions works for Word documents so far; Excel and PowerPoint files open side by side
-  without marks. Files in Git LFS compare only when their content is on this machine: Nightdocs
+- Comparing versions works for Word documents and Excel workbooks so far; PowerPoint files open side
+  by side without marks. Excel comparisons go by displayed values: formatting changes aren't
+  marked, and an inserted column marks the cells to its right as changed. Files in Git LFS compare only when their content is on this machine: Nightdocs
   doesn't download it.
 - PowerPoint animations, transitions, speaker notes and media playback aren't shown. Some pasted
   vector pictures (EMF/WMF) appear as placeholders.
