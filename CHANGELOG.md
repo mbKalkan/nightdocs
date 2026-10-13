@@ -6,8 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-13
+
+Find your way around a document as in Office: a navigation pane, Go to Heading and Go to Slide,
+Word comments and tracked changes, and PowerPoint speaker notes.
+
 ### Added
 
+- A navigation pane, as in Office: Word documents show their headings as an outline that folds,
+  presentations show slide thumbnails, and workbooks list their sheets. It marks where you are
+  as you scroll and goes where you click. Open it from the button at the left of the toolbar or
+  with **Toggle Navigation Pane**; it stays open for files of that kind, and comparisons open
+  without it.
 - **Go to Heading…** for Word documents and **Go to Slide…** for presentations list the headings
   or slides (by title) in VS Code's quick pick, like **Go to Sheet…** for workbooks. All three
   open with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>, VS Code's "Go to Symbol" key.
@@ -18,11 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   text with all changes accepted. Comparisons always read the text that way.
 - PowerPoint speaker notes are shown under each slide, as in PowerPoint's notes pane. **Notes** in
   the status bar hides them. Comparisons include the notes and mark what changed in them.
-- A navigation pane, as in Office: Word documents show their headings as an outline that folds,
-  presentations show slide thumbnails, and workbooks list their sheets. It marks where you are
-  as you scroll and goes where you click. Open it from the button at the left of the toolbar or
-  with **Toggle Navigation Pane**; it stays open for files of that kind, and comparisons open
-  without it.
 
 ## [0.4.0] - 2026-10-13
 
@@ -137,7 +142,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mbKalkan/nightdocs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbKalkan/nightdocs/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mbKalkan/nightdocs/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mbKalkan/nightdocs/compare/v0.1.0...v0.2.0
