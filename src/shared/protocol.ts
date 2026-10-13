@@ -50,6 +50,14 @@ export interface ViewerStrings {
   /** `Page {0}` and `Page {0} of {1}` */
   page: string;
   pagePosition: string;
+  /** Word comments and tracked changes; `{0}` is a number or a name. */
+  comments: string;
+  oneComment: string;
+  goToComment: string;
+  commentBy: string;
+  markup: string;
+  showMarkup: string;
+  hideMarkup: string;
   /** `Slide {0}`, the accessible name of a slide. */
   slide: string;
   /** `Slide {0} of {1}`, shown in the status bar of presentations. */

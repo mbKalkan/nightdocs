@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or slides (by title) in VS Code's quick pick, like **Go to Sheet…** for workbooks. All three
   open with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>, VS Code's "Go to Symbol" key.
 - Word documents show the current page in the status bar ("Page 3 of 13").
+- Word comments and tracked changes are shown, as Word's "All Markup" does: insertions and
+  deletions are marked, commented text is highlighted, and hovering its comment button shows the
+  comment. The status bar lists the comments to go to, and **Markup** hides it all to read the
+  text with all changes accepted. Comparisons always read the text that way.
 
 ## [0.4.0] - 2026-10-13
 

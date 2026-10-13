@@ -4,6 +4,7 @@ import { adaptDocumentColors } from '../darkColors';
 import { scrollTopOf } from '../diff/scrolling';
 import { compareWord, wordBlocks, type WordBlocks } from '../diff/wordCompare';
 import { findHeadings, headingClasses, type Heading } from '../docx/outline';
+import { WordReview } from '../docx/review';
 import { PageNavigator } from '../pageNavigator';
 import { paginate } from '../paginate';
 import { describe, pick } from '../picker';
@@ -31,17 +32,26 @@ export const docxRenderer: Renderer = {
       renderFooters: true,
       renderFootnotes: true,
       renderEndnotes: true,
-      renderComments: false,
-      renderChanges: false,
+      // Shown as Word's "All Markup" does; see WordReview.
+      renderComments: true,
+      renderChanges: true,
       // Embedded HTML chunks would need frames, which the webview's CSP blocks.
       renderAltChunks: false,
       useBase64URL: false,
       experimental: true,
     });
 
+    const wrapper = target.querySelector<HTMLElement>('.docx-wrapper');
+    const previous = options.previous as { markup?: boolean } | undefined;
+    const review = new WordReview(
+      wrapper ?? target,
+      options.strings,
+      options.locale,
+      previous?.markup ?? true,
+    );
+
     // Page breaks depend on text metrics, so wait for the document's fonts first.
     await document.fonts.ready;
-    const wrapper = target.querySelector<HTMLElement>('.docx-wrapper');
     if (wrapper) paginate(wrapper);
 
     if (options.palette) {
@@ -63,15 +73,30 @@ export const docxRenderer: Renderer = {
       activate(context) {
         view = context;
         navigator = new PageNavigator(context, pages, options.strings.pagePosition);
+        review.activate(context);
       },
+      state: () => ({ markup: review.shown }),
       command(command) {
         if (command === 'goTo' && view) void goToHeading(view, outline(), options.strings);
       },
       summary: () => ({ format: 'docx', blocks: paragraphs().texts }),
-      compare: (peer, side, context) =>
-        peer.format === 'docx' ? compareWord(paragraphs(), peer, side, context) : undefined,
+      compare: (peer, side, context) => {
+        if (peer.format !== 'docx') return undefined;
+        // Versions compare by their text with all changes accepted; markup would muddle that.
+        const shown = review.shown;
+        review.setShown(false);
+        const comparison = compareWord(paragraphs(), peer, side, context);
+        return {
+          ...comparison,
+          dispose: () => {
+            comparison.dispose();
+            review.setShown(shown);
+          },
+        };
+      },
       dispose() {
         navigator?.dispose();
+        review.dispose();
       },
     };
   },

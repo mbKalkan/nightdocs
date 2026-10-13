@@ -1,7 +1,7 @@
 import type { DiffSide, WordSummary } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
 import { align } from './align';
-import { clearMarks, markWords, otherChange, ownChange, textOf } from './marks';
+import { clearMarks, markWords, NOT_TEXT, otherChange, ownChange, textOf } from './marks';
 import { revealByTops, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
 
 export interface WordBlocks {
@@ -34,6 +34,8 @@ export function wordBlocks(root: HTMLElement): WordBlocks {
   const elements: HTMLElement[] = [];
   const texts: string[] = [];
   for (const paragraph of root.querySelectorAll<HTMLElement>('section.docx > article p')) {
+    // Such as the paragraphs of a comment.
+    if (paragraph.closest(`[${NOT_TEXT}]`)) continue;
     const text = normalize(textOf(paragraph));
     if (text) {
       elements.push(paragraph);
