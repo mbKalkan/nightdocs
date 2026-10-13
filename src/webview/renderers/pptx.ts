@@ -7,7 +7,9 @@ import {
   type SlideRendererOptions,
 } from '@aiden0z/pptx-renderer';
 import type { DarkPalette } from '../../shared/color';
+import type { SlideSummary } from '../../shared/protocol';
 import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
+import { compareSlides, summarizeSlides } from '../diff/slideCompare';
 import { adaptChartOption, type Chart } from '../pptx/chartColors';
 import { SlideNavigator } from '../pptx/navigator';
 import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
@@ -90,16 +92,27 @@ export const pptxRenderer: Renderer = {
       }
       adaptDocumentColors([...adapted], palette);
     }
+    const slideCharts = frames.map((): Chart[] => []);
     for (const chart of charts) {
       const frame = chart.getDom().closest<HTMLElement>('.pptx-slide');
       settleChart(chart, frame && adapted.has(frame) ? palette : undefined);
+      if (frame) slideCharts[frames.indexOf(frame)]?.push(chart);
     }
 
+    // Only needed when comparing.
+    const slides = { deck, frames, charts: slideCharts };
+    let summaries: Promise<SlideSummary[]> | undefined;
+    const summarize = () => (summaries ??= summarizeSlides(slides));
     return {
       naturalWidth: presentation.width + DECK_GUTTER,
       activate(context: RenderContext) {
         navigator = new SlideNavigator(context, frames, strings);
       },
+      summary: async () => ({ format: 'pptx', slides: await summarize() }),
+      compare: async (peer, side, context) =>
+        peer.format === 'pptx'
+          ? compareSlides(slides, await summarize(), peer.slides, side, context)
+          : undefined,
       dispose() {
         navigator?.dispose();
         for (const handle of handles) handle.dispose();

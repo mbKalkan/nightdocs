@@ -1,5 +1,6 @@
 // Marking differences in rendered document content.
 
+import { diff, sameToken, tokenize } from '../../shared/diff';
 import type { DiffSide } from '../../shared/protocol';
 
 /** Stands in for a picture in the text of a paragraph, so added or removed pictures count. */
@@ -12,24 +13,32 @@ export const ownChange = (side: DiffSide) => (side === 'original' ? 'removed' : 
 export const otherChange = (side: DiffSide) => (side === 'original' ? 'added' : 'removed');
 
 interface Segment {
-  node: Text | Element;
+  /** A text node, a picture, or `null` for a break between blocks. */
+  node: Text | Element | null;
   start: number;
   length: number;
 }
+
+/** Elements that start a new block of text, so their words don't run into the ones before. */
+const BLOCKS = new Set(['DIV', 'P', 'LI', 'TR', 'TD', 'TH', 'BR', 'TABLE', 'SECTION']);
 
 /** The text and pictures of an element in reading order, with where each starts. */
 function segments(root: Element): Segment[] {
   const result: Segment[] = [];
   let offset = 0;
+  const push = (node: Segment['node'], length: number) => {
+    result.push({ node, start: offset, length });
+    offset += length;
+  };
   const walk = (node: Node) => {
     for (const child of node.childNodes) {
       if (child instanceof Text) {
-        result.push({ node: child, start: offset, length: child.data.length });
-        offset += child.data.length;
+        push(child, child.data.length);
       } else if (child instanceof HTMLImageElement || child instanceof SVGSVGElement) {
-        result.push({ node: child, start: offset, length: 1 });
-        offset += 1;
+        push(child, 1);
       } else if (child instanceof Element) {
+        const last = result[result.length - 1];
+        if (BLOCKS.has(child.tagName) && last && last.node !== null) push(null, 1);
         walk(child);
       }
     }
@@ -38,10 +47,10 @@ function segments(root: Element): Segment[] {
   return result;
 }
 
-/** The text of an element, with each picture as one `OBJECT` character. */
+/** The text of an element, with each picture as one `OBJECT` character, blocks on new lines. */
 export function textOf(root: Element): string {
   return segments(root)
-    .map((segment) => (segment.node instanceof Text ? segment.node.data : OBJECT))
+    .map(({ node }) => (node === null ? '\n' : node instanceof Text ? node.data : OBJECT))
     .join('');
 }
 
@@ -59,7 +68,7 @@ export function markRanges(root: Element, ranges: [number, number][], className:
         Math.min(to, end) - segment.start,
       ])
       .filter(([from, to]) => from < to);
-    if (inside.length === 0) continue;
+    if (inside.length === 0 || segment.node === null) continue;
     if (!(segment.node instanceof Text)) {
       segment.node.classList.add(MARK, className);
       continue;
@@ -90,4 +99,24 @@ export function clearMarks(root: Element, classes: readonly string[]): void {
   for (const element of root.querySelectorAll(classes.map((c) => `.${c}`).join(','))) {
     element.classList.remove(MARK, ...classes);
   }
+}
+
+/** Marks the words of `element` that aren't in `other`, its counterpart on the other side. */
+export function markWords(element: Element, other: string, className: string): void {
+  const mine = tokenize(textOf(element));
+  const theirs = tokenize(other);
+  const ranges: [number, number][] = [];
+  const blank = (index: number) => /^\s+$/.test(mine[index].text);
+  for (const range of diff(mine, theirs, sameToken)) {
+    if (range.kind !== 'delete') continue;
+    let from = range.aStart;
+    let to = range.aEnd;
+    while (from < to && blank(from)) from++;
+    while (to > from && blank(to - 1)) to--;
+    if (from < to) {
+      const last = mine[to - 1];
+      ranges.push([mine[from].start, last.start + last.text.length]);
+    }
+  }
+  markRanges(element, ranges, className);
 }

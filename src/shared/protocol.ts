@@ -55,7 +55,7 @@ export interface ViewerStrings {
 export type DiffSide = 'original' | 'modified';
 
 /** What a viewer shares with the other side of a comparison to find the differences. */
-export type DocumentSummary = WordSummary | WorkbookSummary;
+export type DocumentSummary = WordSummary | WorkbookSummary | PresentationSummary;
 
 export interface WordSummary {
   format: 'docx';
@@ -73,6 +73,21 @@ export interface SheetSummary {
   name: string;
   /** Each row's displayed values, separated by `CELL_SEPARATOR` at their column positions. */
   rows: string[];
+}
+
+export interface PresentationSummary {
+  format: 'pptx';
+  slides: SlideSummary[];
+}
+
+export interface SlideSummary {
+  /** The slide's text in reading order, whitespace collapsed. */
+  text: string;
+  /** A fingerprint of each picture's pixels, so a replaced picture counts as a change. */
+  pictures: string[];
+  /** Each chart's categories and series values. */
+  charts: string[];
+  hidden: boolean;
 }
 
 /** Separates cells in `SheetSummary.rows`; not something a cell shows. */

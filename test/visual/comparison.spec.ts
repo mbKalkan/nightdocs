@@ -233,3 +233,92 @@ test('moves between changes across sheets and switches sheets together', async (
   // One order was removed above and one added: past both, the same rows line up.
   await expect.poll(() => topRow(original.page)).toBe(await topRow(modified.page));
 });
+
+for (const theme of ['dark', 'light'] as ThemeName[]) {
+  test(`compares two versions of a presentation in the ${theme} theme`, async ({ context }) => {
+    const [original, modified] = await openComparison(
+      [await context.newPage(), await context.newPage()],
+      theme,
+      ['sample.pptx', 'sample-revised.pptx'],
+    );
+
+    // The revision edits a list, a table cell and a chart, adds a slide, replaces a picture
+    // and removes a slide; each side has an empty stand-in for the other's extra slide.
+    for (const { page } of [original, modified]) {
+      await expect(page.locator('.ov-diff-status')).toHaveText('6 changes');
+      await expect(page.locator('.pptx-slide.nd-slide-changed')).toHaveCount(4);
+      await expect(page.locator('.nd-diff-object')).toHaveCount(2);
+    }
+    await expect(original.page.locator('.nd-slide-only.nd-diff-removed')).toContainText(
+      'Already dark',
+    );
+    await expect(original.page.locator('.nd-slide-gap.nd-diff-added')).toHaveCount(1);
+    await expect(modified.page.locator('.nd-slide-only.nd-diff-added')).toContainText('Next steps');
+    await expect(modified.page.locator('.nd-slide-gap.nd-diff-removed')).toHaveCount(1);
+    expect(await marked(original.page, 'span.nd-diff-word.nd-diff-removed')).toEqual([
+      '40',
+      '1,060',
+      '4.1',
+    ]);
+    expect(await marked(modified.page, 'span.nd-diff-word.nd-diff-added')).toEqual([
+      '55',
+      '•',
+      'Self-service portal launched in May',
+      '1,095',
+      '0.9',
+    ]);
+
+    // Like VS Code's diff editor, the modified side opens at the first change.
+    expect(await scrollTop(modified.page)).toBeGreaterThan(0);
+    await expect.poll(() => lastSent(modified.viewer, 'scroll')).toBeTruthy();
+    await relayScroll(modified, original);
+    await original.page.screenshot({ path: `${SCREENS}/compare-pptx-original-${theme}.png` });
+    await modified.page.screenshot({ path: `${SCREENS}/compare-pptx-modified-${theme}.png` });
+    expect(original.viewer.problems).toEqual([]);
+    expect(modified.viewer.problems).toEqual([]);
+  });
+}
+
+test('moves between changed slides and keeps both decks lined up', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['sample.pptx', 'sample-revised.pptx'],
+  );
+  const status = modified.page.locator('.ov-diff-status');
+
+  // Opened at the edited list; then the table, the chart and the added slide.
+  await expect.poll(() => scrollTop(modified.page)).toBeGreaterThan(0);
+  for (const position of [2, 3, 4]) {
+    await modified.page.keyboard.press('F7');
+    await expect(status).toHaveText(`Change ${position} of 6`);
+  }
+  await expect(modified.page.locator('.nd-slide-only')).toBeInViewport();
+
+  // The other side shows its stand-in for that slide at the same place.
+  await expect
+    .poll(
+      async () =>
+        (await lastSent<{ anchor: ScrollAnchor }>(modified.viewer, 'scroll'))?.anchor.index,
+    )
+    .toBe(3);
+  await relayScroll(modified, original);
+  await expect(original.page.locator('.nd-slide-gap')).toBeInViewport();
+  const position = await scrollTop(modified.page);
+  await expect
+    .poll(async () => Math.abs((await scrollTop(original.page)) - position))
+    .toBeLessThan(2);
+
+  // The removed slide is the last change; the modified side has a stand-in for it.
+  await modified.page.keyboard.press('F7');
+  await modified.page.keyboard.press('F7');
+  await expect(status).toHaveText('Change 6 of 6');
+  await expect(modified.page.locator('.nd-slide-gap')).toBeInViewport();
+
+  // Closing the comparison takes the stand-ins and marks away.
+  await original.viewer.post({ type: 'diff', side: undefined });
+  await expect(
+    original.page.locator('.nd-slide-gap, .nd-diff-word, .nd-slide-changed'),
+  ).toHaveCount(0);
+  await expect(original.page.locator('.pptx-slide')).toHaveCount(8);
+});

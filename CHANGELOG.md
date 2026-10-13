@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compare two versions of an Excel workbook the same way: changed cells and added and removed rows
   are marked, sheet tabs with changes get a dot, and moving between changes goes from sheet to
   sheet. Switching sheets or scrolling on one side moves the other side along.
+- Compare two versions of a PowerPoint presentation the same way: edited slides are outlined with
+  their changed words, pictures and charts marked, and added and removed slides are tinted. The
+  other side shows an empty stand-in for them, so both decks line up slide for slide.
 - Versions from Git open as committed. That includes Word files that Git for Windows turns into
   plain text for diffs, and files kept in Git LFS whose content is on this machine.
 

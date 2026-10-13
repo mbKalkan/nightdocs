@@ -59,6 +59,7 @@ async function comparisonShot(
   context: BrowserContext,
   files: [string, string],
   image: string,
+  change = 1,
 ): Promise<void> {
   const [original, modified] = await openComparison(
     [await context.newPage(), await context.newPage()],
@@ -68,7 +69,15 @@ async function comparisonShot(
   );
   // The modified side opens at its first change; the original follows, as in VS Code.
   await expect.poll(() => lastSent(modified.viewer, 'scroll')).toBeTruthy();
+  for (let position = 2; position <= change; position++) {
+    await modified.page.keyboard.press('F7');
+    await expect(modified.page.locator('.ov-diff-status')).toHaveText(
+      new RegExp(`^Change ${position} of`),
+    );
+  }
+  await modified.page.waitForTimeout(200);
   await relayScroll(modified, original);
+  await original.page.waitForTimeout(200);
   const shots = await Promise.all([original.page.screenshot(), modified.page.screenshot()]);
 
   const page = await context.newPage();
@@ -88,4 +97,14 @@ test('Word comparison in a dark theme', async ({ context }) => {
 
 test('Excel comparison in a dark theme', async ({ context }) => {
   await comparisonShot(context, ['orders.xlsx', 'orders-revised.xlsx'], 'excel-compare-dark.png');
+});
+
+test('PowerPoint comparison in a dark theme', async ({ context }) => {
+  // The changed chart above the added slide, and the stand-in for it on the other side.
+  await comparisonShot(
+    context,
+    ['sample.pptx', 'sample-revised.pptx'],
+    'powerpoint-compare-dark.png',
+    3,
+  );
 });

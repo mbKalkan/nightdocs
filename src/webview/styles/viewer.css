@@ -941,6 +941,88 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   outline-offset: 2px;
 }
 
+/* Differences in a presentation: an outline around changed slides, a tint over slides only this
+   side has, and an empty stand-in where the other side has a slide this one doesn't. */
+
+.ov-content .pptx-slide.nd-diff-removed {
+  outline: 4px solid var(--ov-diff-removed-bar);
+  outline-offset: 4px;
+}
+
+.ov-content .pptx-slide.nd-diff-added {
+  outline: 4px solid var(--ov-diff-added-bar);
+  outline-offset: 4px;
+}
+
+/* The slide's content gets a stacking context of its own, so the tint stays over all of it. */
+.ov-content .pptx-slide.nd-slide-only > :first-child {
+  isolation: isolate;
+}
+
+.ov-content .pptx-slide.nd-slide-only::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ov-content .pptx-slide.nd-slide-only[data-hidden]::after {
+  z-index: 2;
+}
+
+.ov-content .pptx-slide.nd-slide-only.nd-diff-removed::before {
+  background: var(--ov-diff-removed-line);
+}
+
+.ov-content .pptx-slide.nd-slide-only.nd-diff-added::before {
+  background: var(--ov-diff-added-line);
+}
+
+.ov-content .nd-slide-gap {
+  flex: none;
+  box-sizing: border-box;
+  border: 2px dashed;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--vscode-diffEditor-diagonalFill, rgb(204 204 204 / 20%)) 0 2px,
+    transparent 2px 10px
+  );
+}
+
+.ov-content .nd-slide-gap.nd-diff-removed {
+  border-color: var(--ov-diff-removed-bar);
+}
+
+.ov-content .nd-slide-gap.nd-diff-added {
+  border-color: var(--ov-diff-added-bar);
+}
+
+/* Changed pictures and charts get a frame inside their edge, since they sit in boxes of their
+   own size that clip the rest. A chart draws on a canvas above its own outline, so its frame is
+   a layer over it. */
+.ov-content .nd-diff-word.nd-diff-object:is(img, svg) {
+  outline: 4px solid var(--nd-diff-object);
+  outline-offset: -4px;
+}
+
+.ov-content div.nd-diff-object::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 4px solid var(--nd-diff-object);
+  pointer-events: none;
+}
+
+.ov-content .nd-diff-object.nd-diff-removed {
+  --nd-diff-object: var(--ov-diff-removed-bar);
+}
+
+.ov-content .nd-diff-object.nd-diff-added {
+  --nd-diff-object: var(--ov-diff-added-bar);
+}
+
 /* Differences in a sheet: rows only this side has, changed cells, and a line where the other
    side has rows this one doesn't. Over the cells, so they show through cell fills. */
 
