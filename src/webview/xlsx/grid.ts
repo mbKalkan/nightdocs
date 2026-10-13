@@ -7,6 +7,7 @@ import {
   type CellOverride,
   type CellRange,
   type CellStyle,
+  type ChartPart,
   type Drawing,
   type SheetData,
 } from './model';
@@ -20,6 +21,8 @@ interface PlacedDrawing {
   width: number;
   height: number;
   html: string;
+  /** For charts, the index in the sheet's drawings. */
+  chart?: number;
 }
 
 const HEADER_HEIGHT = 20;
@@ -77,6 +80,8 @@ export class SheetGrid {
   readonly lastDataRow: number;
   readonly lastDataCol: number;
   private readonly drawings: PlacedDrawing[];
+  private readonly chartLayer: HTMLElement;
+  private readonly drawnCharts = new Set<number>();
   private readonly objectUrls: string[] = [];
 
   constructor(
@@ -113,6 +118,7 @@ export class SheetGrid {
     this.element.style.height = `${height}px`;
     this.element.innerHTML = `
       <div class="ng-layer ng-main"></div>
+      <div class="ng-charts"></div>
       <div class="ng-layer ng-top" style="width:${width}px;height:${topHeight}px;margin-bottom:-${topHeight}px"></div>
       <div class="ng-layer ng-left" style="width:${leftWidth}px;height:${height}px;margin-bottom:-${height}px"></div>
       <div class="ng-layer ng-corner" style="width:${leftWidth}px;height:${topHeight}px"></div>`;
@@ -123,7 +129,33 @@ export class SheetGrid {
       left: layer('left'),
       corner: layer('corner'),
     };
-    this.drawings = sheet.drawings.flatMap((drawing) => this.placeDrawing(drawing));
+    this.chartLayer = this.element.querySelector('.ng-charts') as HTMLElement;
+    this.drawings = sheet.drawings.flatMap((drawing, index) => this.placeDrawing(drawing, index));
+  }
+
+  /**
+   * A box over each chart to draw it into. Repaints leave the boxes alone, so the charts in
+   * them keep running; the placeholder under a box is left out once the box is made.
+   */
+  chartBoxes(): { box: HTMLElement; part: ChartPart; failed(): void }[] {
+    const boxes = this.drawings.flatMap(({ chart, x, y, width, height }) => {
+      const part = chart === undefined ? undefined : this.sheet.drawings[chart].chart;
+      if (chart === undefined || !part) return [];
+      const box = document.createElement('div');
+      box.className = 'ng-chart-box';
+      box.style.cssText = `left:${x}px;top:${y}px;width:${width}px;height:${height}px`;
+      this.chartLayer.append(box);
+      this.drawnCharts.add(chart);
+      // A chart that can't be drawn shows its placeholder again.
+      const failed = () => {
+        box.remove();
+        this.drawnCharts.delete(chart);
+        this.paint();
+      };
+      return [{ box, part, failed }];
+    });
+    if (boxes.length > 0) this.paint();
+    return boxes;
   }
 
   /** Releases the object URLs of pictures. */
@@ -487,11 +519,12 @@ export class SheetGrid {
     const bottom = HEADER_HEIGHT + this.rowTop[range.row2 + 1];
     return this.drawings
       .filter((d) => d.x < right && d.x + d.width > left && d.y < bottom && d.y + d.height > top)
+      .filter((d) => d.chart === undefined || !this.drawnCharts.has(d.chart))
       .map((d) => d.html)
       .join('');
   }
 
-  private placeDrawing(drawing: Drawing): PlacedDrawing[] {
+  private placeDrawing(drawing: Drawing, index: number): PlacedDrawing[] {
     const x = this.headerWidth + this.anchorX(drawing.from);
     const y = HEADER_HEIGHT + this.anchorY(drawing.from);
     const width = drawing.to
@@ -513,6 +546,7 @@ export class SheetGrid {
         `<div class="ng-chart" style="${box}">${icons.chart}` +
         `<span class="ng-chart-title">${escapeHtml(drawing.text || labels.chart)}</span>` +
         `<span class="ng-chart-hint">${escapeHtml(labels.hint)}</span></div>`;
+      return [{ x, y, width, height, html, chart: index }];
     } else {
       const fill = this.options.colors.fill(drawing.fill);
       const color = this.options.colors.text(drawing.color, drawing.fill);

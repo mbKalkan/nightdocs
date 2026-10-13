@@ -35,6 +35,8 @@ export interface WorkbookInfo {
   /** Index of the sheet Excel had open when the file was saved. */
   activeSheet: number;
   styles: CellStyle[];
+  /** The theme part, which charts' colors refer to. */
+  theme?: string;
 }
 
 export const CellKind = {
@@ -75,7 +77,14 @@ export interface CellAnchor {
   colOffset: number;
 }
 
-/** Something drawn over the grid: a picture, a chart (shown as a placeholder) or a text box. */
+/** A chart part with the style parts it uses, as stored in the file. */
+export interface ChartPart {
+  xml: string;
+  style?: string;
+  colors?: string;
+}
+
+/** Something drawn over the grid: a picture, a chart or a text box. */
 export interface Drawing {
   kind: 'picture' | 'chart' | 'text';
   from: CellAnchor;
@@ -88,6 +97,8 @@ export interface Drawing {
   mime?: string;
   /** Chart title or text box content. */
   text?: string;
+  /** The chart to draw; until it is drawn, or if it can't be, a placeholder shows its title. */
+  chart?: ChartPart;
   /** Text box colors. */
   fill?: string;
   color?: string;

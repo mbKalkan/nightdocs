@@ -14,6 +14,17 @@ export type Chart =
 type Role = 'text' | 'line' | 'fill' | 'keep';
 
 /**
+ * Draws a chart once more without its opening animation, which only delays reading it,
+ * and with colors for a dark theme when `palette` is given. Series data is replaced rather
+ * than merged by `setOption`, so the whole option goes back.
+ */
+export function settleChart(chart: Chart, palette: DarkPalette | undefined): void {
+  const option = chart.getOption();
+  const next = palette ? adaptChartOption(option, palette) : { ...option };
+  chart.setOption({ ...next, animation: false }, { notMerge: true });
+}
+
+/**
  * Parts of a chart option that aren't drawn until someone interacts with the chart, or that
  * hold the data colors. Data colors stay as authored, like pictures, so the legend still
  * matches and series stay apart.

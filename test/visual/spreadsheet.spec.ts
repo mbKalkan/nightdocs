@@ -78,17 +78,16 @@ for (const theme of ['dark', 'light', 'hcDark', 'hcLight'] as const) {
 }
 
 for (const theme of ['dark', 'light'] as const) {
-  test(`draws pictures, chart placeholders and text boxes in the ${theme} theme`, async ({
-    page,
-  }) => {
+  test(`draws pictures, charts and text boxes in the ${theme} theme`, async ({ page }) => {
     const viewer = await openViewer(page, theme);
     await viewer.load('sample.xlsx');
     await page.locator('.ov-sheet-tab', { hasText: 'Charts' }).click();
 
-    const charts = page.locator('.ng-main .ng-chart');
-    await expect(charts.first()).toContainText('Q3 revenue by region');
-    await expect(charts.first()).toContainText('Open in Excel to see this chart');
-    await expect(charts.nth(1).locator('.ng-chart-title')).toHaveText('Chart');
+    // Charts are drawn as Excel shows them, in place of their placeholders.
+    const charts = page.locator('.ng-chart-box');
+    await expect(charts).toHaveCount(2);
+    await expect(charts.first().locator('canvas')).toBeVisible();
+    await expect(page.locator('.ng-chart')).toHaveCount(0);
     await expect(page.locator('.ng-shape')).toContainText('are drawn over the grid.');
     const picture = page.locator('.ng-main .ng-pic').first();
     await expect
@@ -109,7 +108,7 @@ test('grows a sheet to show drawings past its data', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');
   await page.locator('.ov-sheet-tab', { hasText: 'Charts' }).click();
-  await expect(page.locator('.ng-main .ng-chart').first()).toBeVisible();
+  await expect(page.locator('.ng-chart-box').first()).toBeVisible();
 
   await page.locator('.ov-viewport').evaluate((el) => el.scrollTo(el.scrollWidth, el.scrollHeight));
   await expect(page.locator('.ng-main .ng-pic')).toHaveCount(1);

@@ -998,6 +998,19 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
 
 /* Drawings: above cells (including spilled text), below the selection. */
 
+/* Drawn charts, over the cells and under frozen panes; repaints leave them alone. */
+.ng-charts {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ng-chart-box {
+  position: absolute;
+  overflow: hidden;
+}
+
 .ng-pic,
 .ng-chart,
 .ng-shape {

@@ -50,7 +50,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Merged cells, frozen panes, hidden rows, columns and sheets, and row and column fills
 - Text spills into empty neighbors the way it's aligned, including center across selection
 - Conditional formatting: highlight rules, color scales and data bars
-- Pictures and text boxes; charts appear as placeholders with their title
+- Pictures, text boxes and charts; charts follow your theme as in presentations: text and
+  gridlines adapt, data keeps its colors
 - Select cells with the mouse or keyboard, copy them, and see the cell's text and formula, or Sum,
   Count and Average, in the status bar under the sheet tabs
 - **Copy as Markdown Table** (right-click, or the Command Palette) for READMEs, issues and chats;
@@ -151,7 +152,7 @@ If another extension also opens these files, right-click the file and choose
 - The older binary formats (`.doc`, `.xls`, `.ppt`) aren't supported yet.
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
-- Excel charts, icon sets and conditional formatting rules with custom formulas aren't drawn yet.
+- Excel icon sets and conditional formatting rules with custom formulas aren't drawn yet.
 - Comparisons go by content, not formatting: a changed font or color isn't marked. In Excel a
   formula that changed but gives the same value isn't marked; in PowerPoint slides compare by
   their text, pictures and chart data, and a moved slide shows as removed in one place and added in

@@ -8,6 +8,7 @@ import {
   type CellAnchor,
   type CellLink,
   type CellRange,
+  type ChartPart,
   type CellStyle,
   type Drawing,
   type SheetData,
@@ -63,7 +64,8 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
   const date1904 = pr?.date1904 === '1' || pr?.date1904 === 'true';
   const activeTab = parseInt(firstElement(workbookXml, 'workbookView')?.attrs.activeTab ?? '0', 10);
 
-  const theme = readThemeColors(await read(relByType(REL_THEME)));
+  const themeXml = await read(relByType(REL_THEME));
+  const theme = readThemeColors(themeXml);
   const stylesXml = await read(relByType(REL_STYLES));
   const { styles, formats } = parseStyles(stylesXml, theme, locale);
   const dxfs = parseDxfs(stylesXml, theme);
@@ -103,6 +105,7 @@ export async function openWorkbook(bytes: Uint8Array, locale: string): Promise<O
       sheets: sheets.map(({ name, hidden, tabColor }) => ({ name, hidden, tabColor })),
       activeSheet,
       styles,
+      theme: themeXml,
     },
     async readSheet(index) {
       const path = sheets[index]?.path;
@@ -723,8 +726,14 @@ async function readDrawings(
         drawings.push({ kind: 'picture', ...placement, image, mime });
       }
     } else if (chart) {
-      const chartXml = await read(rels.get(chart[1])?.target);
-      drawings.push({ kind: 'chart', ...placement, text: chartXml ? chartTitle(chartXml) : '' });
+      const chartPath = rels.get(chart[1])?.target;
+      const chartXml = await read(chartPath);
+      drawings.push({
+        kind: 'chart',
+        ...placement,
+        text: chartXml ? chartTitle(chartXml) : '',
+        chart: chartXml ? await chartPart(read, chartPath!, chartXml) : undefined,
+      });
     } else {
       const text = firstElement(anchor.body, 'txBody');
       if (!text) continue;
@@ -765,6 +774,17 @@ function shapeColors(
 function solidColor(xml: string, theme: string[]): string | undefined {
   const solid = firstElement(xml, 'solidFill');
   return solid ? drawingColor(solid.body, theme) : undefined;
+}
+
+/** A chart with the style and color parts Excel keeps beside it. */
+async function chartPart(
+  read: (path: string | undefined) => Promise<string | undefined>,
+  path: string,
+  xml: string,
+): Promise<ChartPart> {
+  const rels = [...(await relationships(read, path)).values()];
+  const part = async (type: RegExp) => read(rels.find((rel) => type.test(rel.type))?.target);
+  return { xml, style: await part(/\/chartStyle$/), colors: await part(/\/chartColorStyle$/) };
 }
 
 /** The chart's own title; axis titles come later, inside the plot area. */

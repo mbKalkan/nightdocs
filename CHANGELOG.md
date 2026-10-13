@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   right-click menu or the Command Palette. Columns of numbers are aligned right, hidden rows and
   columns are left out, and with one cell selected it copies the block of data around it.
   Right-clicking a cell outside the selection now selects it first, as in Excel.
+- Excel charts are drawn instead of placeholders, by the same renderer as PowerPoint charts:
+  in a dark theme their text, gridlines and chart area follow it while the data keeps its
+  colors.
 
 ### Changed
 

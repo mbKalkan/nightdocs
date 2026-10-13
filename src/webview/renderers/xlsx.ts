@@ -173,6 +173,7 @@ class WorkbookView implements RenderedDocument {
     });
 
     this.grid.render(true);
+    void this.drawCharts(this.grid);
     if (this.restore) {
       this.grid.selectRange({
         row1: this.restore.row,
@@ -466,6 +467,32 @@ class WorkbookView implements RenderedDocument {
     }
   }
 
+  /**
+   * Draws the sheet's charts over their placeholders. The chart code is only loaded for sheets
+   * that have charts; a chart that can't be drawn keeps its placeholder.
+   */
+  private async drawCharts(grid: SheetGrid): Promise<void> {
+    const boxes = grid.chartBoxes();
+    if (boxes.length === 0) return;
+    let drawChart: typeof import('../xlsx/charts').drawChart;
+    try {
+      ({ drawChart } = await import('../xlsx/charts'));
+    } catch (error) {
+      console.error(error);
+      boxes.forEach((box) => box.failed());
+      return;
+    }
+    for (const { box, part, failed } of boxes) {
+      if (!box.isConnected) continue;
+      try {
+        await drawChart(part, this.info.theme, box, this.options.palette);
+      } catch (error) {
+        console.error(error);
+        failed();
+      }
+    }
+  }
+
   private createGrid(sheet: SheetData): SheetGrid {
     const grid = this.newGrid(sheet);
     grid.setMarks(this.diff?.get(this.info.sheets[this.index].name)?.marks);
@@ -553,6 +580,7 @@ class WorkbookView implements RenderedDocument {
     this.grid = grid;
     this.context.viewport.scrollTo(0, 0);
     grid.render(true);
+    void this.drawCharts(grid);
     // The other side switches sheets by following the scroll position, and starts at A1 too.
     this.quiet++;
     grid.selectRange({ row1: 0, col1: 0, row2: 0, col2: 0 });
