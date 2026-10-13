@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Versions from Git open as committed. That includes Word files that Git for Windows turns into
   plain text for diffs, and files kept in Git LFS whose content is on this machine.
 
+### Changed
+
+- The extension is now called **Nightdocs — Office Viewer for Word, Excel & PowerPoint** in the
+  Marketplace and the Extensions view. Word, Excel and PowerPoint files are registered as file
+  types of their own, so searching the Marketplace by file type (`ext:docx`) finds Nightdocs.
+
 ## [0.2.0] - 2026-10-12
 
 ### Added

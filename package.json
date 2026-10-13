@@ -27,19 +27,32 @@
     "xlsx",
     "xlsm",
     "pptx",
+    "pptm",
+    "ppsx",
     "word",
     "excel",
     "powerpoint",
     "office",
+    "microsoft office",
     "spreadsheet",
     "presentation",
     "slides",
     "document",
     "viewer",
-    "reader",
     "preview",
-    "dark",
-    "dark mode"
+    "reader",
+    "office viewer",
+    "word viewer",
+    "excel viewer",
+    "powerpoint viewer",
+    "docx viewer",
+    "xlsx viewer",
+    "pptx viewer",
+    "dark mode",
+    "dark theme",
+    "diff",
+    "compare",
+    "git diff"
   ],
   "preview": true,
   "pricing": "Free",
@@ -61,6 +74,38 @@
   },
   "activationEvents": [],
   "contributes": {
+    "languages": [
+      {
+        "id": "docx",
+        "aliases": [
+          "Word"
+        ],
+        "extensions": [
+          ".docx"
+        ]
+      },
+      {
+        "id": "xlsx",
+        "aliases": [
+          "Excel"
+        ],
+        "extensions": [
+          ".xlsx",
+          ".xlsm"
+        ]
+      },
+      {
+        "id": "pptx",
+        "aliases": [
+          "PowerPoint"
+        ],
+        "extensions": [
+          ".pptx",
+          ".pptm",
+          ".ppsx"
+        ]
+      }
+    ],
     "customEditors": [
       {
         "viewType": "nightdocs.viewer",

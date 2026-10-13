@@ -7,7 +7,11 @@ const readJson = (path: string) =>
 
 const manifest = readJson('package.json') as {
   engines: { vscode: string };
-  contributes: { customEditors: { selector: { filenamePattern: string }[] }[] };
+  contributes: {
+    customEditors: { selector: { filenamePattern: string }[] }[];
+    languages: { extensions: string[] }[];
+  };
+  keywords: string[];
   devDependencies: Record<string, string>;
   icon: string;
   files: string[];
@@ -25,6 +29,16 @@ describe('extension manifest', () => {
       editor.selector.map((selector) => selector.filenamePattern),
     );
     expect(patterns.sort()).toEqual(SUPPORTED_EXTENSIONS.map((ext) => `*${ext}`).sort());
+  });
+
+  it('declares the same file types as languages, so the Marketplace lists it for them', () => {
+    const extensions = manifest.contributes.languages.flatMap((language) => language.extensions);
+    expect(extensions.sort()).toEqual([...SUPPORTED_EXTENSIONS].sort());
+  });
+
+  it('stays within the Marketplace limit of 30 keywords', () => {
+    expect(manifest.keywords.length).toBeLessThanOrEqual(30);
+    expect(new Set(manifest.keywords).size).toBe(manifest.keywords.length);
   });
 
   it('defines every %placeholder% in each package.nls file', () => {
