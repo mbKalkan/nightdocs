@@ -286,6 +286,29 @@ test('lists every sheet to pick from', async ({ page }) => {
     .toHaveLength(2);
 });
 
+test('keeps a long cell text in the status bar from crowding out the tabs', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('many-sheets.xlsx');
+  await viewer.post({ type: 'showSheet', sheet: 'Notes' });
+  await expect(activeTab(page)).toHaveText('Notes');
+  await clickCell(page, 'A', 7);
+
+  // The text is cut short with the whole of it on hover, and the tabs keep most of the room.
+  const value = page.locator('.ov-status-value');
+  await expect(value).toHaveAttribute('title', /^Figures before March 2025 .* Q4 2025 review\.$/);
+  expect((await value.boundingBox())!.width).toBeLessThanOrEqual(240);
+  const footer = (await page.locator('.ov-footer').boundingBox())!.width;
+  expect((await page.getByRole('tablist').boundingBox())!.width).toBeGreaterThan(footer / 2);
+  await expect(activeTab(page)).toBeInViewport({ ratio: 0.95 });
+  await page.locator('.ov-footer').screenshot({ path: `${SCREENS}/xlsx-status-long-text.png` });
+
+  // A narrow view keeps only the address.
+  await page.setViewportSize({ width: 520, height: 760 });
+  await expect(value).toBeHidden();
+  await expect(status(page)).toContainText('A7');
+  await expect(activeTab(page)).toBeInViewport({ ratio: 0.95 });
+});
+
 test('shows no tab scrolling buttons when every tab fits', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');

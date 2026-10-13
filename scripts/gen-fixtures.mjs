@@ -787,6 +787,17 @@ function manySheetsWorkbook() {
         { ref: 'B4', value: costs, style: 4 },
         { ref: 'A5', value: 'Profit', style: 2 },
         { ref: 'B5', value: revenue - costs, style: 4, formula: 'B3-B4' },
+        ...(name === 'Notes'
+          ? [
+              {
+                ref: 'A7',
+                value:
+                  'Figures before March 2025 come from the old billing system and were converted ' +
+                  'at the average monthly exchange rate; later months use the rate on the invoice ' +
+                  'date. Forecast sheets assume the pricing approved in the Q4 2025 review.',
+              },
+            ]
+          : []),
       ],
     };
   });
