@@ -63,6 +63,8 @@ Other useful scripts:
 - `npm run fixtures:large` writes a 100,000-row workbook and a 200-slide deck for performance
   checks.
 - `npm run screenshots` regenerates the images in `docs/images`.
+- `npm run demo` records the README's animated demo, `docs/images/demo.gif` (needs
+  [ffmpeg](https://ffmpeg.org/) and `npx playwright install ffmpeg`).
 - `npm run corpus -- <folder>` opens every `.docx`, `.xlsx` and `.pptx` file in a folder and
   lists the ones that don't show, get stuck, log errors or open slowly. Use it with a collection
   of real documents, such as the test files of [Apache POI](https://github.com/apache/poi/tree/trunk/test-data);
