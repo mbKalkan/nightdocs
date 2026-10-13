@@ -1537,6 +1537,27 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
     inset -2px 0 0 var(--ng-accent);
 }
 
+/* Letters of columns only one side has get a bar along their top. */
+.ng-hc.ng-diff-removed {
+  box-shadow: inset 0 3px 0 var(--ov-diff-removed-bar);
+}
+
+.ng-hc.ng-diff-added {
+  box-shadow: inset 0 3px 0 var(--ov-diff-added-bar);
+}
+
+.ng-hc.ng-sel.ng-diff-removed {
+  box-shadow:
+    inset 0 3px 0 var(--ov-diff-removed-bar),
+    inset 0 -2px 0 var(--ng-accent);
+}
+
+.ng-hc.ng-sel.ng-diff-added {
+  box-shadow:
+    inset 0 3px 0 var(--ov-diff-added-bar),
+    inset 0 -2px 0 var(--ng-accent);
+}
+
 /* Sheets with changes have a dot on their tab. */
 .ov-sheet-tab[data-change]::before {
   content: '';

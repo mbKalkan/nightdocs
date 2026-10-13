@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   columns are left out, and with one cell selected it copies the block of data around it.
   Right-clicking a cell outside the selection now selects it first, as in Excel.
 
+### Changed
+
+- Workbook comparisons line up columns as well as rows: a column inserted or deleted is marked as
+  one change, with a line where it would be on the other side, instead of marking every cell to
+  its right as changed. Selecting cells and scrolling sideways follow the matching columns.
+
 ### Fixed
 
 - Picking another sheet while a workbook was still loading the sheet a link, a comparison or a
