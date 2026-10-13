@@ -11,6 +11,7 @@ import { markWords } from '../diff/marks';
 import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
 import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
+import { NavList } from '../navList';
 import { describe, pick } from '../picker';
 import { vscode } from '../vscodeApi';
 import { columnName, SheetGrid } from '../xlsx/grid';
@@ -18,7 +19,14 @@ import type { SheetData, WorkbookInfo } from '../xlsx/model';
 import { SheetTabs } from '../xlsx/sheetTabs';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
 import { WorkbookClient } from '../xlsx/workerClient';
-import type { Comparison, RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
+import type {
+  Comparison,
+  NavigationContent,
+  RenderContext,
+  RenderedDocument,
+  RenderOptions,
+  Renderer,
+} from './types';
 
 interface XlsxState {
   sheet: string;
@@ -170,6 +178,31 @@ class WorkbookView implements RenderedDocument {
 
   refresh(): void {
     this.grid.render(true);
+  }
+
+  /** The sheets in the navigation pane, for workbooks with more than the tabs show at once. */
+  navigation(context: RenderContext): NavigationContent {
+    const { strings } = this.options;
+    const visible = this.visibleSheets();
+    const list = new NavList(
+      visible.map((index) => {
+        const sheet = this.info.sheets[index];
+        const swatch = document.createElement('span');
+        swatch.className = 'ov-nav-swatch';
+        if (sheet.tabColor) {
+          swatch.style.background = this.colors.fill(sheet.tabColor) ?? sheet.tabColor;
+        }
+        return { label: sheet.name, decoration: swatch };
+      }),
+      {
+        select: (position) => void this.showSheet(visible[position]),
+        current: () => visible.indexOf(this.index),
+      },
+      strings.sheets,
+      strings,
+    );
+    // Switching sheets tells scroll listeners too.
+    return { title: strings.sheets, element: list.element, dispose: list.follow(context.viewport) };
   }
 
   command(command: ViewerCommand): void {

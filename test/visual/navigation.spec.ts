@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { lastSent } from './comparison';
 import { openViewer } from './harness';
 import { answerPick, lastPick } from './picks';
 
@@ -79,5 +80,114 @@ test('goes to a slide picked by its title', async ({ page }) => {
 
   await answerPick(viewer, request, '5. Shapes and pictures');
   await expect(page.locator('.ov-status')).toHaveText('Slide 5 of 8');
+  expect(viewer.problems).toEqual([]);
+});
+
+const pane = (page: Page) => page.getByRole('complementary', { name: 'Navigation Pane' });
+// Not by role: collapsed entries leave the accessibility tree, and the indexes would shift.
+const items = (page: Page) => page.locator('.ov-nav-item');
+
+test('lists the headings of a Word document in the navigation pane', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+  const toggle = page.getByRole('button', { name: 'Navigation Pane' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(pane(page)).toBeHidden();
+
+  await toggle.click();
+  await expect(pane(page)).toBeVisible();
+  await expect(pane(page)).toContainText('Headings');
+  await expect(items(page)).toHaveText(['Summary', 'Key points', 'Regional results', 'Next steps']);
+  await expect(items(page).nth(1)).toHaveAttribute('aria-level', '2');
+  expect(await lastSent<{ open: boolean }>(viewer, 'setNavigationPane')).toMatchObject({
+    open: true,
+  });
+
+  // Clicking a heading goes there and marks it as where the document is.
+  await items(page).nth(3).click();
+  await expect(page.locator('section.docx p', { hasText: /^Next steps$/ })).toBeInViewport();
+  await expect(items(page).nth(3)).toHaveAttribute('aria-current', 'location');
+
+  // Headings with headings under them collapse, with the mouse or the keyboard.
+  await items(page).nth(0).locator('.ov-nav-twisty').click();
+  await expect(items(page).nth(0)).toHaveAttribute('aria-expanded', 'false');
+  await expect(items(page).nth(1)).toBeHidden();
+  await items(page).nth(0).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(items(page).nth(1)).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(items(page).nth(1)).toBeFocused();
+  await expect(items(page).nth(1)).toHaveAttribute('aria-current', 'location');
+  await page.screenshot({ path: 'test-results/screens/nav-docx-dark.png' });
+
+  // It stays open for the next document, and the close button closes it.
+  await viewer.load('long.docx');
+  await expect(items(page)).toHaveCount(12);
+  await pane(page).getByRole('button', { name: 'Close' }).click();
+  await expect(pane(page)).toBeHidden();
+  expect(await lastSent<{ open: boolean }>(viewer, 'setNavigationPane')).toMatchObject({
+    open: false,
+  });
+  expect(viewer.problems).toEqual([]);
+});
+
+test('shows the slides as pictures in the navigation pane', async ({ page }) => {
+  const viewer = await openViewer(page, 'light');
+  await viewer.load('sample.pptx');
+  await viewer.post({ type: 'command', command: 'toggleNavigation' });
+  await expect(pane(page)).toContainText('Slides');
+  await expect(items(page)).toHaveCount(8);
+  await expect(items(page).nth(1)).toHaveAccessibleName('Slide 2: Highlights');
+  await expect(items(page).nth(7)).toHaveClass(/ov-nav-muted/);
+  // The pictures are drawn as they scroll into the pane.
+  await expect(page.locator('.ov-nav-thumb .pptx-slide').first()).toBeVisible();
+  await expect(items(page).nth(0)).toHaveAttribute('aria-current', 'location');
+
+  await items(page).nth(4).click();
+  await expect(page.locator('.ov-status')).toHaveText('Slide 5 of 8');
+  await expect(items(page).nth(4)).toHaveAttribute('aria-current', 'location');
+  await page.screenshot({ path: 'test-results/screens/nav-pptx-light.png' });
+  expect(viewer.problems).toEqual([]);
+});
+
+test('lists the sheets of a workbook in the navigation pane', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('many-sheets.xlsx');
+  await page.getByRole('button', { name: 'Navigation Pane' }).click();
+  await expect(pane(page)).toContainText('Sheets');
+  await expect(items(page)).toHaveCount(35);
+  await expect(pane(page).locator('[aria-current]')).toHaveText('Jun 2025');
+
+  await pane(page).getByRole('treeitem', { name: 'Notes' }).click();
+  await expect(page.locator('.ov-sheet-tab[aria-selected="true"]')).toHaveText('Notes');
+  await expect(pane(page).locator('[aria-current]')).toHaveText('Notes');
+  // And the other way round: a tab picked below shows in the pane.
+  await page.locator('.ov-sheet-tab', { hasText: 'Regions' }).click();
+  await expect(pane(page).locator('[aria-current]')).toHaveText('Regions');
+});
+
+test('keeps the navigation pane closed beside a comparison', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+  const toggle = page.getByRole('button', { name: 'Navigation Pane' });
+  await toggle.click();
+  await expect(pane(page)).toBeVisible();
+
+  // Half a window is too narrow for it, so a comparison opens without it.
+  await viewer.post({ type: 'diff', side: 'modified' });
+  await expect(pane(page)).toBeHidden();
+  await viewer.load('sample.docx', true);
+  await expect(pane(page)).toBeHidden();
+
+  // It still opens on request, without changing what single files remember.
+  const saved = (await viewer.sent()).filter((m) => m.type === 'setNavigationPane').length;
+  await toggle.click();
+  await expect(pane(page)).toBeVisible();
+  await toggle.click();
+  await expect(pane(page)).toBeHidden();
+  expect((await viewer.sent()).filter((m) => m.type === 'setNavigationPane')).toHaveLength(saved);
+
+  await viewer.post({ type: 'diff', side: undefined });
+  await expect(pane(page)).toBeVisible();
   expect(viewer.problems).toEqual([]);
 });

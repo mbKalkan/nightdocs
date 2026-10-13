@@ -13,6 +13,7 @@ import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
 import { compareSlides, summarizeSlides } from '../diff/slideCompare';
 import { adaptChartOption, type Chart } from '../pptx/chartColors';
 import { readNotes } from '../pptx/notes';
+import { slidesPane } from '../pptx/thumbnails';
 import { OBJECT, textOf } from '../diff/marks';
 import { icons } from '../icons';
 import { PageNavigator } from '../pageNavigator';
@@ -126,6 +127,21 @@ export const pptxRenderer: Renderer = {
         }
       },
       state: () => ({ notes: !deck.hasAttribute('data-notes-hidden') }),
+      navigation(context) {
+        return slidesPane(
+          presentation.slides.map((slide, index) => ({
+            frame: frames[index],
+            title: slideTitle(slide, frames[index]),
+            hidden: Boolean(slide.hidden),
+          })),
+          {
+            select: (index) => navigator?.goTo(index),
+            current: () => navigator?.current ?? -1,
+          },
+          context.viewport,
+          strings,
+        );
+      },
       command(command) {
         if (command !== 'goTo' || !navigator) return;
         const current = navigator.current;

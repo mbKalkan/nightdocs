@@ -184,6 +184,11 @@
         "command": "nightdocs.find",
         "title": "%command.find%",
         "category": "%category%"
+      },
+      {
+        "command": "nightdocs.toggleNavigation",
+        "title": "%command.toggleNavigation%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -227,6 +232,10 @@
         {
           "command": "nightdocs.find",
           "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        },
+        {
+          "command": "nightdocs.toggleNavigation",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         }
       ]
     },

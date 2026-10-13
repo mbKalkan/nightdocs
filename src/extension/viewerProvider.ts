@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { detectContainer, formatForPath, type FormatInfo } from '../shared/formats';
 import type {
   ColorMode,
+  DocumentFormat,
   HostToWebviewMessage,
   ViewerCommand,
   WebviewToHostMessage,
@@ -14,6 +15,9 @@ import { openWithDefaultApp } from './openWithDefaultApp';
 import { pick } from './quickPick';
 import { viewerStrings } from './strings';
 import { buildWebviewHtml } from './webviewHtml';
+
+/** Each kind of file remembers whether its navigation pane was left open, as Office does. */
+const navigationPaneKey = (format: DocumentFormat) => `nightdocs.navigationPane.${format}`;
 
 export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   static readonly viewType = 'nightdocs.viewer';
@@ -53,6 +57,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
         vscode.commands.registerCommand(`nightdocs.${id}`, () => provider.sendCommand('goTo')),
       ),
       vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
+      vscode.commands.registerCommand('nightdocs.toggleNavigation', () =>
+        provider.sendCommand('toggleNavigation'),
+      ),
     );
   }
 
@@ -105,6 +112,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'setColorMode':
             void this.state.update(ViewerProvider.colorModeKey, message.mode);
+            break;
+          case 'setNavigationPane':
+            void this.state.update(navigationPaneKey(info.format), message.open);
             break;
           case 'pick':
             void pick(message.placeholder, message.items).then((index) =>
@@ -175,6 +185,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       data: new Uint8Array(data),
       reload,
       colorMode: this.state.get<ColorMode>(ViewerProvider.colorModeKey, 'dark'),
+      navigationPane: this.state.get<boolean>(navigationPaneKey(info.format), false),
       locale: Intl.DateTimeFormat().resolvedOptions().locale,
       ...common,
     });

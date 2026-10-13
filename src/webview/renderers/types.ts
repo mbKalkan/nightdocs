@@ -38,6 +38,8 @@ export interface RenderedDocument {
   /** Called when the zoom level changes. */
   refresh?(): void;
   command?(command: ViewerCommand): void;
+  /** What the navigation pane lists for this document, made when the pane opens. */
+  navigation?(context: RenderContext): NavigationContent | undefined;
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */
@@ -49,6 +51,14 @@ export interface RenderedDocument {
     context: RenderContext,
   ): Comparison | undefined | Promise<Comparison | undefined>;
   dispose?(): void;
+}
+
+/** A document's part of the navigation pane. */
+export interface NavigationContent {
+  /** What it lists: Headings, Slides, Sheets. */
+  title: string;
+  element: HTMLElement;
+  dispose(): void;
 }
 
 /** The differences marked in one side of a comparison. */

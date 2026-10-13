@@ -294,13 +294,184 @@ body {
   }
 }
 
-/* Document area */
+/* Document area, with the navigation pane beside it */
+
+.ov-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
 
 .ov-viewport {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   outline: none;
+}
+
+/* Navigation pane: headings, slides or sheets, styled like a VS Code side bar. */
+
+.ov-nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 240px;
+  max-width: 40%;
+  border-right: 1px solid var(--vscode-sideBar-border, var(--ov-border));
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+  font-size: 13px;
+  user-select: none;
+}
+
+.ov-nav[hidden] {
+  display: none;
+}
+
+.ov-nav-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 4px 0 12px;
+  color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ov-nav-header .ov-icon-button {
+  height: 22px;
+}
+
+.ov-nav-body {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 8px;
+  overflow: auto;
+}
+
+.ov-nav-empty {
+  margin: 4px 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ov-nav-item {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px 0 calc(4px + var(--ov-nav-level, 0) * 12px);
+  outline: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ov-nav-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.ov-nav-item[aria-current] {
+  background: var(
+    --vscode-list-inactiveSelectionBackground,
+    var(--vscode-toolbar-activeBackground, rgb(128 128 128 / 25%))
+  );
+  color: var(--vscode-list-inactiveSelectionForeground, inherit);
+}
+
+.ov-nav-item:focus-visible {
+  outline: 1px solid var(--vscode-list-focusOutline, var(--vscode-focusBorder));
+  outline-offset: -1px;
+}
+
+.ov-nav-twisty {
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.ov-nav-twisty svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ov-nav-item[aria-expanded='false'] .ov-nav-twisty svg {
+  transform: rotate(-90deg);
+}
+
+.ov-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-nav-muted {
+  opacity: 0.55;
+}
+
+.ov-nav-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 2px;
+}
+
+/* Slides as small pictures, numbered on the left like PowerPoint's slide pane. */
+.ov-nav-thumbnails .ov-nav-item {
+  align-items: flex-start;
+  padding: 6px 12px 6px 4px;
+}
+
+.ov-nav-thumbnails .ov-nav-twisty {
+  display: none;
+}
+
+.ov-nav-thumbnails .ov-nav-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.ov-nav-preview {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ov-nav-number {
+  flex: none;
+  width: 18px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  text-align: right;
+}
+
+.ov-nav-thumb {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--ov-border);
+}
+
+.ov-nav-thumb > .pptx-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.ov-nav-item[aria-current] .ov-nav-thumb {
+  box-shadow: 0 0 0 2px var(--vscode-focusBorder);
 }
 
 /* Dark pages use the editor background, so the canvas around them goes a step darker. */
