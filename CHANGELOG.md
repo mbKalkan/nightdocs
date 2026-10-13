@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Zooming one side of a comparison zooms the other side to the same level, in Word, Excel and
+  PowerPoint alike.
+
 ## [0.3.0] - 2026-10-13
 
 Compare two versions of a Word, Excel or PowerPoint file side by side, straight from Source

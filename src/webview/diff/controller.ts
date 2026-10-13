@@ -27,13 +27,18 @@ export class DiffController {
   /** Scroll position set to follow the other side; its scroll event isn't passed back. */
   private following: number | undefined;
   private revealed = false;
+  /** The zoom both sides last had, so taking on the other side's doesn't send it back. */
+  private zoom: number | null | undefined;
   /** The last move between changes, which the next one waits for. */
   private moving: Promise<void> = Promise.resolve();
   private readonly cleanup: (() => void)[] = [];
 
   setSide(side: DiffSide | undefined): void {
     this.side = side;
-    if (!side) this.peer = undefined;
+    if (!side) {
+      this.peer = undefined;
+      this.zoom = undefined;
+    }
     void this.publish();
     void this.update();
   }
@@ -55,6 +60,20 @@ export class DiffController {
   detach(): void {
     this.stop();
     this.target = undefined;
+  }
+
+  /** Shares a zoom set on this side (a factor, or `null` for fitting the width). */
+  zoomed(zoom: number | null): void {
+    if (!this.side || zoom === this.zoom) return;
+    this.zoom = zoom;
+    vscode.postMessage({ type: 'zoomed', zoom });
+  }
+
+  /** Zooms like the other side, with `apply`, without sending that zoom back. */
+  followZoom(zoom: number | null, apply: (zoom: number | null) => void): void {
+    if (!this.side) return;
+    this.zoom = zoom;
+    apply(zoom);
   }
 
   /** Scrolls to where the other side is. */

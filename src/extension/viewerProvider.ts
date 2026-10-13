@@ -91,7 +91,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             this.diffs.summary(member, message.summary);
             break;
           case 'scroll':
-            this.diffs.scroll(member, message.anchor);
+            this.diffs.relay(member, { type: 'peerScroll', anchor: message.anchor });
+            break;
+          case 'zoomed':
+            this.diffs.relay(member, { type: 'peerZoom', zoom: message.zoom });
             break;
           case 'openInOffice':
             void this.openInOffice(uri, info);

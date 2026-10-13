@@ -332,3 +332,43 @@ test('moves between changed slides and keeps both decks lined up', async ({ cont
   ).toHaveCount(0);
   await expect(original.page.locator('.pptx-slide')).toHaveCount(8);
 });
+
+for (const files of [
+  ['sample.docx', 'sample-revised.docx'],
+  ['orders.xlsx', 'orders-revised.xlsx'],
+  ['sample.pptx', 'sample-revised.pptx'],
+] as [string, string][]) {
+  test(`zooms both sides together when comparing ${files[0]}`, async ({ context }) => {
+    const [original, modified] = await openComparison(
+      [await context.newPage(), await context.newPage()],
+      'dark',
+      files,
+    );
+    const label = (side: typeof original) => side.page.locator('.ov-zoom-label');
+    /** Hands the zoom one side last reported to the other side, as the host does. */
+    const relayZoom = async (from: typeof original, to: typeof original) => {
+      const message = await lastSent<{ zoom: number | null }>(from.viewer, 'zoomed');
+      await to.viewer.post({ type: 'peerZoom', zoom: message!.zoom });
+    };
+
+    // Zooming in on one side zooms the other side to the same level.
+    await modified.page.getByRole('button', { name: 'Zoom In' }).click();
+    await expect
+      .poll(async () => (await lastSent(modified.viewer, 'zoomed')) !== undefined)
+      .toBe(true);
+    await relayZoom(modified, original);
+    await expect(label(original)).toHaveText(await label(modified).innerText());
+    // Following doesn't send the zoom back.
+    const sent = (await original.viewer.sent()) as unknown as { type: string; zoom?: unknown }[];
+    const echoes = sent.filter((message) => message.type === 'zoomed');
+    expect(echoes.map((message) => message.zoom)).toEqual(echoes.map(() => null));
+
+    // Back to fitting the width on both.
+    await original.viewer.post({ type: 'zoom', action: 'reset' });
+    await expect
+      .poll(async () => (await lastSent<{ zoom: number | null }>(original.viewer, 'zoomed'))?.zoom)
+      .toBeNull();
+    await relayZoom(original, modified);
+    await expect(label(modified)).toHaveText(await label(original).innerText());
+  });
+}
