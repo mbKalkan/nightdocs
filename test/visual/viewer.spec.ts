@@ -167,7 +167,7 @@ test('can be used from the keyboard and a screen reader', async ({ page }) => {
   await page.keyboard.press('End');
   await expect(page.locator('[data-action="open"]')).toBeFocused();
   await page.keyboard.press('ArrowRight');
-  await expect(page.locator('[data-action="colors"]')).toBeFocused();
+  await expect(page.locator('[data-action="navigation"]')).toBeFocused();
   await page.keyboard.press('ArrowLeft');
   await expect(page.locator('[data-action="open"]')).toBeFocused();
 });

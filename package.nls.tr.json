@@ -12,5 +12,6 @@
   "command.goToSheet": "Sayfaya Git…",
   "command.goToSlide": "Slayta Git…",
   "command.goToHeading": "Başlığa Git…",
-  "command.find": "Sayfada Bul"
+  "command.find": "Sayfada Bul",
+  "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat"
 }

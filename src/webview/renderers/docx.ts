@@ -8,7 +8,14 @@ import { WordReview } from '../docx/review';
 import { PageNavigator } from '../pageNavigator';
 import { paginate } from '../paginate';
 import { describe, pick } from '../picker';
-import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
+import { NavList } from '../navList';
+import type {
+  NavigationContent,
+  RenderContext,
+  RenderedDocument,
+  RenderOptions,
+  Renderer,
+} from './types';
 
 /** Horizontal space around pages; matches the padding of `.docx-wrapper` in viewer.css. */
 const PAGE_GUTTER = 2 * 32;
@@ -79,6 +86,9 @@ export const docxRenderer: Renderer = {
       command(command) {
         if (command === 'goTo' && view) void goToHeading(view, outline(), options.strings);
       },
+      navigation(context) {
+        return headingsPane(context.viewport, outline(), options.strings);
+      },
       summary: () => ({ format: 'docx', blocks: paragraphs().texts }),
       compare: (peer, side, context) => {
         if (peer.format !== 'docx') return undefined;
@@ -109,13 +119,7 @@ async function goToHeading(
   strings: ViewerStrings,
 ): Promise<void> {
   const { viewport } = context;
-  const top = (heading: Heading) =>
-    scrollTopOf(viewport, heading.element.getBoundingClientRect().top);
-  const at = viewport.scrollTop + HEADING_MARGIN + 1;
-  const current = headings.reduce(
-    (found, heading, index) => (top(heading) <= at ? index : found),
-    -1,
-  );
+  const current = currentHeading(viewport, headings);
   const index = await pick(
     strings.goToHeading.replace('{0}', String(headings.length)),
     headings.map((heading, i) => ({
@@ -128,5 +132,45 @@ async function goToHeading(
       current: i === current,
     })),
   );
-  if (index !== undefined) viewport.scrollTop = Math.max(0, top(headings[index]) - HEADING_MARGIN);
+  if (index !== undefined) revealHeading(viewport, headings[index]);
+}
+
+/** The headings in the navigation pane, as an outline that follows the view. */
+function headingsPane(
+  viewport: HTMLElement,
+  headings: readonly Heading[],
+  strings: ViewerStrings,
+): NavigationContent {
+  if (headings.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'ov-nav-empty';
+    empty.textContent = strings.noHeadings;
+    return { title: strings.headings, element: empty, dispose: () => {} };
+  }
+  const list = new NavList(
+    headings.map((heading) => ({ label: heading.text, level: heading.level })),
+    {
+      select: (index) => revealHeading(viewport, headings[index]),
+      current: () => currentHeading(viewport, headings),
+    },
+    strings.headings,
+    strings,
+  );
+  return { title: strings.headings, element: list.element, dispose: list.follow(viewport) };
+}
+
+const headingTop = (viewport: HTMLElement, heading: Heading) =>
+  scrollTopOf(viewport, heading.element.getBoundingClientRect().top);
+
+/** The heading the view is under: the last one at or above its top, or -1 before the first. */
+function currentHeading(viewport: HTMLElement, headings: readonly Heading[]): number {
+  const at = viewport.scrollTop + HEADING_MARGIN + 1;
+  return headings.reduce(
+    (found, heading, index) => (headingTop(viewport, heading) <= at ? index : found),
+    -1,
+  );
+}
+
+function revealHeading(viewport: HTMLElement, heading: Heading): void {
+  viewport.scrollTop = Math.max(0, headingTop(viewport, heading) - HEADING_MARGIN);
 }

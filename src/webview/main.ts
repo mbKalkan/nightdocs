@@ -1,12 +1,17 @@
 import './styles/viewer.css';
 import { formatCssColor } from '../shared/color';
 import { detectContainer } from '../shared/formats';
-import type { HostToWebviewMessage, LoadMessage, ReadErrorMessage } from '../shared/protocol';
+import type {
+  HostToWebviewMessage,
+  LoadMessage,
+  ReadErrorMessage,
+  ViewerStrings,
+} from '../shared/protocol';
 import { isDarkTheme, readPalette } from './darkColors';
 import { DiffController } from './diff/controller';
 import { picked } from './picker';
 import { loadRenderer } from './renderers';
-import type { RenderContext, RenderedDocument } from './renderers/types';
+import type { NavigationContent, RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
 import { vscode, type ViewState } from './vscodeApi';
 import { ZoomController } from './zoomController';
@@ -22,8 +27,16 @@ let current: RenderedDocument | undefined;
 let themeKey = currentThemeKey();
 /** Present when this viewer is one side of a comparison. */
 const diff = new DiffController();
+/** The live parts of the viewer the document on screen was given. */
+let renderContext: RenderContext | undefined;
+/** Whether the navigation pane is open, and what it shows. */
+let navigationOpen = false;
+let navigation: NavigationContent | undefined;
+/** One side of a comparison: half a window is too narrow to keep the pane open by default. */
+let comparing = false;
 
 const shell = new Shell(document.getElementById('app') as HTMLElement, {
+  onToggleNavigation: toggleNavigation,
   onZoomIn: () => zoom.zoomIn(),
   onZoomOut: () => zoom.zoomOut(),
   onResetZoom: () => zoom.reset(),
@@ -64,13 +77,15 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       }
       break;
     case 'command':
-      current?.command?.(message.command);
+      if (message.command === 'toggleNavigation') toggleNavigation();
+      else current?.command?.(message.command);
       break;
     case 'picked':
       picked(message.index);
       break;
     case 'diff':
       diff.setSide(message.side);
+      setComparing(message.side !== undefined);
       break;
     case 'peerSummary':
       diff.setPeer(message.summary);
@@ -190,6 +205,9 @@ async function show(message: LoadMessage): Promise<void> {
     };
     rendered.activate?.(context);
     diff.attach(rendered, context, message.strings);
+    renderContext = context;
+    if (!comparing) navigationOpen = message.navigationPane;
+    showNavigation(message.strings);
   } catch (error) {
     console.error(error);
     if (id === renderId && !keepOnFailure) {
@@ -201,6 +219,36 @@ async function show(message: LoadMessage): Promise<void> {
       shell.setBusy(false);
     }
   }
+}
+
+/** Fills the navigation pane from the document on screen, or hides it. */
+function showNavigation(strings: ViewerStrings): void {
+  navigation?.dispose();
+  navigation = undefined;
+  shell.navigationBody.replaceChildren();
+  if (navigationOpen && current && renderContext) {
+    navigation = current.navigation?.(renderContext);
+    if (navigation) shell.navigationBody.append(navigation.element);
+  }
+  shell.setNavigation(Boolean(current?.navigation), navigation?.title, strings);
+}
+
+function toggleNavigation(): void {
+  if (!lastLoad || !hasContent || !current?.navigation) return;
+  navigationOpen = !navigationOpen;
+  // Opened beside a comparison, it is for this once; the choice for single files stays.
+  if (!comparing) {
+    lastLoad = { ...lastLoad, navigationPane: navigationOpen };
+    vscode.postMessage({ type: 'setNavigationPane', open: navigationOpen });
+  }
+  showNavigation(lastLoad.strings);
+}
+
+function setComparing(value: boolean): void {
+  if (value === comparing) return;
+  comparing = value;
+  navigationOpen = !comparing && Boolean(lastLoad?.navigationPane);
+  if (lastLoad && hasContent) showNavigation(lastLoad.strings);
 }
 
 function toggleColors(): void {
@@ -228,6 +276,7 @@ function showReadError(message: ReadErrorMessage): void {
 function showError(message: LoadMessage | ReadErrorMessage, reason: string): void {
   hasContent = false;
   replaceCurrent(undefined);
+  shell.setNavigation(false, undefined, message.strings);
   shell.showError(
     message.strings.errorTitle,
     reason,
@@ -238,6 +287,10 @@ function showError(message: LoadMessage | ReadErrorMessage, reason: string): voi
 /** Releases the previous document (its workers, listeners and footer) before showing another. */
 function replaceCurrent(next: RenderedDocument | undefined): void {
   diff.detach();
+  navigation?.dispose();
+  navigation = undefined;
+  shell.navigationBody.replaceChildren();
+  renderContext = undefined;
   current?.dispose?.();
   current = next;
   shell.footer.replaceChildren();

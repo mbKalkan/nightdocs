@@ -65,6 +65,13 @@ export const strings: ViewerStrings = {
   markup: 'Markup',
   showMarkup: 'Show Comments and Tracked Changes',
   hideMarkup: 'Hide Comments and Tracked Changes',
+  navigationPane: 'Navigation Pane',
+  headings: 'Headings',
+  slides: 'Slides',
+  noHeadings: 'This document has no headings.',
+  close: 'Close',
+  expand: 'Expand',
+  collapse: 'Collapse',
   notes: 'Notes',
   speakerNotes: 'Speaker notes',
   showNotes: 'Show Speaker Notes',
@@ -168,6 +175,10 @@ export async function openViewer(page: Page, theme: ThemeName) {
     },
     async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
       const info = formatForPath(fixture) ?? { format: 'docx', appName: 'Word' };
+      // Like the extension host, remember whether the navigation pane was left open.
+      const sent = (await this.sent()) as { type: string; open?: boolean }[];
+      const navigationPane =
+        sent.filter((message) => message.type === 'setNavigationPane').pop()?.open ?? false;
       await this.post({
         type: 'load',
         fileName: fixture,
@@ -176,6 +187,7 @@ export async function openViewer(page: Page, theme: ThemeName) {
         reload,
         canOpenInOffice: true,
         colorMode,
+        navigationPane,
         locale: 'en-US',
         strings: { ...strings, openInOffice: `Open in ${info.appName}` },
       });

@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   text with all changes accepted. Comparisons always read the text that way.
 - PowerPoint speaker notes are shown under each slide, as in PowerPoint's notes pane. **Notes** in
   the status bar hides them. Comparisons include the notes and mark what changed in them.
+- A navigation pane, as in Office: Word documents show their headings as an outline that folds,
+  presentations show slide thumbnails, and workbooks list their sheets. It marks where you are
+  as you scroll and goes where you click. Open it from the button at the left of the toolbar or
+  with **Toggle Navigation Pane**; it stays open for files of that kind, and comparisons open
+  without it.
 
 ## [0.4.0] - 2026-10-13
 

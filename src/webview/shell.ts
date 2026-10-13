@@ -5,6 +5,7 @@ import { icons } from './icons';
 const SKELETONS: Record<DocumentFormat, string> = { docx: 'page', xlsx: 'grid', pptx: 'slides' };
 
 export interface ShellHandlers {
+  onToggleNavigation(): void;
   onZoomIn(): void;
   onZoomOut(): void;
   onResetZoom(): void;
@@ -33,12 +34,18 @@ export class Shell {
   private readonly openLabel: HTMLElement;
   private readonly separator: HTMLElement;
   private readonly progress: HTMLElement;
+  private readonly navigationButton: HTMLButtonElement;
+  private readonly navigation: HTMLElement;
+  private readonly navigationTitle: HTMLElement;
+  /** Where a document's navigation content goes. */
+  readonly navigationBody: HTMLElement;
 
   constructor(container: HTMLElement, handlers: ShellHandlers) {
     container.innerHTML = `
       <div class="ov-shell">
         <header class="ov-toolbar" role="toolbar">
           <div class="ov-title">
+            <button class="ov-icon-button" data-action="navigation" type="button" aria-pressed="false" hidden>${icons.sidebar}</button>
             <span class="ov-file-icon">${icons.document}</span>
             <span class="ov-file-name"></span>
           </div>
@@ -55,9 +62,18 @@ export class Shell {
           </div>
         </header>
         <div class="ov-progress" role="progressbar" hidden></div>
-        <main class="ov-viewport" tabindex="0">
-          <div class="ov-content"></div>
-        </main>
+        <div class="ov-main">
+          <aside class="ov-nav" hidden>
+            <div class="ov-nav-header">
+              <span class="ov-nav-title"></span>
+              <button class="ov-icon-button" data-action="close-navigation" type="button">${icons.close}</button>
+            </div>
+            <div class="ov-nav-body"></div>
+          </aside>
+          <main class="ov-viewport" tabindex="0">
+            <div class="ov-content"></div>
+          </main>
+        </div>
         <div class="ov-tabbar" hidden></div>
         <footer class="ov-footer" hidden></footer>
       </div>`;
@@ -80,6 +96,12 @@ export class Shell {
     this.viewport = find('.ov-viewport');
     this.content = find('.ov-content');
     this.tabBar = find('.ov-tabbar');
+    this.navigationButton = find('[data-action="navigation"]');
+    this.navigation = find('.ov-nav');
+    this.navigationTitle = find('.ov-nav-title');
+    this.navigationBody = find('.ov-nav-body');
+    this.navigationButton.addEventListener('click', handlers.onToggleNavigation);
+    find('[data-action="close-navigation"]').addEventListener('click', handlers.onToggleNavigation);
     this.footer = find('.ov-footer');
 
     find('.ov-toolbar').addEventListener('keydown', (event) => this.onToolbarKeyDown(event));
@@ -125,6 +147,20 @@ export class Shell {
     this.openButton.hidden = !canOpenInOffice;
     this.separator.hidden = !canOpenInOffice;
     this.progress.setAttribute('aria-label', strings.loading);
+  }
+
+  /** Shows the navigation pane with `title`, or hides it when `title` is undefined. */
+  setNavigation(available: boolean, title: string | undefined, strings: ViewerStrings): void {
+    this.navigationButton.hidden = !available;
+    this.label(this.navigationButton, strings.navigationPane);
+    this.navigationButton.setAttribute('aria-pressed', String(title !== undefined));
+    this.label(
+      this.navigation.querySelector<HTMLButtonElement>('[data-action="close-navigation"]')!,
+      strings.close,
+    );
+    this.navigation.setAttribute('aria-label', strings.navigationPane);
+    this.navigation.hidden = title === undefined;
+    this.navigationTitle.textContent = title ?? '';
   }
 
   setZoom(zoom: number): void {

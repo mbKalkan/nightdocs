@@ -58,6 +58,14 @@ export interface ViewerStrings {
   markup: string;
   showMarkup: string;
   hideMarkup: string;
+  /** The navigation pane and what it lists. */
+  navigationPane: string;
+  headings: string;
+  slides: string;
+  noHeadings: string;
+  close: string;
+  expand: string;
+  collapse: string;
   /** PowerPoint speaker notes. */
   notes: string;
   speakerNotes: string;
@@ -144,6 +152,8 @@ export interface LoadMessage {
   reload: boolean;
   canOpenInOffice: boolean;
   colorMode: ColorMode;
+  /** Whether the navigation pane is open, as last left for this kind of file. */
+  navigationPane: boolean;
   /** The user's locale, for dates and numbers shown the way their Office would. */
   locale: string;
   strings: ViewerStrings;
@@ -165,7 +175,7 @@ export interface ZoomMessage {
 export type ZoomAction = 'in' | 'out' | 'reset';
 
 /** `goTo` lists what the document can go to: sheets, slides or headings. */
-export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goTo' | 'find';
+export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goTo' | 'find' | 'toggleNavigation';
 
 export interface CommandMessage {
   type: 'command';
@@ -238,6 +248,7 @@ export type WebviewToHostMessage =
   | { type: 'ready' }
   | { type: 'openInOffice' }
   | { type: 'setColorMode'; mode: ColorMode }
+  | { type: 'setNavigationPane'; open: boolean }
   | { type: 'summary'; summary: DocumentSummary }
   /** Where the other side should scroll to, in its own terms. */
   | { type: 'scroll'; anchor: ScrollAnchor }

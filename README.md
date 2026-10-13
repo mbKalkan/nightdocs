@@ -38,8 +38,10 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
   list them all from the status bar, or hide the markup to read the text with all changes accepted
 - Documents that Word never paginated (exports from other apps, generated files) are split into
   pages
+- A navigation pane with the headings as an outline, as in Word: fold sections, click a heading
+  to go there, and see where you are
 - The status bar shows the current page; **Go to Heading…** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
-  lists the headings, as Word's navigation pane does
+  finds a heading as you type
 - Find with <kbd>Ctrl</kbd>+<kbd>F</kbd>
 
 ### Excel (`.xlsx`, `.xlsm`)
@@ -52,9 +54,9 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Select cells with the mouse or keyboard, copy them, and see the cell's text or Sum, Count and
   Average in the status bar under the sheet tabs
 - Find across the whole sheet, not only the visible cells
-- Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, or pick a sheet
+- Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, pick a sheet
   from **All Sheets** (also **Go to Sheet…**, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>), where
-  typing filters the list
+  typing filters the list, or keep them all in view in the navigation pane
 
 ![An Excel workbook in Nightdocs with conditional formatting and a selection summed in the status bar](docs/images/excel-dark.png)
 
@@ -64,6 +66,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Charts follow your theme too: text and gridlines adapt, data keeps its colors
 - Slides designed dark, or drawn on a picture, keep their look
 - Hidden slides are shown dimmed and marked
+- A slide pane with thumbnails, as in PowerPoint, that follows the slide you're on
 - Speaker notes under each slide, as in PowerPoint's notes pane; **Notes** in the status bar hides
   them
 - The status bar shows the current slide; <kbd>Page Down</kbd> and <kbd>Page Up</kbd> step from
@@ -99,6 +102,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 ### Everywhere
 
 - Zoom with the toolbar, the keyboard, <kbd>Ctrl</kbd>+mouse wheel or pinch
+- The navigation pane opens from the button at the left of the toolbar or with **Toggle
+  Navigation Pane**, and stays open for files of that kind
 - Live reload that keeps your place
 - Dark, light and high contrast themes
 - Keyboard and screen reader support

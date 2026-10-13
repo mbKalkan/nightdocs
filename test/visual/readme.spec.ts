@@ -51,7 +51,12 @@ test('PowerPoint presentation in a dark theme', async ({ page }) => {
   await page.locator('.ov-viewport').focus();
   for (let i = 0; i < 3; i++) await page.keyboard.press('PageDown');
   await expect(page.locator('.ov-status')).toHaveText('Slide 4 of 8');
-  await page.locator('.ov-viewport').blur();
+  // With the slide pane open, as PowerPoint shows it.
+  await page.locator('[data-action="navigation"]').click();
+  await expect(page.locator('.ov-nav-thumb .pptx-slide').first()).toBeAttached();
+  await expect(page.locator('.ov-status')).toHaveText('Slide 4 of 8');
+  await page.locator('[data-action="navigation"]').blur();
+  await page.waitForTimeout(200);
   await page.screenshot({ path: `${OUT}/powerpoint-dark.png` });
 });
 
