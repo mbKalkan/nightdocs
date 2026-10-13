@@ -10,6 +10,11 @@ export const icons = {
   arrowDown: svg('<path d="M8 3.5v9M4 8.5l4 4 4-4"/>'),
   chart: svg('<path d="M2.5 13.5h11M4.5 11.5V8M8 11.5V4.5M11.5 11.5V6.5"/>'),
   close: svg('<path d="M4 4l8 8M12 4l-8 8"/>'),
+  chevronLeft: svg('<path d="M10 3.5 5.5 8l4.5 4.5"/>'),
+  chevronRight: svg('<path d="M6 3.5 10.5 8 6 12.5"/>'),
+  list: svg(
+    '<path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="2.75" cy="4" r=".75" fill="currentColor" stroke="none"/><circle cx="2.75" cy="8" r=".75" fill="currentColor" stroke="none"/><circle cx="2.75" cy="12" r=".75" fill="currentColor" stroke="none"/>',
+  ),
   colors: svg(
     '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/>',
   ),

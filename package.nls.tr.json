@@ -9,5 +9,6 @@
   "command.resetZoom": "Yakınlaştırmayı Sıfırla",
   "command.nextSheet": "Sonraki Sayfa",
   "command.previousSheet": "Önceki Sayfa",
+  "command.goToSheet": "Sayfaya Git…",
   "command.find": "Sayfada Bul"
 }

@@ -11,6 +11,7 @@ import { DiffPairs, type DiffMember } from './diffPairs';
 import { watchFile } from './fileWatcher';
 import { readGitBlob } from './gitBlob';
 import { openWithDefaultApp } from './openWithDefaultApp';
+import { pickSheet } from './sheetPicker';
 import { viewerStrings } from './strings';
 import { buildWebviewHtml } from './webviewHtml';
 
@@ -46,6 +47,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       ),
       vscode.commands.registerCommand('nightdocs.previousSheet', () =>
         provider.sendCommand('previousSheet'),
+      ),
+      vscode.commands.registerCommand('nightdocs.goToSheet', () =>
+        provider.sendCommand('goToSheet'),
       ),
       vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
     );
@@ -94,6 +98,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'setColorMode':
             void this.state.update(ViewerProvider.colorModeKey, message.mode);
+            break;
+          case 'pickSheet':
+            void pickSheet(message.sheets).then((sheet) => {
+              if (sheet !== undefined) void post({ type: 'showSheet', sheet });
+            });
             break;
         }
       }),

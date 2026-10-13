@@ -36,6 +36,10 @@ export interface ViewerStrings {
   chartHint: string;
   /** Accessible name of the sheet tab list. */
   sheets: string;
+  /** Buttons shown when the sheet tabs don't all fit. */
+  allSheets: string;
+  scrollSheetsLeft: string;
+  scrollSheetsRight: string;
   /** `Slide {0}`, the accessible name of a slide. */
   slide: string;
   /** `Slide {0} of {1}`, shown in the status bar of presentations. */
@@ -135,7 +139,7 @@ export interface ZoomMessage {
 
 export type ZoomAction = 'in' | 'out' | 'reset';
 
-export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'find';
+export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goToSheet' | 'find';
 
 export interface CommandMessage {
   type: 'command';
@@ -158,6 +162,20 @@ export interface PeerScrollMessage {
   anchor: ScrollAnchor;
 }
 
+/** The sheet picked from the list `pickSheet` asked for. */
+export interface ShowSheetMessage {
+  type: 'showSheet';
+  sheet: string;
+}
+
+/** A sheet as listed to pick from. */
+export interface SheetChoice {
+  name: string;
+  current: boolean;
+  /** When comparing, whether the sheet has changes. */
+  changed: boolean;
+}
+
 export type HostToWebviewMessage =
   | LoadMessage
   | ReadErrorMessage
@@ -165,7 +183,8 @@ export type HostToWebviewMessage =
   | CommandMessage
   | DiffMessage
   | PeerSummaryMessage
-  | PeerScrollMessage;
+  | PeerScrollMessage
+  | ShowSheetMessage;
 
 export type WebviewToHostMessage =
   | { type: 'ready' }
@@ -173,4 +192,6 @@ export type WebviewToHostMessage =
   | { type: 'setColorMode'; mode: ColorMode }
   | { type: 'summary'; summary: DocumentSummary }
   /** Where the other side should scroll to, in its own terms. */
-  | { type: 'scroll'; anchor: ScrollAnchor };
+  | { type: 'scroll'; anchor: ScrollAnchor }
+  /** Asks for a list of the sheets to pick one from; the answer is a `showSheet` message. */
+  | { type: 'pickSheet'; sheets: SheetChoice[] };

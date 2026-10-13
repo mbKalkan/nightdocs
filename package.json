@@ -166,6 +166,11 @@
         "category": "%category%"
       },
       {
+        "command": "nightdocs.goToSheet",
+        "title": "%command.goToSheet%",
+        "category": "%category%"
+      },
+      {
         "command": "nightdocs.find",
         "title": "%command.find%",
         "category": "%category%"
@@ -196,6 +201,10 @@
         {
           "command": "nightdocs.previousSheet",
           "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.goToSheet",
+          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
         },
         {
           "command": "nightdocs.find",

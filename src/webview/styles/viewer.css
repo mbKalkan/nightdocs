@@ -733,12 +733,54 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   user-select: none;
 }
 
+.ov-sheet-bar {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Shown only while some sheet tabs are out of view. */
+.ov-sheet-nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding: 0 4px;
+  border-right: 1px solid var(--ov-border);
+}
+
+.ov-sheet-nav[hidden] {
+  display: none;
+}
+
+.ov-sheet-nav .ov-icon-button {
+  height: 22px;
+  min-width: 22px;
+  padding: 0 3px;
+}
+
 .ov-sheet-tabs {
+  --ov-fade-before: 0px;
+  --ov-fade-after: 0px;
   display: flex;
   flex: 1;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--ov-fade-before),
+    #000 calc(100% - var(--ov-fade-after)),
+    transparent
+  );
+}
+
+.ov-sheet-tabs[data-more-before] {
+  --ov-fade-before: 24px;
+}
+
+.ov-sheet-tabs[data-more-after] {
+  --ov-fade-after: 24px;
 }
 
 .ov-sheet-tab {
