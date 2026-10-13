@@ -14,7 +14,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 
 > **Status:** preview. Feedback is very welcome.
 
-![A Word document in Nightdocs with a dark VS Code theme](docs/images/word-dark.png)
+![Nightdocs showing a Word document in dark and original colors, an Excel workbook with a sum and charts, and a PowerPoint presentation with its slide pane](docs/images/demo.gif)
 
 ## Why Nightdocs
 
@@ -32,6 +32,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 ## Features
 
 ### Word (`.docx`)
+
+![A Word document in Nightdocs with a dark VS Code theme](docs/images/word-dark.png)
 
 - Page layout with headers, footers, footnotes, tables, lists, images and links
 - Comments and tracked changes, as Word's "All Markup" shows them: hover a comment to read it,
