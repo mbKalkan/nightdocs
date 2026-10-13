@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In workbooks with more sheets than fit, the sheets past the visible tabs can be reached with a
   mouse. The tabs scroll with the mouse wheel and with arrow buttons that appear when they don't
   fit, faded edges show there are more, and the current sheet's tab stays in view.
+- A long cell text in the status bar no longer squeezes the sheet tabs. It is cut short, with all
+  of it on hover, and narrow views such as one side of a comparison show only the cell address.
 
 ## [0.2.0] - 2026-10-12
 

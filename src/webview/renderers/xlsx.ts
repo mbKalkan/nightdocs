@@ -531,9 +531,16 @@ class WorkbookView implements RenderedDocument {
       ? cellName(range.row1, range.col1)
       : `${cellName(range.row1, range.col1)}:${cellName(range.row2, range.col2)}`;
     const parts = [address];
+    let value: HTMLElement | undefined;
     if (single) {
       const text = this.grid.textAt(range.row1, range.col1);
-      if (text) parts.push(text.length > 80 ? `${text.slice(0, 80)}…` : text);
+      if (text) {
+        // Long text is cut short to leave the sheet tabs room; hovering shows all of it.
+        value = document.createElement('span');
+        value.className = 'ov-status-value';
+        value.textContent = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+        value.title = text.length > 1000 ? `${text.slice(0, 1000)}…` : text;
+      }
     } else {
       let count = 0;
       let numbers = 0;
@@ -559,6 +566,7 @@ class WorkbookView implements RenderedDocument {
         span.textContent = part;
         return span;
       }),
+      ...(value ? [value] : []),
     );
   }
 }
