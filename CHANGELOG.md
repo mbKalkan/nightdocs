@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Go to Heading…** for Word documents and **Go to Slide…** for presentations list the headings
+  or slides (by title) in VS Code's quick pick, like **Go to Sheet…** for workbooks. All three
+  open with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>, VS Code's "Go to Symbol" key.
+- Word documents show the current page in the status bar ("Page 3 of 13").
+
 ## [0.4.0] - 2026-10-13
 
 Both sides of a comparison zoom together, and workbook comparisons follow the selected cell.

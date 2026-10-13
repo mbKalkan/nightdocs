@@ -11,6 +11,7 @@ import { markWords } from '../diff/marks';
 import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
 import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
+import { describe, pick } from '../picker';
 import { vscode } from '../vscodeApi';
 import { columnName, SheetGrid } from '../xlsx/grid';
 import type { SheetData, WorkbookInfo } from '../xlsx/model';
@@ -113,7 +114,7 @@ class WorkbookView implements RenderedDocument {
 
     const tabs = new SheetTabs(this.options.strings, {
       select: (index) => void this.showSheet(index),
-      pickFromList: () => this.pickSheet(),
+      pickFromList: () => void this.pickSheet(),
     });
     this.tabs = tabs;
     this.status = document.createElement('div');
@@ -176,8 +177,8 @@ class WorkbookView implements RenderedDocument {
       this.openFind();
       return;
     }
-    if (command === 'goToSheet') {
-      this.pickSheet();
+    if (command === 'goTo') {
+      void this.pickSheet();
       return;
     }
     const visible = this.visibleSheets();
@@ -186,11 +187,6 @@ class WorkbookView implements RenderedDocument {
     if (next >= 0 && next < visible.length) {
       void this.showSheet(visible[next]);
     }
-  }
-
-  goToSheet(name: string): void {
-    const index = this.info.sheets.findIndex((sheet) => sheet.name === name && !sheet.hidden);
-    if (index >= 0) void this.showSheet(index);
   }
 
   /** The displayed values of every visible sheet; the worker reads them all. */
@@ -449,19 +445,26 @@ class WorkbookView implements RenderedDocument {
     );
   }
 
-  /** Has VS Code list the sheets to pick from, for workbooks with more tabs than fit. */
-  private pickSheet(): void {
-    vscode.postMessage({
-      type: 'pickSheet',
-      sheets: this.visibleSheets().map((index) => {
+  /** Lists the sheets to pick one from, for workbooks with more tabs than fit. */
+  private async pickSheet(): Promise<void> {
+    const { strings } = this.options;
+    const visible = this.visibleSheets();
+    const choice = await pick(
+      strings.goToSheet.replace('{0}', String(visible.length)),
+      visible.map((index) => {
         const { name } = this.info.sheets[index];
+        const changed = (this.diff?.get(name)?.changes.length ?? 0) > 0;
         return {
-          name,
+          label: name,
+          description: describe(
+            index === this.index && strings.current,
+            changed && strings.changed,
+          ),
           current: index === this.index,
-          changed: (this.diff?.get(name)?.changes.length ?? 0) > 0,
         };
       }),
-    });
+    );
+    if (choice !== undefined) await this.showSheet(visible[choice]);
   }
 
   private async showSheet(index: number): Promise<void> {

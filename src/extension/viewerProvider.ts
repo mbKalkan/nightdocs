@@ -11,7 +11,7 @@ import { DiffPairs, type DiffMember } from './diffPairs';
 import { watchFile } from './fileWatcher';
 import { readGitBlob } from './gitBlob';
 import { openWithDefaultApp } from './openWithDefaultApp';
-import { pickSheet } from './sheetPicker';
+import { pick } from './quickPick';
 import { viewerStrings } from './strings';
 import { buildWebviewHtml } from './webviewHtml';
 
@@ -48,8 +48,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       vscode.commands.registerCommand('nightdocs.previousSheet', () =>
         provider.sendCommand('previousSheet'),
       ),
-      vscode.commands.registerCommand('nightdocs.goToSheet', () =>
-        provider.sendCommand('goToSheet'),
+      // One command per format, so each has a title that says what it lists.
+      ...['goToSheet', 'goToSlide', 'goToHeading'].map((id) =>
+        vscode.commands.registerCommand(`nightdocs.${id}`, () => provider.sendCommand('goTo')),
       ),
       vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
     );
@@ -105,10 +106,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
           case 'setColorMode':
             void this.state.update(ViewerProvider.colorModeKey, message.mode);
             break;
-          case 'pickSheet':
-            void pickSheet(message.sheets).then((sheet) => {
-              if (sheet !== undefined) void post({ type: 'showSheet', sheet });
-            });
+          case 'pick':
+            void pick(message.placeholder, message.items).then((index) =>
+              post({ type: 'picked', index }),
+            );
             break;
         }
       }),

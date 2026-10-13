@@ -4,6 +4,7 @@ import { detectContainer } from '../shared/formats';
 import type { HostToWebviewMessage, LoadMessage, ReadErrorMessage } from '../shared/protocol';
 import { isDarkTheme, readPalette } from './darkColors';
 import { DiffController } from './diff/controller';
+import { picked } from './picker';
 import { loadRenderer } from './renderers';
 import type { RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
@@ -65,8 +66,8 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'command':
       current?.command?.(message.command);
       break;
-    case 'showSheet':
-      current?.goToSheet?.(message.sheet);
+    case 'picked':
+      picked(message.index);
       break;
     case 'diff':
       diff.setSide(message.side);
