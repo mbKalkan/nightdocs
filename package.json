@@ -171,6 +171,16 @@
         "category": "%category%"
       },
       {
+        "command": "nightdocs.goToSlide",
+        "title": "%command.goToSlide%",
+        "category": "%category%"
+      },
+      {
+        "command": "nightdocs.goToHeading",
+        "title": "%command.goToHeading%",
+        "category": "%category%"
+      },
+      {
         "command": "nightdocs.find",
         "title": "%command.find%",
         "category": "%category%"
@@ -205,6 +215,14 @@
         {
           "command": "nightdocs.goToSheet",
           "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        },
+        {
+          "command": "nightdocs.goToSlide",
+          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == pptx"
+        },
+        {
+          "command": "nightdocs.goToHeading",
+          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == docx"
         },
         {
           "command": "nightdocs.find",
@@ -260,6 +278,24 @@
         "key": "ctrl+alt+pageup",
         "mac": "cmd+alt+pageup",
         "when": "activeCustomEditorId == nightdocs.viewer"
+      },
+      {
+        "command": "nightdocs.goToSheet",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+      },
+      {
+        "command": "nightdocs.goToSlide",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == pptx"
+      },
+      {
+        "command": "nightdocs.goToHeading",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == docx"
       },
       {
         "command": "nightdocs.find",

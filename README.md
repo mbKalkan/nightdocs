@@ -36,6 +36,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Page layout with headers, footers, footnotes, tables, lists, images and links
 - Documents that Word never paginated (exports from other apps, generated files) are split into
   pages
+- The status bar shows the current page; **Go to Heading…** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
+  lists the headings, as Word's navigation pane does
 - Find with <kbd>Ctrl</kbd>+<kbd>F</kbd>
 
 ### Excel (`.xlsx`, `.xlsm`)
@@ -49,7 +51,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
   Average in the status bar under the sheet tabs
 - Find across the whole sheet, not only the visible cells
 - Workbooks with many sheets: scroll the tabs with the mouse wheel or the arrows, or pick a sheet
-  from **All Sheets** (also **Go to Sheet…** in the Command Palette), where typing filters the list
+  from **All Sheets** (also **Go to Sheet…**, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>), where
+  typing filters the list
 
 ![An Excel workbook in Nightdocs with conditional formatting and a selection summed in the status bar](docs/images/excel-dark.png)
 
@@ -60,7 +63,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Slides designed dark, or drawn on a picture, keep their look
 - Hidden slides are shown dimmed and marked
 - The status bar shows the current slide; <kbd>Page Down</kbd> and <kbd>Page Up</kbd> step from
-  slide to slide, and links between slides work
+  slide to slide, **Go to Slide…** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>) lists them by
+  title, and links between slides work
 - Find with <kbd>Ctrl</kbd>+<kbd>F</kbd>
 
 ![A PowerPoint presentation in Nightdocs with charts adapted to a dark theme](docs/images/powerpoint-dark.png)
@@ -118,15 +122,16 @@ If another extension also opens these files, right-click the file and choose
 
 ## Keyboard shortcuts
 
-| Action                 | Windows / Linux                                                  | macOS                                                           |
-| ---------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
-| Zoom in / out          | <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>      | <kbd>Cmd</kbd>+<kbd>=</kbd> / <kbd>Cmd</kbd>+<kbd>-</kbd>       |
-| Reset zoom             | <kbd>Ctrl</kbd>+<kbd>Numpad 0</kbd>                              | <kbd>Cmd</kbd>+<kbd>Numpad 0</kbd>                              |
-| Find                   | <kbd>Ctrl</kbd>+<kbd>F</kbd>                                     | <kbd>Cmd</kbd>+<kbd>F</kbd>                                     |
-| Next / previous sheet  | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> | <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
-| Copy selected cells    | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                     | <kbd>Cmd</kbd>+<kbd>C</kbd>                                     |
-| Next / previous slide  | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                                | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                               |
-| Next / previous change | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                   | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                  |
+| Action                        | Windows / Linux                                                  | macOS                                                           |
+| ----------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Zoom in / out                 | <kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd>      | <kbd>Cmd</kbd>+<kbd>=</kbd> / <kbd>Cmd</kbd>+<kbd>-</kbd>       |
+| Reset zoom                    | <kbd>Ctrl</kbd>+<kbd>Numpad 0</kbd>                              | <kbd>Cmd</kbd>+<kbd>Numpad 0</kbd>                              |
+| Find                          | <kbd>Ctrl</kbd>+<kbd>F</kbd>                                     | <kbd>Cmd</kbd>+<kbd>F</kbd>                                     |
+| Next / previous sheet         | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> | <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
+| Copy selected cells           | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                     | <kbd>Cmd</kbd>+<kbd>C</kbd>                                     |
+| Next / previous slide         | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                                | <kbd>PgDn</kbd> / <kbd>PgUp</kbd>                               |
+| Go to heading, slide or sheet | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>                    | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>                    |
+| Next / previous change        | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                   | <kbd>F7</kbd> / <kbd>Shift</kbd>+<kbd>F7</kbd>                  |
 
 ## Limitations
 

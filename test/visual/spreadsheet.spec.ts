@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { openViewer } from './harness';
+import { answerPick, lastPick } from './picks';
 
 const SCREENS = 'test-results/screens';
 
@@ -269,35 +270,28 @@ test('lists every sheet to pick from', async ({ page }) => {
   await viewer.load('many-sheets.xlsx');
 
   await page.getByRole('button', { name: 'All Sheets' }).click();
-  const sent = (await viewer.sent()) as {
-    type: string;
-    sheets?: { name: string; current: boolean; changed: boolean }[];
-  }[];
-  const request = sent.filter((message) => message.type === 'pickSheet').pop();
-  expect(request?.sheets).toHaveLength(35);
-  expect(request?.sheets?.filter((sheet) => sheet.current).map((sheet) => sheet.name)).toEqual([
-    'Jun 2025',
-  ]);
+  const request = await lastPick(viewer);
+  expect(request.placeholder).toBe('Go to a sheet (35 sheets)');
+  expect(request.items).toHaveLength(35);
+  const current = request.items.filter((item) => item.current);
+  expect(current).toEqual([{ label: 'Jun 2025', description: 'current', current: true }]);
 
   // VS Code lists them; the one picked comes back and its tab scrolls into view.
-  await viewer.post({ type: 'showSheet', sheet: 'Raw data export from the billing system' });
+  await answerPick(viewer, request, 'Raw data export from the billing system');
   await expect(activeTab(page)).toHaveText('Raw data export from the billing system');
   await expect(activeTab(page)).toBeInViewport({ ratio: 1 });
   await expect(page.locator('.ng-c', { hasText: 'Raw data export' }).first()).toBeVisible();
 
-  // The command palette's "Go to Sheet…" asks for the same list.
-  await viewer.post({ type: 'command', command: 'goToSheet' });
-  await expect
-    .poll(async () =>
-      (await viewer.sent()).filter((m) => (m as { type: string }).type === 'pickSheet'),
-    )
-    .toHaveLength(2);
+  // Go to Sheet… in the Command Palette (Ctrl+Shift+O) asks for the same list.
+  await viewer.post({ type: 'command', command: 'goTo' });
+  await lastPick(viewer, 2);
 });
 
 test('gives the sheet tabs and the selected cell a row each', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('many-sheets.xlsx');
-  await viewer.post({ type: 'showSheet', sheet: 'Notes' });
+  await viewer.post({ type: 'command', command: 'goTo' });
+  await answerPick(viewer, await lastPick(viewer), 'Notes');
   await expect(activeTab(page)).toHaveText('Notes');
   await clickCell(page, 'A', 7);
 

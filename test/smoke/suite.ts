@@ -161,6 +161,8 @@ const tests: Record<string, () => Promise<void>> = {
       'nextSheet',
       'previousSheet',
       'goToSheet',
+      'goToSlide',
+      'goToHeading',
     ]) {
       assert.ok(commands.includes(`nightdocs.${id}`), `missing nightdocs.${id}`);
     }

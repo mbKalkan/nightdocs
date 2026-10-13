@@ -40,6 +40,16 @@ export interface ViewerStrings {
   allSheets: string;
   scrollSheetsLeft: string;
   scrollSheetsRight: string;
+  /** Placeholders of the lists to go to; `{0}` is how many there are. */
+  goToSheet: string;
+  goToSlide: string;
+  goToHeading: string;
+  /** Descriptions in those lists. */
+  current: string;
+  changed: string;
+  /** `Page {0}` and `Page {0} of {1}` */
+  page: string;
+  pagePosition: string;
   /** `Slide {0}`, the accessible name of a slide. */
   slide: string;
   /** `Slide {0} of {1}`, shown in the status bar of presentations. */
@@ -139,7 +149,8 @@ export interface ZoomMessage {
 
 export type ZoomAction = 'in' | 'out' | 'reset';
 
-export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goToSheet' | 'find';
+/** `goTo` lists what the document can go to: sheets, slides or headings. */
+export type ViewerCommand = 'nextSheet' | 'previousSheet' | 'goTo' | 'find';
 
 export interface CommandMessage {
   type: 'command';
@@ -182,18 +193,18 @@ export interface PeerZoomMessage {
   zoom: number | null;
 }
 
-/** The sheet picked from the list `pickSheet` asked for. */
-export interface ShowSheetMessage {
-  type: 'showSheet';
-  sheet: string;
+/** The item picked from the list a `pick` message asked for; -1 when it was dismissed. */
+export interface PickedMessage {
+  type: 'picked';
+  index: number;
 }
 
-/** A sheet as listed to pick from. */
-export interface SheetChoice {
-  name: string;
-  current: boolean;
-  /** When comparing, whether the sheet has changes. */
-  changed: boolean;
+/** An entry of a list to pick from: a sheet, a slide, a heading. */
+export interface PickItem {
+  label: string;
+  description?: string;
+  /** Where the view is now; the list opens on it. */
+  current?: boolean;
 }
 
 export type HostToWebviewMessage =
@@ -206,7 +217,7 @@ export type HostToWebviewMessage =
   | PeerScrollMessage
   | PeerZoomMessage
   | PeerSelectMessage
-  | ShowSheetMessage;
+  | PickedMessage;
 
 export type WebviewToHostMessage =
   | { type: 'ready' }
@@ -219,5 +230,5 @@ export type WebviewToHostMessage =
   | { type: 'select'; selection: CellSelection }
   /** The zoom the user set while comparing, for the other side to match. */
   | { type: 'zoomed'; zoom: number | null }
-  /** Asks for a list of the sheets to pick one from; the answer is a `showSheet` message. */
-  | { type: 'pickSheet'; sheets: SheetChoice[] };
+  /** Asks VS Code to list items to pick one from; the answer is a `picked` message. */
+  | { type: 'pick'; placeholder: string; items: PickItem[] };

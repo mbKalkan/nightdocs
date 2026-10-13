@@ -3,6 +3,7 @@ import {
   parseZip,
   RECOMMENDED_ZIP_LIMITS,
   renderSlide,
+  type SlideData,
   type SlideHandle,
   type SlideRendererOptions,
 } from '@aiden0z/pptx-renderer';
@@ -11,7 +12,9 @@ import type { SlideSummary } from '../../shared/protocol';
 import { adaptDocumentColors, KEEP_COLORS_ATTRIBUTE } from '../darkColors';
 import { compareSlides, summarizeSlides } from '../diff/slideCompare';
 import { adaptChartOption, type Chart } from '../pptx/chartColors';
-import { SlideNavigator } from '../pptx/navigator';
+import { OBJECT, textOf } from '../diff/marks';
+import { PageNavigator } from '../pageNavigator';
+import { describe, pick } from '../picker';
 import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
 
 /** Space around the slides; matches the padding of `.pptx-deck` in viewer.css. */
@@ -49,7 +52,7 @@ export const pptxRenderer: Renderer = {
     const mediaUrls = new Map<string, string>();
     const handles: SlideHandle[] = [];
     const frames: HTMLElement[] = [];
-    let navigator: SlideNavigator | undefined;
+    let navigator: PageNavigator | undefined;
 
     for (const slide of presentation.slides) {
       const number = slide.index + 1;
@@ -106,7 +109,22 @@ export const pptxRenderer: Renderer = {
     return {
       naturalWidth: presentation.width + DECK_GUTTER,
       activate(context: RenderContext) {
-        navigator = new SlideNavigator(context, frames, strings);
+        navigator = new PageNavigator(context, frames, strings.slidePosition);
+      },
+      command(command) {
+        if (command !== 'goTo' || !navigator) return;
+        const current = navigator.current;
+        const items = presentation.slides.map((slide, index) => ({
+          label: `${index + 1}. ${slideTitle(slide, frames[index]) || strings.slide.replace('{0}', String(index + 1))}`,
+          description: describe(
+            index === current && strings.current,
+            slide.hidden && strings.hiddenSlide,
+          ),
+          current: index === current,
+        }));
+        void pick(strings.goToSlide.replace('{0}', String(items.length)), items).then(
+          (index) => index !== undefined && navigator?.goTo(index),
+        );
       },
       summary: async () => ({ format: 'pptx', slides: await summarize() }),
       compare: async (peer, side, context) =>
@@ -122,6 +140,27 @@ export const pptxRenderer: Renderer = {
     };
   },
 };
+
+/**
+ * A slide's title: the text of its title placeholder, or else its first line of text, as in
+ * PowerPoint's outline.
+ */
+function slideTitle(slide: SlideData, frame: HTMLElement | undefined): string {
+  for (const node of slide.nodes) {
+    const type = node.placeholder?.type;
+    if ((type === 'title' || type === 'ctrTitle') && 'textBody' in node && node.textBody) {
+      const text = node.textBody.paragraphs
+        .map((paragraph) => paragraph.runs.map((run) => run.text).join(''))
+        .join(' ')
+        .trim();
+      if (text) return text;
+    }
+  }
+  const lines = frame ? textOf(frame).split('\n') : [];
+  return (
+    lines.map((line) => line.replaceAll(OBJECT, '').replace(/\s+/g, ' ').trim()).find(Boolean) ?? ''
+  );
+}
 
 /**
  * Draws a chart once more without its opening animation, which only delays reading it,

@@ -10,5 +10,7 @@
   "command.nextSheet": "Next Sheet",
   "command.previousSheet": "Previous Sheet",
   "command.goToSheet": "Go to Sheet…",
+  "command.goToSlide": "Go to Slide…",
+  "command.goToHeading": "Go to Heading…",
   "command.find": "Find in Sheet"
 }

@@ -1,22 +1,22 @@
-import type { ViewerStrings } from '../../shared/protocol';
-import type { RenderContext } from '../renderers/types';
+import type { RenderContext } from './renderers/types';
 
-/** Canvas left visible above a slide that Page Up/Down brings to the top. */
+/** Canvas left visible above a page that Page Up/Down brings to the top. */
 const MARGIN = 12;
 
 /**
- * Tracks which slide is in view for the status bar, and makes Page Up/Down step from slide
- * to slide while a whole slide fits in the window.
+ * Tracks which page or slide is in view for the status bar, and makes Page Up/Down step from
+ * one to the next while a whole one fits in the window.
  */
-export class SlideNavigator {
+export class PageNavigator {
   private readonly status: HTMLElement;
   private readonly cleanup: (() => void)[] = [];
-  private current = -1;
+  private shown = -1;
 
+  /** `position` reads like `Slide {0} of {1}`. */
   constructor(
     private readonly context: RenderContext,
     private readonly frames: readonly HTMLElement[],
-    private readonly strings: ViewerStrings,
+    private readonly position: string,
   ) {
     const { viewport, footer } = context;
     this.status = document.createElement('div');
@@ -44,7 +44,12 @@ export class SlideNavigator {
     this.update();
   }
 
-  /** Scrolls so that slide `index` (0-based) is at the top. */
+  /** The page or slide in view (0-based). */
+  get current(): number {
+    return Math.max(0, this.shown);
+  }
+
+  /** Scrolls so that page or slide `index` (0-based) is at the top. */
   goTo(index: number): void {
     const tops = this.tops();
     if (index >= 0 && index < tops.length) {
@@ -56,23 +61,26 @@ export class SlideNavigator {
     for (const fn of this.cleanup) fn();
   }
 
-  /** Slide tops in the viewport's scroll coordinates, which include the zoom. */
+  /** Page tops in the viewport's scroll coordinates, which include the zoom. */
   private tops(): number[] {
     const { viewport } = this.context;
     const origin = viewport.getBoundingClientRect().top - viewport.scrollTop;
     return this.frames.map((frame) => frame.getBoundingClientRect().top - origin);
   }
 
-  /** The slide that crosses the middle of the window. */
+  /**
+   * The page at the top of the window, as PDF viewers count, so that going to a slide or a
+   * heading shows its own number even when the next page is mostly in view.
+   */
   private update(): void {
     const { viewport } = this.context;
-    const middle = viewport.scrollTop + viewport.clientHeight / 2;
+    const line = viewport.scrollTop + 2 * MARGIN + 8;
     const tops = this.tops();
     let index = 0;
-    while (index + 1 < tops.length && tops[index + 1] <= middle) index++;
-    if (index === this.current || tops.length === 0) return;
-    this.current = index;
-    this.status.textContent = this.strings.slidePosition
+    while (index + 1 < tops.length && tops[index + 1] <= line) index++;
+    if (index === this.shown || tops.length === 0) return;
+    this.shown = index;
+    this.status.textContent = this.position
       .replace('{0}', String(index + 1))
       .replace('{1}', String(tops.length));
   }
@@ -82,14 +90,14 @@ export class SlideNavigator {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.target instanceof HTMLInputElement || event.defaultPrevented) return;
     const { viewport } = this.context;
-    const slideHeight = this.frames[0]?.getBoundingClientRect().height ?? 0;
+    const pageHeight = this.frames[0]?.getBoundingClientRect().height ?? 0;
     // Zoomed in past the window height, paging scrolls by screens as usual.
-    if (slideHeight + MARGIN > viewport.clientHeight) return;
+    if (pageHeight + MARGIN > viewport.clientHeight) return;
 
     const stops = this.tops().map((top) => top - MARGIN);
     const position = viewport.scrollTop;
-    // Down skips a slide that is already about in place (the first one is, before any
-    // scrolling); up first brings back the top of a slide scrolled into.
+    // Down skips a page that is already about in place (the first one is, before any
+    // scrolling); up first brings back the top of a page scrolled into.
     const target =
       event.key === 'PageDown'
         ? stops.find((stop) => stop > position + 2 * MARGIN)
