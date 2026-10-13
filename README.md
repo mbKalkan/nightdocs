@@ -158,8 +158,9 @@ If another extension also opens these files, right-click the file and choose
   their text, pictures and chart data, and a moved slide shows as removed in one place and added in
   another. Files in Git LFS compare only when their content is on this machine: Nightdocs doesn't
   download it.
-- PowerPoint animations, transitions and media playback aren't shown. Some pasted
-  vector pictures (EMF/WMF) appear as placeholders.
+- PowerPoint animations and transitions aren't shown. Embedded audio and video play only in
+  formats VS Code can decode, which usually leaves out MP4 video. Some pasted vector pictures
+  (EMF/WMF) appear as placeholders.
 
 ## Contributing
 

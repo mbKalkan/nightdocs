@@ -19,6 +19,8 @@ export function buildContentSecurityPolicy(cspSource: string, nonce: string): st
     // Documents carry their images and fonts inside the file; the renderer exposes them as blob: URLs.
     `img-src ${cspSource} blob: data:`,
     `font-src ${cspSource} blob: data:`,
+    // Audio and video embedded in presentations play from blob: URLs too.
+    'media-src blob:',
     // The DOCX renderer emits document styles as <style> elements and inline style attributes.
     `style-src ${cspSource} 'unsafe-inline'`,
     // Lazily loaded renderer chunks are served from the extension's dist folder.

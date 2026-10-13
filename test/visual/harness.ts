@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
 import { formatForPath } from '../../src/shared/formats';
@@ -177,16 +177,22 @@ export async function openViewer(page: Page, theme: ThemeName) {
       );
     },
     async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
-      const info = formatForPath(fixture) ?? { format: 'docx', appName: 'Word' };
+      await this.send(join('test/fixtures', fixture), reload, colorMode);
+      await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .ov-error');
+      await page.waitForSelector('.ov-progress', { state: 'hidden' });
+    },
+    /** Hands the viewer a file, as the extension host does, without waiting for it to show. */
+    async send(path: string, reload = false, colorMode: ColorMode = 'dark') {
+      const info = formatForPath(path) ?? { format: 'docx', appName: 'Word' };
       // Like the extension host, remember whether the navigation pane was left open.
       const sent = (await this.sent()) as { type: string; open?: boolean }[];
       const navigationPane =
         sent.filter((message) => message.type === 'setNavigationPane').pop()?.open ?? false;
       await this.post({
         type: 'load',
-        fileName: fixture,
+        fileName: basename(path),
         format: info.format,
-        data: readFileSync(join('test/fixtures', fixture)),
+        data: readFileSync(path),
         reload,
         canOpenInOffice: true,
         colorMode,
@@ -194,8 +200,6 @@ export async function openViewer(page: Page, theme: ThemeName) {
         locale: 'en-US',
         strings: { ...strings, openInOffice: `Open in ${info.appName}` },
       });
-      await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .ov-error');
-      await page.waitForSelector('.ov-progress', { state: 'hidden' });
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */
     async setTheme(name: ThemeName) {

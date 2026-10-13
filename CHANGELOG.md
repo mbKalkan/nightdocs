@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Audio and video embedded in presentations play, in the formats VS Code can decode.
+
+### Fixed
+
+- A damaged file, such as a truncated download, now says that it appears to be damaged instead
+  of that something went wrong.
+- Workbooks whose parts are stored with backslashes or in another letter case, which Excel
+  opens, open in Nightdocs too.
+- Some workbooks opened several times slower than they should: before the first view, the
+  whole sheet was drawn once. A 19,000-row test workbook now opens in under a second instead
+  of four to six.
+- Rows and columns past Excel's limits, which only broken files have, are left out instead of
+  stopping the sheet from opening, and a sheet that can't be read no longer leaves its tab
+  selected over another sheet.
+
 ## [0.6.0] - 2026-10-13
 
 More of Excel: charts are drawn, the status bar shows formulas, links in cells work, cells copy
