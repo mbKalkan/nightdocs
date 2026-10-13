@@ -1,10 +1,18 @@
-import type { ViewerCommand } from '../../shared/protocol';
+import type {
+  DiffSide,
+  DocumentSummary,
+  ScrollAnchor,
+  ViewerCommand,
+  WorkbookSummary,
+} from '../../shared/protocol';
+import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
+import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
 import { columnName, SheetGrid } from '../xlsx/grid';
 import type { SheetData, WorkbookInfo } from '../xlsx/model';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
 import { WorkbookClient } from '../xlsx/workerClient';
-import type { RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
+import type { Comparison, RenderContext, RenderedDocument, RenderOptions, Renderer } from './types';
 
 interface XlsxState {
   sheet: string;
@@ -53,6 +61,11 @@ class WorkbookView implements RenderedDocument {
   private find: FindBar | undefined;
   private matches: { row: number; col: number }[] = [];
   private matchIndex = -1;
+  private values: Promise<WorkbookSummary> | undefined;
+  /** Each sheet's differences from the other version, by name, when comparing. */
+  private diff: Map<string, SheetComparison> | undefined;
+  /** The change last moved to, and where the view was then. */
+  private lastChange: { index: number; at: string } | undefined;
 
   constructor(
     private readonly client: WorkbookClient,
@@ -157,6 +170,41 @@ class WorkbookView implements RenderedDocument {
     }
   }
 
+  /** The displayed values of every visible sheet; the worker reads them all. */
+  summary(): Promise<WorkbookSummary> {
+    return (this.values ??= this.client.summary());
+  }
+
+  async compare(peer: DocumentSummary, side: DiffSide): Promise<Comparison | undefined> {
+    if (peer.format !== 'xlsx') return undefined;
+    const own = await this.summary();
+    const theirs = new Map(peer.sheets.map((sheet) => [sheet.name, sheet.rows]));
+    const diff = new Map(
+      own.sheets.map((sheet) => [
+        sheet.name,
+        compareSheet(sheet.rows, theirs.get(sheet.name), side),
+      ]),
+    );
+    this.diff = diff;
+    this.grid.setMarks(diff.get(this.sheetName)?.marks);
+    this.renderTabs();
+    const changes = own.sheets.flatMap((sheet) =>
+      (diff.get(sheet.name)?.changes ?? []).map((row) => ({ sheet: sheet.name, row })),
+    );
+    return {
+      count: changes.length,
+      go: (direction) => this.goToChange(changes, direction),
+      anchor: () => this.scrollAnchor(),
+      scrollTo: (anchor) => this.follow(anchor),
+      dispose: () => {
+        if (this.diff !== diff) return;
+        this.diff = undefined;
+        this.grid.setMarks(undefined);
+        this.renderTabs();
+      },
+    };
+  }
+
   state(): XlsxState {
     const active = this.grid.activeCell;
     return { sheet: this.info.sheets[this.index].name, row: active.row, col: active.col };
@@ -205,7 +253,81 @@ class WorkbookView implements RenderedDocument {
     this.find.open();
   }
 
+  private get sheetName(): string {
+    return this.info.sheets[this.index].name;
+  }
+
+  private async goToChange(
+    changes: { sheet: string; row: number }[],
+    direction: 1 | -1,
+  ): Promise<number | undefined> {
+    const viewport = this.context?.viewport;
+    if (!viewport || changes.length === 0) return undefined;
+    const at = () => `${this.sheetName}:${viewport.scrollTop}:${viewport.scrollLeft}`;
+    let index: number;
+    if (this.lastChange?.at === at()) {
+      // Still where the last change was shown: step from it.
+      index = (this.lastChange.index + direction + changes.length) % changes.length;
+    } else {
+      // Changes from the top row of the current sheet on are ahead.
+      const order = this.visibleSheets().map((i) => this.info.sheets[i].name);
+      const here = order.indexOf(this.sheetName);
+      const top = this.grid.topRow().row;
+      const ahead = ({ sheet, row }: { sheet: string; row: number }) =>
+        order.indexOf(sheet) > here || (order.indexOf(sheet) === here && row >= top);
+      index =
+        direction > 0
+          ? changes.findIndex(ahead)
+          : changes.length - 1 - [...changes].reverse().findIndex((change) => !ahead(change));
+      if (index < 0 || index >= changes.length) index = direction > 0 ? 0 : changes.length - 1;
+    }
+    const change = changes[index];
+    await this.showSheet(this.info.sheets.findIndex((sheet) => sheet.name === change.sheet));
+    this.grid.reveal(change.row, this.diff?.get(change.sheet)?.marks.cells.get(change.row)?.[0]);
+    this.lastChange = { index, at: at() };
+    return index;
+  }
+
+  /** Where this side is, in the other side's rows. */
+  private scrollAnchor(): ScrollAnchor {
+    const { row, fraction } = this.grid.topRow();
+    const { col, fraction: columnFraction } = this.grid.leftColumn();
+    const comparison = this.diff?.get(this.sheetName);
+    return {
+      sheet: this.sheetName,
+      index: comparison ? comparison.toPeer(row) : row,
+      fraction,
+      column: col,
+      columnFraction,
+    };
+  }
+
+  /** Goes to where the other side is: its sheet, if this side has it, and its rows. */
+  private async follow(anchor: ScrollAnchor): Promise<void> {
+    const viewport = this.context?.viewport;
+    if (!viewport) return;
+    if (anchor.sheet !== undefined && anchor.sheet !== this.sheetName) {
+      const index = this.info.sheets.findIndex(
+        (sheet) => sheet.name === anchor.sheet && !sheet.hidden,
+      );
+      if (index < 0) return;
+      await this.showSheet(index);
+    }
+    if (anchor.index === TOP) viewport.scrollTop = 0;
+    else if (anchor.index === BOTTOM) viewport.scrollTop = viewport.scrollHeight;
+    else this.grid.scrollToRow(anchor.index, anchor.fraction);
+    if (anchor.column !== undefined) {
+      this.grid.scrollToColumn(anchor.column, anchor.columnFraction ?? 0);
+    }
+  }
+
   private createGrid(sheet: SheetData): SheetGrid {
+    const grid = this.newGrid(sheet);
+    grid.setMarks(this.diff?.get(this.info.sheets[this.index].name)?.marks);
+    return grid;
+  }
+
+  private newGrid(sheet: SheetData): SheetGrid {
     return new SheetGrid(sheet, {
       getViewport: () => this.context?.viewport ?? this.host,
       getZoom: () => this.context?.getZoom() ?? 1,
@@ -236,6 +358,11 @@ class WorkbookView implements RenderedDocument {
           const color = this.colors.fill(sheet.tabColor) ?? sheet.tabColor;
           tab.style.setProperty('--tab-color', color);
           tab.classList.add('ov-sheet-tab-colored');
+        }
+        // When comparing, sheets with changes get a dot in the color of this side's changes.
+        const comparison = this.diff?.get(sheet.name);
+        if (comparison && comparison.changes.length > 0) {
+          tab.dataset.change = comparison.marks.own;
         }
         // One tab stop for the whole list; arrow keys move between tabs.
         tab.tabIndex = i === this.index ? 0 : -1;
@@ -293,6 +420,9 @@ class WorkbookView implements RenderedDocument {
     grid.render(true);
     grid.selectRange({ row1: 0, col1: 0, row2: 0, col2: 0 });
     this.find?.refresh();
+    // Lets scroll listeners know the view changed even when it was already at the top, so
+    // the other side of a comparison switches sheets too.
+    this.context.viewport.dispatchEvent(new Event('scroll'));
   }
 
   private onMouseDown(event: MouseEvent): void {

@@ -1,4 +1,5 @@
 import workerSource from 'worker-source:xlsx';
+import type { WorkbookSummary } from '../../shared/protocol';
 import type { SheetData, WorkbookInfo } from './model';
 import type { WorkerRequest, WorkerResponse } from './worker';
 
@@ -38,6 +39,11 @@ export class WorkbookClient {
 
   sheet(index: number): Promise<SheetData> {
     return this.request({ type: 'sheet', index }) as Promise<SheetData>;
+  }
+
+  /** Values of every visible sheet, for comparing with another version. */
+  summary(): Promise<WorkbookSummary> {
+    return this.request({ type: 'summary' }) as Promise<WorkbookSummary>;
   }
 
   dispose(): void {

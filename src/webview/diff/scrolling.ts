@@ -2,6 +2,13 @@
 
 import type { ScrollAnchor } from '../../shared/protocol';
 
+/** `ScrollAnchor.index` values both sides take as they are, whatever the content. */
+export const TOP = -1;
+export const BOTTOM = -2;
+
+/** Canvas left visible above a change brought into view. */
+const REVEAL_MARGIN = 48;
+
 /** Converts a screen position to the viewport's scroll coordinates. */
 export function scrollTopOf(viewport: HTMLElement, clientY: number): number {
   return clientY - viewport.getBoundingClientRect().top + viewport.scrollTop;
@@ -36,8 +43,32 @@ export function scrollToAnchor(
   items: readonly Element[],
   anchor: ScrollAnchor,
 ): void {
+  if (anchor.index === TOP || anchor.index === BOTTOM) {
+    viewport.scrollTop = anchor.index === TOP ? 0 : viewport.scrollHeight;
+    return;
+  }
   const item = items[Math.min(anchor.index, items.length - 1)];
   if (!item) return;
   const rect = item.getBoundingClientRect();
   viewport.scrollTop = scrollTopOf(viewport, rect.top + anchor.fraction * rect.height);
+}
+
+/**
+ * Scrolls to the next (1) or previous (-1) of the changes at `tops` (scroll positions, top to
+ * bottom) from where the view is, wrapping around, and returns which one.
+ */
+export function revealByTops(
+  viewport: HTMLElement,
+  tops: readonly number[],
+  direction: 1 | -1,
+): number | undefined {
+  if (tops.length === 0) return undefined;
+  const at = viewport.scrollTop + REVEAL_MARGIN;
+  let index =
+    direction > 0
+      ? tops.findIndex((top) => top > at + 1)
+      : tops.length - 1 - [...tops].reverse().findIndex((top) => top < at - 1);
+  if (index < 0 || index >= tops.length) index = direction > 0 ? 0 : tops.length - 1;
+  viewport.scrollTop = Math.max(0, tops[index] - REVEAL_MARGIN);
+  return index;
 }

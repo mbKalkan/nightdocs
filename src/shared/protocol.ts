@@ -55,13 +55,28 @@ export interface ViewerStrings {
 export type DiffSide = 'original' | 'modified';
 
 /** What a viewer shares with the other side of a comparison to find the differences. */
-export type DocumentSummary = WordSummary;
+export type DocumentSummary = WordSummary | WorkbookSummary;
 
 export interface WordSummary {
   format: 'docx';
   /** Text of each paragraph of the body, in order; pictures count as U+FFFC. */
   blocks: string[];
 }
+
+export interface WorkbookSummary {
+  format: 'xlsx';
+  /** Visible sheets, in tab order. */
+  sheets: SheetSummary[];
+}
+
+export interface SheetSummary {
+  name: string;
+  /** Each row's displayed values, separated by `CELL_SEPARATOR` at their column positions. */
+  rows: string[];
+}
+
+/** Separates cells in `SheetSummary.rows`; not something a cell shows. */
+export const CELL_SEPARATOR = '\u001f';
 
 /**
  * A scroll position in the receiver's terms: `fraction` of the way through item `index`
@@ -70,6 +85,10 @@ export interface WordSummary {
 export interface ScrollAnchor {
   index: number;
   fraction: number;
+  /** For spreadsheets: the sheet, and the column and fraction of it at the left edge. */
+  sheet?: string;
+  column?: number;
+  columnFraction?: number;
 }
 
 export interface LoadMessage {

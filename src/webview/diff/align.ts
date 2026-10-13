@@ -26,11 +26,23 @@ const LOOKAHEAD = 20;
 /** Items of up to this many words, like table cells, can be edits even with no word in common. */
 const SHORT_WORDS = 3;
 
+export interface AlignOptions {
+  /**
+   * When as many items are replaced as replace them, which count as edited in place: only
+   * short ones like table cells (`short`), or all, like the rows of a sheet (`all`).
+   */
+  inPlace?: 'short' | 'all';
+}
+
 /**
- * Lines up two versions of a list of texts (paragraphs, slides): which items match, which
- * were edited, removed or added.
+ * Lines up two versions of a list of texts (paragraphs, slides, rows): which items match,
+ * which were edited, removed or added.
  */
-export function align(a: readonly string[], b: readonly string[]): Alignment {
+export function align(
+  a: readonly string[],
+  b: readonly string[],
+  { inPlace = 'short' }: AlignOptions = {},
+): Alignment {
   const aToB = new Array<number>(a.length).fill(0);
   const bToA = new Array<number>(b.length).fill(0);
   const hunks: Hunk[] = [];
@@ -52,7 +64,7 @@ export function align(a: readonly string[], b: readonly string[]): Alignment {
       hunk.bEnd = next.bEnd;
       i++;
     }
-    hunk.pairs = pairEdited(a, b, hunk);
+    hunk.pairs = pairEdited(a, b, hunk, inPlace === 'all' ? Infinity : SHORT_WORDS);
     hunks.push(hunk);
 
     // Unpaired items point at the closest paired item before them, or the hunk's start.
@@ -75,7 +87,12 @@ export function align(a: readonly string[], b: readonly string[]): Alignment {
   return { hunks, aToB, bToA };
 }
 
-function pairEdited(a: readonly string[], b: readonly string[], hunk: Hunk): [number, number][] {
+function pairEdited(
+  a: readonly string[],
+  b: readonly string[],
+  hunk: Hunk,
+  shortWords: number,
+): [number, number][] {
   const pairs: [number, number][] = [];
   let from = hunk.bStart;
   for (let x = hunk.aStart; x < hunk.aEnd && from < hunk.bEnd; x++) {
@@ -93,7 +110,7 @@ function pairEdited(a: readonly string[], b: readonly string[], hunk: Hunk): [nu
       from = best + 1;
     }
   }
-  return pairShortInPlace(a, b, hunk, pairs);
+  return pairShortInPlace(a, b, hunk, pairs, shortWords);
 }
 
 /**
@@ -105,12 +122,13 @@ function pairShortInPlace(
   b: readonly string[],
   hunk: Hunk,
   pairs: [number, number][],
+  shortWords: number,
 ): [number, number][] {
   const size = hunk.aEnd - hunk.aStart;
   const inPlace = pairs.every(([x, y]) => x - hunk.aStart === y - hunk.bStart);
   if (size !== hunk.bEnd - hunk.bStart || !inPlace) return pairs;
   const paired = new Set(pairs.map(([x]) => x));
-  const short = (text: string) => text.split(' ').length <= SHORT_WORDS;
+  const short = (text: string) => text.split(' ').length <= shortWords;
   for (let k = 0; k < size; k++) {
     const x = hunk.aStart + k;
     const y = hunk.bStart + k;

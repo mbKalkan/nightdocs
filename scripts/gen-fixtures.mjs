@@ -681,9 +681,75 @@ function sampleWorkbook(dataRows) {
   };
 }
 
+/**
+ * An order list in two versions for comparing: the revised one has a quantity changed, an
+ * order removed, one added, a price changed far down the sheet, and one more sheet.
+ */
+function ordersWorkbook({ revised = false } = {}) {
+  const products = ['Desk', 'Chair', 'Lamp', 'Shelf', 'Cabinet', 'Monitor arm'];
+  const random = makeRandom(5);
+  const orders = Array.from({ length: 60 }, (_, i) => [
+    `SO-${1001 + i}`,
+    products[Math.floor(random() * products.length)],
+    1 + Math.floor(random() * 9),
+    40 + Math.floor(random() * 30) * 10,
+  ]);
+  if (revised) {
+    orders[4][2] += 2;
+    orders.splice(11, 1);
+    orders.splice(20, 0, ['SO-1099', 'Lamp', 3, 90]);
+    orders[52][3] = 990;
+  }
+  const columns = 'ABCDE';
+  const cells = ['Order', 'Product', 'Quantity', 'Price', 'Total'].map((value, c) => ({
+    ref: `${columns[c]}1`,
+    value,
+    style: c >= 2 ? 3 : 2,
+  }));
+  orders.forEach(([order, product, quantity, price], i) => {
+    const r = i + 2;
+    cells.push(
+      { ref: `A${r}`, value: order },
+      { ref: `B${r}`, value: product },
+      { ref: `C${r}`, value: quantity },
+      { ref: `D${r}`, value: price, style: 4 },
+      { ref: `E${r}`, value: quantity * price, style: 4, formula: `C${r}*D${r}` },
+    );
+  });
+  const sheets = [
+    {
+      name: 'Orders',
+      frozen: { rows: 1, cols: 0 },
+      cols: [
+        { min: 1, max: 1, width: 12 },
+        { min: 2, max: 2, width: 16 },
+        { min: 3, max: 5, width: 11 },
+      ],
+      cells,
+    },
+    {
+      name: 'Summary',
+      cols: [{ min: 1, max: 1, width: 14 }],
+      cells: [
+        { ref: 'A1', value: 'Orders', style: 2 },
+        { ref: 'B1', value: orders.length },
+        { ref: 'A2', value: 'Status', style: 2 },
+        { ref: 'B2', value: revised ? 'Final' : 'Draft' },
+      ],
+    },
+  ];
+  if (revised) {
+    sheets.push({ name: 'Notes', cells: [{ ref: 'A1', value: 'Prices checked with suppliers.' }] });
+  }
+  return { styles: BASE_STYLES, sheets };
+}
+
 if (!LARGE_ONLY) {
   writeFileSync(`${OUT}/sample.xlsx`, await writeXlsx(sampleWorkbook(2000)));
   console.log(`wrote ${OUT}/sample.xlsx`);
+  writeFileSync(`${OUT}/orders.xlsx`, await writeXlsx(ordersWorkbook()));
+  writeFileSync(`${OUT}/orders-revised.xlsx`, await writeXlsx(ordersWorkbook({ revised: true })));
+  console.log(`wrote ${OUT}/orders.xlsx and orders-revised.xlsx`);
 }
 
 // 100k rows for performance checks; large, so it isn't committed.
