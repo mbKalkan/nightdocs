@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   points to. Hovering a linked cell shows where it goes. Links made with the `HYPERLINK` function
   work too.
 
+### Fixed
+
+- Picking another sheet while a workbook was still loading the sheet a link, a comparison or a
+  change led to no longer selects cells on the sheet you picked.
+
 ## [0.5.0] - 2026-10-13
 
 Find your way around a document as in Office: a navigation pane, Go to Heading and Go to Slide,

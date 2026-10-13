@@ -383,6 +383,8 @@ class WorkbookView implements RenderedDocument {
         );
         if (index < 0) return;
         await this.showSheet(index);
+        // Another sheet may have been picked while this one loaded.
+        if (this.index !== index) return;
       }
       const row = (r: number) => Math.max(0, Math.min(r, this.grid.rowCount - 1));
       const col = (c: number) => Math.max(0, Math.min(c, this.grid.colCount - 1));
@@ -436,6 +438,8 @@ class WorkbookView implements RenderedDocument {
       );
       if (index < 0) return;
       await this.showSheet(index);
+      // Another sheet may have been picked while this one loaded.
+      if (this.index !== index) return;
     }
     if (anchor.index === TOP) viewport.scrollTop = 0;
     else if (anchor.index === BOTTOM) viewport.scrollTop = viewport.scrollHeight;
@@ -621,6 +625,8 @@ class WorkbookView implements RenderedDocument {
       );
       if (index < 0) return;
       await this.showSheet(index);
+      // Another sheet may have been picked while this one loaded.
+      if (this.index !== index) return;
     }
     const row = (r: number) => Math.max(0, Math.min(r, this.grid.rowCount - 1));
     const col = (c: number) => Math.max(0, Math.min(c, this.grid.colCount - 1));
