@@ -2,6 +2,8 @@
 
 # Nightdocs
 
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/MBKDevStudio.nightdocs?label=Marketplace)](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs)
+[![Open VSX](https://img.shields.io/open-vsx/v/MBKDevStudio/nightdocs?label=Open%20VSX)](https://open-vsx.org/extension/MBKDevStudio/nightdocs)
 [![CI](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml/badge.svg)](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -11,8 +13,6 @@ Nightdocs is a lightweight, view-only Office viewer for Word (`.docx`), Excel (`
 and PowerPoint (`.pptx`, `.pptm`, `.ppsx`) files. Documents take on your editor's colors so a white
 page doesn't light up a dark room. Changed files from Git open side by side with the differences
 marked, and when you need to edit, one click opens the file in Word, Excel or PowerPoint.
-
-> **Status:** preview. Feedback is very welcome.
 
 ![Nightdocs showing a Word document in dark and original colors, an Excel workbook with a sum and charts, and a PowerPoint presentation with its slide pane](docs/images/demo.gif)
 
@@ -119,8 +119,10 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 ## Getting started
 
 1. Install **Nightdocs** from the
-   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs),
-   or search for "Nightdocs" in the Extensions view.
+   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs)
+   or, in VSCodium and other editors that use it,
+   [Open VSX](https://open-vsx.org/extension/MBKDevStudio/nightdocs). Or search for "Nightdocs"
+   in the Extensions view.
 2. Open a `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.pptm` or `.ppsx` file. Nightdocs is the default
    viewer for these files.
 
