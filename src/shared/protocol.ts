@@ -25,6 +25,8 @@ export interface ViewerStrings {
   statusCount: string;
   statusSum: string;
   statusAverage: string;
+  /** Names the selected cell's formula for screen readers. */
+  formula: string;
   find: string;
   findNoResults: string;
   /** `{0} of {1}` */

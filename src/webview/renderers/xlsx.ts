@@ -14,8 +14,9 @@ import { FindBar } from '../findBar';
 import { NavList } from '../navList';
 import { describe, pick } from '../picker';
 import { vscode } from '../vscodeApi';
-import { columnName, SheetGrid } from '../xlsx/grid';
+import { SheetGrid } from '../xlsx/grid';
 import type { SheetData, WorkbookInfo } from '../xlsx/model';
+import { columnName } from '../xlsx/refs';
 import { SheetTabs } from '../xlsx/sheetTabs';
 import { buildStyleSheet, CellColors, gridColors } from '../xlsx/styleSheet';
 import { WorkbookClient } from '../xlsx/workerClient';
@@ -649,6 +650,7 @@ class WorkbookView implements RenderedDocument {
       : `${cellName(range.row1, range.col1)}:${cellName(range.row2, range.col2)}`;
     const parts = [address];
     let value: HTMLElement | undefined;
+    let formula: HTMLElement | undefined;
     if (single) {
       const text = this.grid.textAt(range.row1, range.col1);
       if (text) {
@@ -661,6 +663,7 @@ class WorkbookView implements RenderedDocument {
         const own = this.diff?.get(this.sheetName)?.marks.own;
         if (other !== undefined && own) markWords(value, other, `nd-diff-${own}`);
       }
+      formula = this.formulaStatus(this.grid.formulaAt(range.row1, range.col1));
     } else {
       let count = 0;
       let numbers = 0;
@@ -687,7 +690,25 @@ class WorkbookView implements RenderedDocument {
         return span;
       }),
       ...(value ? [value] : []),
+      ...(formula ? [formula] : []),
     );
+  }
+
+  /** The selected cell's formula, after its value, as Excel's formula bar shows it. */
+  private formulaStatus(formula: string): HTMLElement | undefined {
+    if (!formula) return undefined;
+    const element = document.createElement('span');
+    element.className = 'ov-status-formula';
+    element.title = formula.length > 1000 ? `${formula.slice(0, 1000)}…` : formula;
+    const label = document.createElement('span');
+    label.className = 'ov-status-fx';
+    label.textContent = 'fx';
+    label.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span');
+    name.className = 'ov-sr-only';
+    name.textContent = `${this.options.strings.formula} `;
+    element.append(label, name, formula.length > 200 ? `${formula.slice(0, 200)}…` : formula);
+    return element;
   }
 }
 

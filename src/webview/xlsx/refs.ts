@@ -24,3 +24,12 @@ export function parseRange(ref: string): CellRange | undefined {
     col2: Math.max(from.col, to.col),
   };
 }
+
+/** 0 → "A", 27 → "AB". */
+export function columnName(col: number): string {
+  let name = '';
+  for (let n = col + 1; n > 0; n = Math.floor((n - 1) / 26)) {
+    name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
+  }
+  return name;
+}

@@ -39,6 +39,7 @@ export const strings: ViewerStrings = {
   statusCount: 'Count: {0}',
   statusSum: 'Sum: {0}',
   statusAverage: 'Average: {0}',
+  formula: 'Formula',
   find: 'Find',
   findNoResults: 'No results',
   findCount: '{0} of {1}',

@@ -120,6 +120,8 @@ export interface SheetData {
   frozenCols: number;
   showGridLines: boolean;
   drawings: Drawing[];
+  /** Formulas as Excel's formula bar shows them ("=SUM(A1:A3)"), by cell index. */
+  formulas: Map<number, string>;
   /** Conditional formatting results, by cell index. */
   conditional: Map<number, CellOverride>;
   /** Default styles of whole rows and columns, which also cover the cells the file omits. */

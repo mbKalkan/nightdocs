@@ -16,6 +16,7 @@
   "Couldn't open the file in {0}: {1}": "Dosya {0} ile açılamadı: {1}",
   "Count: {0}": "Sayı: {0}",
   "Sum: {0}": "Toplam: {0}",
+  "Formula": "Formül",
   "Average: {0}": "Ortalama: {0}",
   "Find": "Bul",
   "No results": "Sonuç yok",
