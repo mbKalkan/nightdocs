@@ -26,6 +26,16 @@ async function clickCell(page: Page, column: string, row: number, modifiers: 'Sh
 }
 
 const status = (page: Page) => page.locator('.ov-status');
+
+/** Screenshots the sheet tab row and the status row under it. */
+async function shootBottomBars(page: Page, path: string) {
+  const tabs = (await page.locator('.ov-tabbar').boundingBox())!;
+  const footer = (await page.locator('.ov-footer').boundingBox())!;
+  await page.screenshot({
+    path,
+    clip: { x: 0, y: tabs.y, width: tabs.width, height: footer.y + footer.height - tabs.y },
+  });
+}
 const activeTab = (page: Page) => page.locator('.ov-sheet-tab[aria-selected="true"]');
 
 /** Text the viewer puts on the clipboard for the current selection. */
@@ -230,9 +240,7 @@ for (const theme of ['dark', 'light'] as const) {
     const right = page.getByRole('button', { name: 'Scroll Sheet Tabs Right' });
     await expect(left).toBeEnabled();
     await expect(right).toBeEnabled();
-    await page
-      .locator('.ov-footer')
-      .screenshot({ path: `${SCREENS}/xlsx-many-sheets-${theme}.png` });
+    await shootBottomBars(page, `${SCREENS}/xlsx-many-sheets-${theme}.png`);
 
     // The arrows page through the tabs to either end.
     while (await right.isEnabled()) await right.click();
@@ -286,26 +294,28 @@ test('lists every sheet to pick from', async ({ page }) => {
     .toHaveLength(2);
 });
 
-test('keeps a long cell text in the status bar from crowding out the tabs', async ({ page }) => {
+test('gives the sheet tabs and the selected cell a row each', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('many-sheets.xlsx');
   await viewer.post({ type: 'showSheet', sheet: 'Notes' });
   await expect(activeTab(page)).toHaveText('Notes');
   await clickCell(page, 'A', 7);
 
-  // The text is cut short with the whole of it on hover, and the tabs keep most of the room.
+  // The tabs have the whole width of their row; the cell's text has the row under it, cut
+  // short with all of it on hover.
+  const bar = (await page.locator('.ov-tabbar').boundingBox())!;
+  const footer = (await page.locator('.ov-footer').boundingBox())!;
+  expect(footer.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
+  expect((await page.getByRole('tablist').boundingBox())!.width).toBeGreaterThan(bar.width * 0.8);
+  await expect(status(page)).toContainText('A7');
   const value = page.locator('.ov-status-value');
   await expect(value).toHaveAttribute('title', /^Figures before March 2025 .* Q4 2025 review\.$/);
-  expect((await value.boundingBox())!.width).toBeLessThanOrEqual(240);
-  const footer = (await page.locator('.ov-footer').boundingBox())!.width;
-  expect((await page.getByRole('tablist').boundingBox())!.width).toBeGreaterThan(footer / 2);
-  await expect(activeTab(page)).toBeInViewport({ ratio: 0.95 });
-  await page.locator('.ov-footer').screenshot({ path: `${SCREENS}/xlsx-status-long-text.png` });
+  expect(await value.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await shootBottomBars(page, `${SCREENS}/xlsx-status-long-text.png`);
 
-  // A narrow view keeps only the address.
+  // Still both in a narrow view.
   await page.setViewportSize({ width: 520, height: 760 });
-  await expect(value).toBeHidden();
-  await expect(status(page)).toContainText('A7');
+  await expect(value).toBeVisible();
   await expect(activeTab(page)).toBeInViewport({ ratio: 0.95 });
 });
 
@@ -392,6 +402,7 @@ test('explains a protected workbook', async ({ page }) => {
   await expect(page.locator('.ov-error-message')).toContainText('password-protected');
   await expect(page.locator('.ov-error .ov-button')).toHaveText('Open in Excel');
   await expect(page.locator('.ov-footer')).toBeHidden();
+  await expect(page.locator('.ov-tabbar')).toBeHidden();
 });
 
 test('says so when a file is empty', async ({ page }) => {

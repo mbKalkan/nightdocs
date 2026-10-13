@@ -77,6 +77,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'peerScroll':
       diff.follow(message.anchor);
       break;
+    case 'peerSelect':
+      void diff.followSelection(message.selection);
+      break;
     case 'peerZoom':
       if (hasContent) diff.followZoom(message.zoom, (value) => zoom.set(value));
       break;
@@ -179,6 +182,7 @@ async function show(message: LoadMessage): Promise<void> {
     const context: RenderContext = {
       viewport: shell.viewport,
       footer: shell.footer,
+      tabBar: shell.tabBar,
       overlay: shell.overlay,
       getZoom: () => zoom.zoom,
       setBusy: (busy) => shell.setBusy(busy),
@@ -237,6 +241,8 @@ function replaceCurrent(next: RenderedDocument | undefined): void {
   current = next;
   shell.footer.replaceChildren();
   shell.footer.hidden = true;
+  shell.tabBar.replaceChildren();
+  shell.tabBar.hidden = true;
 }
 
 function currentThemeKey(): string {

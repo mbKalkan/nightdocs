@@ -720,10 +720,10 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   overflow-wrap: anywhere;
 }
 
-/* Footer: sheet tabs and status */
+/* Footer: sheet tabs on a row of their own, then the status */
 
-.ov-footer {
-  container: footer / inline-size;
+.ov-footer,
+.ov-tabbar {
   flex: none;
   display: flex;
   align-items: stretch;
@@ -828,11 +828,10 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
 
 .ov-status {
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   align-items: center;
   gap: 16px;
   min-width: 0;
-  max-width: 45%;
   padding: 0 12px;
   overflow: hidden;
   color: var(--vscode-descriptionForeground);
@@ -848,20 +847,28 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   color: var(--vscode-foreground);
 }
 
-/* The selected cell's text is a glance, not a reader: the sheet tabs need the room more. */
+/* The selected cell's text takes the rest of the row; hovering shows all of it. */
 .ov-status > .ov-status-value {
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--vscode-foreground);
 }
 
-/* In a narrow view, such as one side of a comparison on a small screen, only the address. */
-@container footer (max-width: 560px) {
-  .ov-status > .ov-status-value {
-    display: none;
-  }
+/* When comparing, what changed in the selected cell from the other version. */
+.ov-status .nd-diff-word {
+  border-radius: 2px;
+}
+
+.ov-status .nd-diff-word.nd-diff-removed {
+  background: var(--ov-diff-removed-text);
+  outline: 1px dashed var(--vscode-diffEditor-removedTextBorder, transparent);
+}
+
+.ov-status .nd-diff-word.nd-diff-added {
+  background: var(--ov-diff-added-text);
+  outline: 1px dashed var(--vscode-diffEditor-insertedTextBorder, transparent);
 }
 
 /* Find widget (spreadsheets) */

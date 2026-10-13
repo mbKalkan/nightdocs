@@ -17,6 +17,8 @@ export class Shell {
   readonly viewport: HTMLElement;
   readonly content: HTMLElement;
   readonly footer: HTMLElement;
+  /** Row above the footer for a workbook's sheet tabs, hidden unless a document uses it. */
+  readonly tabBar: HTMLElement;
   /** Positioned container for widgets that float over the document, such as find. */
   readonly overlay: HTMLElement;
   private readonly root: HTMLElement;
@@ -56,6 +58,7 @@ export class Shell {
         <main class="ov-viewport" tabindex="0">
           <div class="ov-content"></div>
         </main>
+        <div class="ov-tabbar" hidden></div>
         <footer class="ov-footer" hidden></footer>
       </div>`;
 
@@ -76,6 +79,7 @@ export class Shell {
     this.progress = find('.ov-progress');
     this.viewport = find('.ov-viewport');
     this.content = find('.ov-content');
+    this.tabBar = find('.ov-tabbar');
     this.footer = find('.ov-footer');
 
     find('.ov-toolbar').addEventListener('keydown', (event) => this.onToolbarKeyDown(event));

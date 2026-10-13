@@ -1,10 +1,13 @@
-import type {
-  DiffSide,
-  DocumentSummary,
-  ScrollAnchor,
-  ViewerCommand,
-  WorkbookSummary,
+import {
+  CELL_SEPARATOR,
+  type CellSelection,
+  type DiffSide,
+  type DocumentSummary,
+  type ScrollAnchor,
+  type ViewerCommand,
+  type WorkbookSummary,
 } from '../../shared/protocol';
+import { markWords } from '../diff/marks';
 import { compareSheet, type SheetComparison } from '../diff/sheetCompare';
 import { BOTTOM, TOP } from '../diff/scrolling';
 import { FindBar } from '../findBar';
@@ -66,6 +69,10 @@ class WorkbookView implements RenderedDocument {
   private values: Promise<WorkbookSummary> | undefined;
   /** Each sheet's differences from the other version, by name, when comparing. */
   private diff: Map<string, SheetComparison> | undefined;
+  /** The other version's rows of each sheet, by name, when comparing. */
+  private peerRows: Map<string, readonly string[]> | undefined;
+  /** Above zero while selecting what the other side selected, which isn't sent back. */
+  private quiet = 0;
   /** The change last moved to, and where the view was then. */
   private lastChange: { index: number; at: string } | undefined;
 
@@ -102,7 +109,7 @@ class WorkbookView implements RenderedDocument {
 
   activate(context: RenderContext): void {
     this.context = context;
-    const { viewport, footer } = context;
+    const { viewport, footer, tabBar } = context;
 
     const tabs = new SheetTabs(this.options.strings, {
       select: (index) => void this.showSheet(index),
@@ -112,7 +119,11 @@ class WorkbookView implements RenderedDocument {
     this.status = document.createElement('div');
     this.status.className = 'ov-status';
     this.status.setAttribute('aria-live', 'polite');
-    footer.replaceChildren(tabs.element, this.status);
+    // Tabs and the selected cell get a row each, so neither crowds the other out and both sides
+    // of a comparison show their cell at the same place.
+    tabBar.replaceChildren(tabs.element);
+    tabBar.hidden = false;
+    footer.replaceChildren(this.status);
     footer.hidden = false;
     // Fill the area around a small sheet with the sheet color.
     viewport.style.background = gridColors(this.options.palette).sheet;
@@ -198,8 +209,10 @@ class WorkbookView implements RenderedDocument {
       ]),
     );
     this.diff = diff;
+    this.peerRows = theirs;
     this.grid.setMarks(diff.get(this.sheetName)?.marks);
     this.renderTabs();
+    this.updateStatus();
     const changes = own.sheets.flatMap((sheet) =>
       (diff.get(sheet.name)?.changes ?? []).map((row) => ({ sheet: sheet.name, row })),
     );
@@ -208,9 +221,11 @@ class WorkbookView implements RenderedDocument {
       go: (direction) => this.goToChange(changes, direction),
       anchor: () => this.scrollAnchor(),
       scrollTo: (anchor) => this.follow(anchor),
+      select: (selection) => this.followSelection(selection),
       dispose: () => {
         if (this.diff !== diff) return;
         this.diff = undefined;
+        this.peerRows = undefined;
         this.grid.setMarks(undefined);
         this.renderTabs();
       },
@@ -295,9 +310,69 @@ class WorkbookView implements RenderedDocument {
     }
     const change = changes[index];
     await this.showSheet(this.info.sheets.findIndex((sheet) => sheet.name === change.sheet));
-    this.grid.reveal(change.row, this.diff?.get(change.sheet)?.marks.cells.get(change.row)?.[0]);
+    const col = this.diff?.get(change.sheet)?.marks.cells.get(change.row)?.[0];
+    this.grid.reveal(change.row, col);
+    // Selecting the change shows its text, and the other side selects it too.
+    const row = Math.min(change.row, this.grid.rowCount - 1);
+    this.grid.selectRange({ row1: row, col1: col ?? 0, row2: row, col2: col ?? 0 });
     this.lastChange = { index, at: at() };
     return index;
+  }
+
+  /** When comparing, has the other side select the same cells, in its rows. */
+  private shareSelection(): void {
+    const comparison = this.diff?.get(this.sheetName);
+    if (!comparison || comparison.onlyHere || this.quiet > 0) return;
+    const { row1, col1, row2, col2 } = this.grid.selection;
+    vscode.postMessage({
+      type: 'select',
+      selection: {
+        sheet: this.sheetName,
+        row1: comparison.toPeer(row1),
+        col1,
+        row2: comparison.toPeer(row2),
+        col2,
+      },
+    });
+  }
+
+  /** Selects what the other side selected, switching sheets if it is on another one. */
+  private async followSelection(selection: CellSelection): Promise<void> {
+    this.quiet++;
+    try {
+      if (selection.sheet !== this.sheetName) {
+        const index = this.info.sheets.findIndex(
+          (sheet) => sheet.name === selection.sheet && !sheet.hidden,
+        );
+        if (index < 0) return;
+        await this.showSheet(index);
+      }
+      const row = (r: number) => Math.max(0, Math.min(r, this.grid.rowCount - 1));
+      const col = (c: number) => Math.max(0, Math.min(c, this.grid.colCount - 1));
+      const range = {
+        row1: row(selection.row1),
+        col1: col(selection.col1),
+        row2: row(selection.row2),
+        col2: col(selection.col2),
+      };
+      this.grid.selectRange(range);
+      this.grid.scrollIntoView(range.row2, range.col2);
+    } finally {
+      this.quiet--;
+    }
+  }
+
+  /**
+   * What the selected cell has instead on the other side, when it changed: the other version's
+   * text, or '' for a row or sheet only this side has.
+   */
+  private otherText(row: number, col: number): string | undefined {
+    const comparison = this.diff?.get(this.sheetName);
+    if (!comparison) return undefined;
+    if (comparison.onlyHere || comparison.marks.rows.has(row)) return '';
+    if (!comparison.marks.cells.get(row)?.includes(col)) return undefined;
+    const peerRow = this.peerRows?.get(this.sheetName)?.[comparison.toPeer(row)];
+    return peerRow?.split(CELL_SEPARATOR)[col] ?? '';
   }
 
   /** Where this side is, in the other side's rows. */
@@ -346,7 +421,10 @@ class WorkbookView implements RenderedDocument {
       styles: this.info.styles,
       colors: this.colors,
       chartLabels: { chart: this.options.strings.chart, hint: this.options.strings.chartHint },
-      onSelectionChange: () => this.updateStatus(),
+      onSelectionChange: () => {
+        this.updateStatus();
+        this.shareSelection();
+      },
     });
   }
 
@@ -410,7 +488,10 @@ class WorkbookView implements RenderedDocument {
     this.grid = grid;
     this.context.viewport.scrollTo(0, 0);
     grid.render(true);
+    // The other side switches sheets by following the scroll position, and starts at A1 too.
+    this.quiet++;
     grid.selectRange({ row1: 0, col1: 0, row2: 0, col2: 0 });
+    this.quiet--;
     this.find?.refresh();
     // Lets scroll listeners know the view changed even when it was already at the top, so
     // the other side of a comparison switches sheets too.
@@ -535,11 +616,14 @@ class WorkbookView implements RenderedDocument {
     if (single) {
       const text = this.grid.textAt(range.row1, range.col1);
       if (text) {
-        // Long text is cut short to leave the sheet tabs room; hovering shows all of it.
+        // Long text is cut short; hovering shows all of it.
         value = document.createElement('span');
         value.className = 'ov-status-value';
         value.textContent = text.length > 200 ? `${text.slice(0, 200)}…` : text;
         value.title = text.length > 1000 ? `${text.slice(0, 1000)}…` : text;
+        const other = this.otherText(range.row1, range.col1);
+        const own = this.diff?.get(this.sheetName)?.marks.own;
+        if (other !== undefined && own) markWords(value, other, `nd-diff-${own}`);
       }
     } else {
       let count = 0;
