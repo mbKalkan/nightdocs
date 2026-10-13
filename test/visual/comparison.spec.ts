@@ -194,15 +194,25 @@ test('moves between changes across sheets and switches sheets together', async (
   await expect(status).toHaveText('Change 5 of 6');
 
   // The other side follows to the same sheet, and stays put for a sheet it doesn't have.
-  await relayScroll(modified, original);
+  /** Relays the modified side's position once it reports being on `sheet`. */
+  const relaySheet = async (sheet: string) => {
+    await expect
+      .poll(
+        async () =>
+          (await lastSent<{ anchor: ScrollAnchor }>(modified.viewer, 'scroll'))?.anchor.sheet,
+      )
+      .toBe(sheet);
+    await relayScroll(modified, original);
+  };
+  await relaySheet('Summary');
   await expect(selectedTab(original.page)).toHaveText('Summary');
   await modified.page.getByRole('tab', { name: 'Notes' }).click();
-  await relayScroll(modified, original);
+  await relaySheet('Notes');
   await expect(selectedTab(original.page)).toHaveText('Summary');
 
   // Back on the first sheet, rows scroll together past the removed order.
   await modified.page.getByRole('tab', { name: 'Orders' }).click();
-  await relayScroll(modified, original);
+  await relaySheet('Orders');
   await expect(selectedTab(original.page)).toHaveText('Orders');
   await modified.page.locator('.ov-viewport').evaluate((viewport) => (viewport.scrollTop = 450));
   await expect
