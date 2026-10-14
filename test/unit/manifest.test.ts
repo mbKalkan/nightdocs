@@ -6,6 +6,8 @@ const readJson = (path: string) =>
   JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
 
 const manifest = readJson('package.json') as {
+  main: string;
+  browser: string;
   engines: { vscode: string };
   contributes: {
     customEditors: { selector: { filenamePattern: string }[] }[];
@@ -22,6 +24,15 @@ describe('extension manifest', () => {
     const engine = manifest.engines.vscode.replace(/^\^/, '');
     const types = manifest.devDependencies['@types/vscode'].replace(/^[\^~]/, '');
     expect(types).toBe(engine);
+  });
+
+  it('ships a web bundle next to the Node one, so it runs on vscode.dev', () => {
+    expect(manifest.main).toBe('./dist/extension.js');
+    expect(manifest.browser).toBe('./dist/extension.web.js');
+    // Both bundles come from the same entry point; only the Node-bound modules are swapped.
+    const build = readFileSync('scripts/build.mjs', 'utf8');
+    expect(build).toContain("outfile: 'dist/extension.web.js'");
+    expect(build).toContain("platform: 'browser'");
   });
 
   it('opens exactly the file types the viewer can render', () => {

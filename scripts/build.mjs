@@ -27,6 +27,32 @@ const extension = {
 };
 
 /**
+ * The two host modules that need Node (git, desktop apps) have `.web.ts` stand-ins, so the
+ * same entry point also bundles for VS Code for the Web, where the extension host is a worker.
+ * @type {import('esbuild').Plugin}
+ */
+const webStandIns = {
+  name: 'web-stand-ins',
+  setup(build) {
+    build.onResolve({ filter: /^\.\/(gitBlob|openWithDefaultApp)$/ }, (args) => ({
+      path: resolve(args.resolveDir, `${args.path}.web.ts`),
+    }));
+  },
+};
+
+/** @type {import('esbuild').BuildOptions} */
+const webExtension = {
+  ...shared,
+  entryPoints: ['src/extension/extension.ts'],
+  outfile: 'dist/extension.web.js',
+  platform: 'browser',
+  format: 'cjs',
+  target: 'chrome120',
+  external: ['vscode'],
+  plugins: [webStandIns],
+};
+
+/**
  * Workers can't be loaded from the extension's resource URLs (different origin), so worker
  * bundles are embedded as strings and started from blob URLs. Import as `worker-source:<name>`.
  * @type {import('esbuild').Plugin}
@@ -73,10 +99,11 @@ const webview = {
   plugins: [workerSource],
 };
 
+const builds = [extension, webExtension, webview];
 if (watch) {
-  const contexts = await Promise.all([esbuild.context(extension), esbuild.context(webview)]);
+  const contexts = await Promise.all(builds.map((options) => esbuild.context(options)));
   await Promise.all(contexts.map((ctx) => ctx.watch()));
 } else {
   rmSync('dist', { recursive: true, force: true });
-  await Promise.all([esbuild.build(extension), esbuild.build(webview)]);
+  await Promise.all(builds.map((options) => esbuild.build(options)));
 }

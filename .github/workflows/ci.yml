@@ -30,6 +30,7 @@ jobs:
       - run: npm run fixtures:large
       - run: npm run test:visual
       - run: xvfb-run -a npm run test:smoke
+      - run: npm run test:web
       - run: npm run package -- --out nightdocs.vsix
       - uses: actions/upload-artifact@v7
         with:

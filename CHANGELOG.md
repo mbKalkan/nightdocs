@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Nightdocs runs in VS Code for the Web: open Word, Excel and PowerPoint files on vscode.dev and
+  github.dev with the same viewer. **Open in Office** isn't offered there, since a browser has no
+  desktop app to hand a file to.
 - Word, Excel and PowerPoint templates (`.dotx`, `.xltx`, `.potx`) and the remaining
   macro-enabled files (`.docm`, `.dotm`, `.xltm`, `.potm`, `.ppsm`) open in the viewer. Macros
   are never run.
