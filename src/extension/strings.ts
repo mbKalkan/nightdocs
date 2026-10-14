@@ -75,5 +75,11 @@ export function viewerStrings(appName: string): ViewerStrings {
     changePosition: vscode.l10n.t('Change {0} of {1}'),
     previousChange: vscode.l10n.t('Previous Change'),
     nextChange: vscode.l10n.t('Next Change'),
+    refPage: vscode.l10n.t('page {0}'),
+    refUnder: vscode.l10n.t('under "{0}"'),
+    refSheet: vscode.l10n.t('sheet "{0}"'),
+    refCell: vscode.l10n.t('cell {0}'),
+    refCells: vscode.l10n.t('cells {0}'),
+    refSlide: vscode.l10n.t('slide {0}'),
   };
 }

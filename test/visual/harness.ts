@@ -88,6 +88,12 @@ export const strings: ViewerStrings = {
   changePosition: 'Change {0} of {1}',
   previousChange: 'Previous Change',
   nextChange: 'Next Change',
+  refPage: 'page {0}',
+  refUnder: 'under "{0}"',
+  refSheet: 'sheet "{0}"',
+  refCell: 'cell {0}',
+  refCells: 'cells {0}',
+  refSlide: 'slide {0}',
 };
 
 /**

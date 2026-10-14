@@ -14,6 +14,8 @@ import { settleChart, type Chart } from '../pptx/chartColors';
 import { readNotes } from '../pptx/notes';
 import { slidesPane } from '../pptx/thumbnails';
 import { OBJECT, textOf } from '../diff/marks';
+import { quote } from '../../shared/reference';
+import { blockLines, selectedTextIn } from '../reference';
 import { icons } from '../icons';
 import { followLink } from '../links';
 import { PageNavigator } from '../pageNavigator';
@@ -156,6 +158,20 @@ export const pptxRenderer: Renderer = {
         void pick(strings.goToSlide.replace('{0}', String(items.length)), items).then(
           (index) => index !== undefined && navigator?.goTo(index),
         );
+      },
+      reference(hit, withText) {
+        const frame = hit?.element.closest<HTMLElement>('.pptx-slide');
+        const index = frame ? frames.indexOf(frame) : (navigator?.current ?? 0);
+        if (index < 0 || index >= frames.length) return undefined;
+        const title = slideTitle(presentation.slides[index], frames[index]);
+        const location = [strings.refSlide.replace('{0}', String(index + 1)), title && `"${title}"`]
+          .filter(Boolean)
+          .join(', ');
+        if (!withText) return { location };
+        // The slide itself is the frame's first child; speaker notes come after it.
+        const slide = frames[index].firstElementChild ?? frames[index];
+        const text = selectedTextIn(deck) || blockLines(slide);
+        return { location, text: text ? quote(text) : undefined };
       },
       summary: async () => ({ format: 'pptx', slides: await summarize() }),
       compare: async (peer, side, context) =>

@@ -11,6 +11,7 @@ import { isDamaged } from './damaged';
 import { isDarkTheme, readPalette } from './darkColors';
 import { DiffController } from './diff/controller';
 import { picked } from './picker';
+import { lastContextTarget, trackContextMenu } from './reference';
 import { loadRenderer } from './renderers';
 import type { NavigationContent, RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
@@ -45,6 +46,7 @@ const shell = new Shell(document.getElementById('app') as HTMLElement, {
   onToggleColors: toggleColors,
 });
 shell.setZoomEnabled(false);
+trackContextMenu(shell.viewport);
 
 const zoom = new ZoomController(
   {
@@ -79,6 +81,8 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       break;
     case 'command':
       if (message.command === 'toggleNavigation') toggleNavigation();
+      else if (message.command === 'copyReference') copyReference(false);
+      else if (message.command === 'copyReferenceWithText') copyReference(true);
       else current?.command?.(message.command);
       break;
     case 'picked':
@@ -144,6 +148,12 @@ themeObserver.observe(document.body, {
 themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
 vscode.postMessage({ type: 'ready' });
+
+/** Hands the host the place last right-clicked, or in view, to put on the clipboard. */
+function copyReference(withText: boolean): void {
+  const reference = current?.reference?.(lastContextTarget(), withText);
+  if (reference) vscode.postMessage({ type: 'reference', ...reference });
+}
 
 async function show(message: LoadMessage): Promise<void> {
   const id = ++renderId;

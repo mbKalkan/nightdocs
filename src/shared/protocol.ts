@@ -89,6 +89,13 @@ export interface ViewerStrings {
   changePosition: string;
   previousChange: string;
   nextChange: string;
+  /** Parts of a copied reference: `page {0}`, `under "{0}"`, `sheet "{0}"`, `cell {0}`, … */
+  refPage: string;
+  refUnder: string;
+  refSheet: string;
+  refCell: string;
+  refCells: string;
+  refSlide: string;
 }
 
 /** Which version a viewer shows when VS Code compares two files side by side. */
@@ -179,9 +186,19 @@ export interface ZoomMessage {
 
 export type ZoomAction = 'in' | 'out' | 'reset';
 
-/** `goTo` lists what the document can go to: sheets, slides or headings. */
+/**
+ * `goTo` lists what the document can go to: sheets, slides or headings. The copy commands act
+ * on the place last right-clicked, or on the place in view when run from the Command Palette.
+ */
 export type ViewerCommand =
-  'nextSheet' | 'previousSheet' | 'goTo' | 'find' | 'toggleNavigation' | 'copyAsMarkdown';
+  | 'nextSheet'
+  | 'previousSheet'
+  | 'goTo'
+  | 'find'
+  | 'toggleNavigation'
+  | 'copyAsMarkdown'
+  | 'copyReference'
+  | 'copyReferenceWithText';
 
 export interface CommandMessage {
   type: 'command';
@@ -265,4 +282,9 @@ export type WebviewToHostMessage =
   /** Asks VS Code to list items to pick one from; the answer is a `picked` message. */
   | { type: 'pick'; placeholder: string; items: PickItem[] }
   /** Puts text on the clipboard; `rows` says how much, for the confirmation. */
-  | { type: 'copy'; text: string; rows: number };
+  | { type: 'copy'; text: string; rows: number }
+  /**
+   * A place in the document to put on the clipboard, for pasting into a chat with an AI
+   * assistant or a note: the host prepends the file's path. `text` is what is there, quoted.
+   */
+  | { type: 'reference'; location: string; text?: string };

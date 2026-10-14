@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Copy Reference** in the right-click menu puts the file's path and the place under the pointer
+  on the clipboard, such as `docs/report.docx, page 3, under "Regional results"`, `budget.xlsx,
+  sheet "Budget", cells B4:D9` or `deck.pptx, slide 5, "Highlights"`, ready to paste into a chat
+  with an AI assistant. **Copy Reference with Text** adds the selected text or what is at the
+  place: the paragraph, the cells as a Markdown table, or the slide's text. Both are in the
+  Command Palette too, where they describe the place in view.
+
 ## [1.1.0] - 2026-10-14
 
 Nightdocs now runs in VS Code for the Web and opens Office templates and macro-enabled files.
