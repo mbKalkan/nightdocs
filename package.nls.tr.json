@@ -1,6 +1,6 @@
 {
-  "displayName": "Nightdocs — Word, Excel ve PowerPoint Görüntüleyici",
-  "description": "Word, Excel ve PowerPoint dosyalarını (.docx, .xlsx, .pptx) koyu temada görüntüleyin, sürümlerini yan yana karşılaştırın. Hızlı, çevrimdışı ve salt okunur.",
+  "displayName": "Nightdocs — Word, Excel ve PowerPoint Görüntüleyici ve Karşılaştırıcı",
+  "description": "Word, Excel ve PowerPoint dosyalarını (.docx, .xlsx, .pptx) koyu temada görüntüleyin, sürümlerini doğrudan Git'ten yan yana karşılaştırın. Hızlı, çevrimdışı ve salt okunur.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Office'te Aç",

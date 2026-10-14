@@ -14,7 +14,19 @@ describe('formatForPath', () => {
     expect(formatForPath('/talks/review.ppsx')?.format).toBe('pptx');
   });
 
+  it('recognizes templates and the other macro-enabled files', () => {
+    expect(formatForPath('/docs/letter.dotx')).toEqual({ format: 'docx', appName: 'Word' });
+    expect(formatForPath('/docs/letter.docm')?.format).toBe('docx');
+    expect(formatForPath('/docs/letter.dotm')?.format).toBe('docx');
+    expect(formatForPath('/data/budget.xltx')).toEqual({ format: 'xlsx', appName: 'Excel' });
+    expect(formatForPath('/data/budget.xltm')?.format).toBe('xlsx');
+    expect(formatForPath('/talks/deck.potx')).toEqual({ format: 'pptx', appName: 'PowerPoint' });
+    expect(formatForPath('/talks/deck.potm')?.format).toBe('pptx');
+    expect(formatForPath('/talks/deck.ppsm')?.format).toBe('pptx');
+  });
+
   it('ignores unsupported and extensionless paths', () => {
+    expect(formatForPath('/data/budget.xlsb')).toBeUndefined();
     expect(formatForPath('/docs/report.pdf')).toBeUndefined();
     expect(formatForPath('/docs/report')).toBeUndefined();
     expect(formatForPath('/docs.docx/report')).toBeUndefined();

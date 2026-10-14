@@ -37,10 +37,10 @@
     "spreadsheet",
     "presentation",
     "slides",
-    "document",
+    "docx diff",
     "viewer",
     "preview",
-    "reader",
+    "excel diff",
     "office viewer",
     "word viewer",
     "excel viewer",
@@ -80,7 +80,10 @@
           "Word"
         ],
         "extensions": [
-          ".docx"
+          ".docx",
+          ".docm",
+          ".dotx",
+          ".dotm"
         ]
       },
       {
@@ -90,7 +93,9 @@
         ],
         "extensions": [
           ".xlsx",
-          ".xlsm"
+          ".xlsm",
+          ".xltx",
+          ".xltm"
         ]
       },
       {
@@ -101,7 +106,10 @@
         "extensions": [
           ".pptx",
           ".pptm",
-          ".ppsx"
+          ".ppsx",
+          ".ppsm",
+          ".potx",
+          ".potm"
         ]
       }
     ],
@@ -114,10 +122,25 @@
             "filenamePattern": "*.docx"
           },
           {
+            "filenamePattern": "*.docm"
+          },
+          {
+            "filenamePattern": "*.dotx"
+          },
+          {
+            "filenamePattern": "*.dotm"
+          },
+          {
             "filenamePattern": "*.xlsx"
           },
           {
             "filenamePattern": "*.xlsm"
+          },
+          {
+            "filenamePattern": "*.xltx"
+          },
+          {
+            "filenamePattern": "*.xltm"
           },
           {
             "filenamePattern": "*.pptx"
@@ -127,6 +150,15 @@
           },
           {
             "filenamePattern": "*.ppsx"
+          },
+          {
+            "filenamePattern": "*.ppsm"
+          },
+          {
+            "filenamePattern": "*.potx"
+          },
+          {
+            "filenamePattern": "*.potm"
           }
         ],
         "priority": "default"

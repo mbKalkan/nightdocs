@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Word, Excel and PowerPoint templates (`.dotx`, `.xltx`, `.potx`) and the remaining
+  macro-enabled files (`.docm`, `.dotm`, `.xltm`, `.potm`, `.ppsm`) open in the viewer. Macros
+  are never run.
+
+### Changed
+
+- The Marketplace listing says that Nightdocs also compares versions: "Office Viewer & Diff".
+
 ## [1.0.0] - 2026-10-14
 
 First stable release: Nightdocs is no longer marked as a preview. Checked against hundreds of
