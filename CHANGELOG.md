@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-14
+
+### Fixed
+
+- The Marketplace badge at the top of the extension page showed "retired badge" instead of the
+  version. The page now also shows the install and download counts.
+
 ## [1.2.0] - 2026-10-14
 
 Point an AI assistant at a place in a document: right-click, copy the reference, paste it into
@@ -231,7 +238,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/mbKalkan/nightdocs/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/mbKalkan/nightdocs/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/mbKalkan/nightdocs/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mbKalkan/nightdocs/compare/v0.6.0...v1.0.0
