@@ -80,9 +80,16 @@ async function assertReadsDocument(head: vscode.Uri): Promise<void> {
 const tests: Record<string, () => Promise<void>> = {
   async 'opens .docx files in the viewer by default'() {
     await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(`${FIXTURES}/sample.docx`));
+    // Right after startup the workbench may still be settling, so look across all groups.
     const input = await waitFor(() => {
-      const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
-      return tab?.input instanceof vscode.TabInputCustom ? tab.input : undefined;
+      for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+          if (tab.input instanceof vscode.TabInputCustom && tab.input.uri.path.endsWith('.docx')) {
+            return tab.input;
+          }
+        }
+      }
+      return undefined;
     });
     assert.equal(input.viewType, VIEW_TYPE);
     assert.ok(vscode.extensions.getExtension(EXTENSION_ID)?.isActive);
