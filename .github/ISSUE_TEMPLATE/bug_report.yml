@@ -21,9 +21,9 @@ body:
     attributes:
       label: File type
       options:
-        - Word (.docx)
-        - Excel (.xlsx / .xlsm)
-        - PowerPoint (.pptx / .pptm / .ppsx)
+        - Word (.docx / .docm / .dotx / .dotm)
+        - Excel (.xlsx / .xlsm / .xltx / .xltm)
+        - PowerPoint (.pptx / .pptm / .ppsx / .ppsm / .potx / .potm)
         - Other
     validations:
       required: true

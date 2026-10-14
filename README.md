@@ -9,9 +9,9 @@
 
 **Read Word, Excel and PowerPoint files in VS Code, in your dark theme.**
 
-Nightdocs is a lightweight, view-only Office viewer for Word (`.docx`), Excel (`.xlsx`, `.xlsm`)
-and PowerPoint (`.pptx`, `.pptm`, `.ppsx`) files. Documents take on your editor's colors so a white
-page doesn't light up a dark room. Changed files from Git open side by side with the differences
+Nightdocs is a lightweight, view-only Office viewer for Word (`.docx`), Excel (`.xlsx`) and
+PowerPoint (`.pptx`) files, templates and macro-enabled files included. Documents take on your
+editor's colors so a white page doesn't light up a dark room. Changed files from Git open side by side with the differences
 marked, and when you need to edit, one click opens the file in Word, Excel or PowerPoint.
 
 ![Nightdocs showing a Word document in dark and original colors, an Excel workbook with a sum and charts, and a PowerPoint presentation with its slide pane](docs/images/demo.gif)
@@ -31,7 +31,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 
 ## Features
 
-### Word (`.docx`)
+### Word (`.docx`, `.docm`, `.dotx`, `.dotm`)
 
 ![A Word document in Nightdocs with a dark VS Code theme](docs/images/word-dark.png)
 
@@ -46,7 +46,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
   finds a heading as you type
 - Find with <kbd>Ctrl</kbd>+<kbd>F</kbd>
 
-### Excel (`.xlsx`, `.xlsm`)
+### Excel (`.xlsx`, `.xlsm`, `.xltx`, `.xltm`)
 
 - Cell styles, number formats, and dates in your locale's short format
 - Merged cells, frozen panes, hidden rows, columns and sheets, and row and column fills
@@ -67,7 +67,7 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 
 ![An Excel workbook in Nightdocs with conditional formatting and a selection summed in the status bar](docs/images/excel-dark.png)
 
-### PowerPoint (`.pptx`, `.pptm`, `.ppsx`)
+### PowerPoint (`.pptx`, `.pptm`, `.ppsx`, `.ppsm`, `.potx`, `.potm`)
 
 - Slides with text, bullets, tables, shapes, pictures, SmartArt and charts
 - Charts follow your theme too: text and gridlines adapt, data keeps its colors
@@ -123,8 +123,9 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
    or, in VSCodium and other editors that use it,
    [Open VSX](https://open-vsx.org/extension/MBKDevStudio/nightdocs). Or search for "Nightdocs"
    in the Extensions view.
-2. Open a `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.pptm` or `.ppsx` file. Nightdocs is the default
-   viewer for these files.
+2. Open a Word, Excel or PowerPoint file: `.docx`, `.xlsx` or `.pptx`, or one of their
+   macro-enabled (`.docm`, `.xlsm`, `.pptm`, `.ppsm`) and template (`.dotx`, `.xltx`, `.potx`)
+   variants. Nightdocs is the default viewer for these files.
 
 If another extension also opens these files, right-click the file and choose
 **Open With… › Nightdocs**, then **Configure default editor**. Or add this to your settings:

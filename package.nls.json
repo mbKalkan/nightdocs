@@ -1,6 +1,6 @@
 {
-  "displayName": "Nightdocs — Office Viewer for Word, Excel & PowerPoint",
-  "description": "View Word, Excel and PowerPoint files (.docx, .xlsx, .pptx) in dark mode and compare versions side by side. Fast, private and view-only.",
+  "displayName": "Nightdocs — Office Viewer & Diff for Word, Excel & PowerPoint",
+  "description": "View Word, Excel and PowerPoint files (.docx, .xlsx, .pptx) in dark mode and diff versions side by side, straight from Git. Fast, private and view-only.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Open in Office",

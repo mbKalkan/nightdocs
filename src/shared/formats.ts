@@ -6,13 +6,26 @@ export interface FormatInfo {
   appName: string;
 }
 
+/**
+ * Templates (.dotx, .xltx, .potx) and macro-enabled files (.docm, .xlsm, .pptm, …) have the same
+ * parts as their plain siblings; only the content type of the main part differs. Macros are
+ * never run.
+ */
 const FORMATS: Readonly<Record<string, FormatInfo>> = {
   '.docx': { format: 'docx', appName: 'Word' },
+  '.docm': { format: 'docx', appName: 'Word' },
+  '.dotx': { format: 'docx', appName: 'Word' },
+  '.dotm': { format: 'docx', appName: 'Word' },
   '.xlsx': { format: 'xlsx', appName: 'Excel' },
   '.xlsm': { format: 'xlsx', appName: 'Excel' },
+  '.xltx': { format: 'xlsx', appName: 'Excel' },
+  '.xltm': { format: 'xlsx', appName: 'Excel' },
   '.pptx': { format: 'pptx', appName: 'PowerPoint' },
   '.pptm': { format: 'pptx', appName: 'PowerPoint' },
   '.ppsx': { format: 'pptx', appName: 'PowerPoint' },
+  '.ppsm': { format: 'pptx', appName: 'PowerPoint' },
+  '.potx': { format: 'pptx', appName: 'PowerPoint' },
+  '.potm': { format: 'pptx', appName: 'PowerPoint' },
 };
 
 /** File extensions the viewer opens, with the leading dot. */
