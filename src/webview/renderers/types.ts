@@ -7,6 +7,14 @@ import type {
   ViewerCommand,
   ViewerStrings,
 } from '../../shared/protocol';
+import type { ContextTarget } from '../reference';
+
+/** A place in the document for the clipboard; the host adds the file's path in front. */
+export interface Reference {
+  location: string;
+  /** What is at the place, quoted or as a Markdown table. */
+  text?: string;
+}
 
 export interface RenderOptions {
   /** Present when document colors should be adapted to a dark theme. */
@@ -38,6 +46,11 @@ export interface RenderedDocument {
   /** Called when the zoom level changes. */
   refresh?(): void;
   command?(command: ViewerCommand): void;
+  /**
+   * Describes a place: what was right-clicked (`hit`), or what is in view without one. With
+   * `withText`, also the selected text or what is at the place.
+   */
+  reference?(hit: ContextTarget | undefined, withText: boolean): Reference | undefined;
   /** What the navigation pane lists for this document, made when the pane opens. */
   navigation?(context: RenderContext): NavigationContent | undefined;
   /** View state to carry over when the same file is rendered again. */

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { detectContainer, formatForPath, type FormatInfo } from '../shared/formats';
+import { composeReference } from '../shared/reference';
 import type {
   ColorMode,
   DocumentFormat,
@@ -62,6 +63,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       ),
       vscode.commands.registerCommand('nightdocs.copyAsMarkdown', () =>
         provider.sendCommand('copyAsMarkdown'),
+      ),
+      vscode.commands.registerCommand('nightdocs.copyReference', () =>
+        provider.sendCommand('copyReference'),
+      ),
+      vscode.commands.registerCommand('nightdocs.copyReferenceWithText', () =>
+        provider.sendCommand('copyReferenceWithText'),
       ),
     );
   }
@@ -133,6 +140,18 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
                   message.rows === 1
                     ? vscode.l10n.t('Copied 1 row as a Markdown table')
                     : vscode.l10n.t('Copied {0} rows as a Markdown table', message.rows),
+                  3000,
+                ),
+              );
+            break;
+          case 'reference':
+            void vscode.env.clipboard
+              .writeText(composeReference(referencePath(uri), message.location, message.text))
+              .then(() =>
+                vscode.window.setStatusBarMessage(
+                  message.text
+                    ? vscode.l10n.t('Copied reference with text')
+                    : vscode.l10n.t('Copied reference'),
                   3000,
                 ),
               );
@@ -253,4 +272,13 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       action,
     } satisfies HostToWebviewMessage);
   }
+}
+
+/**
+ * How a copied reference names the file: relative to its workspace folder, so that an assistant
+ * working in the workspace can find it; versions from Git and other virtual files by name only.
+ */
+function referencePath(uri: vscode.Uri): string {
+  if (uri.scheme === 'file') return vscode.workspace.asRelativePath(uri, false);
+  return uri.path.slice(uri.path.lastIndexOf('/') + 1);
 }

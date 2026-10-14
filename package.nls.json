@@ -14,5 +14,7 @@
   "command.goToHeading": "Go to Heading…",
   "command.find": "Find in Sheet",
   "command.toggleNavigation": "Toggle Navigation Pane",
-  "command.copyAsMarkdown": "Copy as Markdown Table"
+  "command.copyAsMarkdown": "Copy as Markdown Table",
+  "command.copyReference": "Copy Reference",
+  "command.copyReferenceWithText": "Copy Reference with Text"
 }

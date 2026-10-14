@@ -188,6 +188,8 @@ const tests: Record<string, () => Promise<void>> = {
       'goToHeading',
       'toggleNavigation',
       'copyAsMarkdown',
+      'copyReference',
+      'copyReferenceWithText',
     ]) {
       assert.ok(commands.includes(`nightdocs.${id}`), `missing nightdocs.${id}`);
     }

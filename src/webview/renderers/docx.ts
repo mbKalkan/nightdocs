@@ -9,6 +9,8 @@ import { PageNavigator } from '../pageNavigator';
 import { paginate } from '../paginate';
 import { describe, pick } from '../picker';
 import { NavList } from '../navList';
+import { quote } from '../../shared/reference';
+import { blockText, selectedTextIn } from '../reference';
 import type {
   NavigationContent,
   RenderContext,
@@ -86,6 +88,22 @@ export const docxRenderer: Renderer = {
       command(command) {
         if (command === 'goTo' && view) void goToHeading(view, outline(), options.strings);
       },
+      reference(hit, withText) {
+        const page = hit?.element.closest<HTMLElement>('.docx-wrapper > section.docx');
+        const index = page ? pages.indexOf(page) : (navigator?.current ?? 0);
+        if (index < 0 || index >= pages.length) return undefined;
+        const heading = headingBefore(outline(), page ? hit?.element : undefined, index);
+        const location = [
+          options.strings.refPage.replace('{0}', String(index + 1)),
+          heading && options.strings.refUnder.replace('{0}', heading.text),
+        ]
+          .filter(Boolean)
+          .join(', ');
+        if (!withText) return { location };
+        const text =
+          selectedTextIn(wrapper ?? target) || (page && hit ? blockText(hit.element) : '');
+        return { location, text: text ? quote(text) : undefined };
+      },
       navigation(context) {
         return headingsPane(context.viewport, outline(), options.strings);
       },
@@ -111,6 +129,30 @@ export const docxRenderer: Renderer = {
     };
   },
 };
+
+/**
+ * The heading a place is under: the last one at or before `element`, or without an element the
+ * last one that starts on or before page `page` (0-based).
+ */
+function headingBefore(
+  headings: readonly Heading[],
+  element: Element | undefined,
+  page: number,
+): Heading | undefined {
+  let found: Heading | undefined;
+  for (const heading of headings) {
+    const before = element
+      ? heading.element === element ||
+        Boolean(
+          heading.element.compareDocumentPosition(element) &
+          (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED_BY),
+        )
+      : heading.page <= page;
+    if (!before) break;
+    found = heading;
+  }
+  return found;
+}
 
 /** Lists the headings to pick one from, opened on the one the view is under, and goes there. */
 async function goToHeading(

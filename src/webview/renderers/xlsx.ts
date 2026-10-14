@@ -15,6 +15,8 @@ import { icons } from '../icons';
 import { followLink, isWebLink, LINK_MODIFIER } from '../links';
 import { NavList } from '../navList';
 import { describe, pick } from '../picker';
+import { quote } from '../../shared/reference';
+import type { ContextTarget } from '../reference';
 import { vscode } from '../vscodeApi';
 import { SheetGrid } from '../xlsx/grid';
 import type { CellLink, CellRange, SheetData, WorkbookInfo } from '../xlsx/model';
@@ -235,6 +237,26 @@ class WorkbookView implements RenderedDocument {
     if (next >= 0 && next < visible.length) {
       void this.showSheet(visible[next]);
     }
+  }
+
+  /** A right-click already selected the cell under the pointer, as in Excel, so use the selection. */
+  reference(
+    _hit: ContextTarget | undefined,
+    withText: boolean,
+  ): { location: string; text?: string } {
+    const range = this.grid.selection;
+    const single = range.row1 === range.row2 && range.col1 === range.col2;
+    const { strings } = this.options;
+    const place = (single ? strings.refCell : strings.refCells).replace('{0}', rangeName(range));
+    const location = `${strings.refSheet.replace('{0}', this.sheetName)}, ${place}`;
+    if (!withText) return { location };
+    if (single) {
+      const value = this.grid.textAt(range.row1, range.col1);
+      return { location, text: value ? quote(value) : undefined };
+    }
+    const rows = this.tableRows(range);
+    const empty = rows.every((row) => row.every((cell) => !cell.text));
+    return { location, text: empty ? undefined : markdownTable(rows) };
   }
 
   /** The displayed values of every visible sheet; the worker reads them all. */
@@ -769,6 +791,13 @@ class WorkbookView implements RenderedDocument {
     const selection = this.grid.selection;
     const single = selection.row1 === selection.row2 && selection.col1 === selection.col2;
     const range = single ? this.dataBlock(selection.row1, selection.col1) : selection;
+    const rows = this.tableRows(range);
+    if (rows.every((row) => row.every((cell) => !cell.text))) return;
+    vscode.postMessage({ type: 'copy', text: markdownTable(rows), rows: rows.length });
+  }
+
+  /** The cells of a range as shown, row by row; cells past the data are left out. */
+  private tableRows(range: CellRange): { text: string; number: boolean }[][] {
     const lastRow = Math.max(range.row1, Math.min(range.row2, this.grid.lastDataRow));
     const lastCol = Math.max(range.col1, Math.min(range.col2, this.grid.lastDataCol));
     const rows = [];
@@ -782,8 +811,7 @@ class WorkbookView implements RenderedDocument {
       }
       rows.push(cells);
     }
-    if (rows.every((row) => row.every((cell) => !cell.text))) return;
-    vscode.postMessage({ type: 'copy', text: markdownTable(rows), rows: rows.length });
+    return rows;
   }
 
   /** The cells around one that hold data with no empty row or column between them. */
@@ -840,10 +868,7 @@ class WorkbookView implements RenderedDocument {
     if (!this.status) return;
     const range = this.grid.selection;
     const single = range.row1 === range.row2 && range.col1 === range.col2;
-    const address = single
-      ? cellName(range.row1, range.col1)
-      : `${cellName(range.row1, range.col1)}:${cellName(range.row2, range.col2)}`;
-    const parts = [address];
+    const parts = [rangeName(range)];
     let value: HTMLElement | undefined;
     let formula: HTMLElement | undefined;
     let link: HTMLElement | undefined;
@@ -933,4 +958,12 @@ function canFollow(link: CellLink): boolean {
 
 function cellName(row: number, col: number): string {
   return `${columnName(col)}${row + 1}`;
+}
+
+/** `B4` for one cell, `B4:D9` for more. */
+function rangeName(range: CellRange): string {
+  const single = range.row1 === range.row2 && range.col1 === range.col2;
+  return single
+    ? cellName(range.row1, range.col1)
+    : `${cellName(range.row1, range.col1)}:${cellName(range.row2, range.col2)}`;
 }

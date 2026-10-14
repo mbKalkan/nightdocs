@@ -111,6 +111,11 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Zoom with the toolbar, the keyboard, <kbd>Ctrl</kbd>+mouse wheel or pinch
 - The navigation pane opens from the button at the left of the toolbar or with **Toggle
   Navigation Pane**, and stays open for files of that kind
+- Point an AI assistant or a teammate at a place in a document: right-click and choose **Copy
+  Reference** to get `docs/report.docx, page 3, under "Regional results"` on the clipboard, ready
+  to paste into a chat with Claude Code or any assistant that works in your workspace. **Copy
+  Reference with Text** adds the paragraph, the selected cells as a Markdown table, or the
+  slide's text
 - Live reload that keeps your place
 - Dark, light and high contrast themes
 - Keyboard and screen reader support

@@ -14,5 +14,7 @@
   "command.goToHeading": "Başlığa Git…",
   "command.find": "Sayfada Bul",
   "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat",
-  "command.copyAsMarkdown": "Markdown Tablosu Olarak Kopyala"
+  "command.copyAsMarkdown": "Markdown Tablosu Olarak Kopyala",
+  "command.copyReference": "Referansı Kopyala",
+  "command.copyReferenceWithText": "Referansı Metinle Kopyala"
 }

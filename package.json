@@ -226,6 +226,16 @@
         "command": "nightdocs.copyAsMarkdown",
         "title": "%command.copyAsMarkdown%",
         "category": "%category%"
+      },
+      {
+        "command": "nightdocs.copyReference",
+        "title": "%command.copyReference%",
+        "category": "%category%"
+      },
+      {
+        "command": "nightdocs.copyReferenceWithText",
+        "title": "%command.copyReferenceWithText%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -277,13 +287,31 @@
         {
           "command": "nightdocs.copyAsMarkdown",
           "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        },
+        {
+          "command": "nightdocs.copyReference",
+          "when": "activeCustomEditorId == nightdocs.viewer"
+        },
+        {
+          "command": "nightdocs.copyReferenceWithText",
+          "when": "activeCustomEditorId == nightdocs.viewer"
         }
       ],
       "webview/context": [
         {
+          "command": "nightdocs.copyReference",
+          "when": "webviewId == 'nightdocs.viewer'",
+          "group": "9_cutcopypaste@1"
+        },
+        {
+          "command": "nightdocs.copyReferenceWithText",
+          "when": "webviewId == 'nightdocs.viewer'",
+          "group": "9_cutcopypaste@2"
+        },
+        {
           "command": "nightdocs.copyAsMarkdown",
           "when": "webviewId == 'nightdocs.viewer' && nightdocs.activeFormat == xlsx",
-          "group": "9_cutcopypaste"
+          "group": "9_cutcopypaste@3"
         }
       ]
     },
