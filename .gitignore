@@ -8,6 +8,7 @@ out/
 
 # Test artifacts
 .vscode-test/
+.vscode-test-web/
 coverage/
 test-results/
 playwright-report/

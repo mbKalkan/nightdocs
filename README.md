@@ -115,6 +115,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Dark, light and high contrast themes
 - Keyboard and screen reader support
 - English and Turkish
+- Works in VS Code for the Web too: open Office files on [vscode.dev](https://vscode.dev) and
+  [github.dev](https://github.dev) without installing anything
 
 ## Getting started
 
@@ -155,6 +157,8 @@ If another extension also opens these files, right-click the file and choose
 ## Limitations
 
 - The older binary formats (`.doc`, `.xls`, `.ppt`) aren't supported yet.
+- In VS Code for the Web there is no desktop Office to hand a file to, so **Open in Office** isn't
+  offered there.
 - Password-protected files can't be opened; Nightdocs says so and offers to open them in Office.
 - Excel formulas aren't recalculated: cells show the values saved in the file.
 - Excel icon sets and conditional formatting rules with custom formulas aren't drawn yet.

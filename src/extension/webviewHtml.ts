@@ -1,5 +1,3 @@
-import { randomBytes } from 'node:crypto';
-
 export interface WebviewHtmlOptions {
   /** `webview.cspSource`: the origin the webview loads extension resources from. */
   cspSource: string;
@@ -9,8 +7,10 @@ export interface WebviewHtmlOptions {
   nonce?: string;
 }
 
+/** Web Crypto, so the same code runs in the Node extension host and in VS Code for the Web. */
 export function createNonce(): string {
-  return randomBytes(16).toString('base64');
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes));
 }
 
 export function buildContentSecurityPolicy(cspSource: string, nonce: string): string {
