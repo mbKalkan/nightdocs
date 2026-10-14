@@ -2,8 +2,10 @@
 
 # Nightdocs
 
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/MBKDevStudio.nightdocs?label=Marketplace)](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs)
+[![Visual Studio Marketplace](https://vsmarketplacebadges.dev/version-short/MBKDevStudio.nightdocs.svg?label=Marketplace&color=007ec6)](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs)
+[![Visual Studio Marketplace installs](https://vsmarketplacebadges.dev/installs-short/MBKDevStudio.nightdocs.svg?label=Marketplace%20installs&color=4c1)](https://marketplace.visualstudio.com/items?itemName=MBKDevStudio.nightdocs)
 [![Open VSX](https://img.shields.io/open-vsx/v/MBKDevStudio/nightdocs?label=Open%20VSX)](https://open-vsx.org/extension/MBKDevStudio/nightdocs)
+[![Open VSX downloads](https://img.shields.io/open-vsx/dt/MBKDevStudio/nightdocs?label=Open%20VSX%20downloads&color=4c1)](https://open-vsx.org/extension/MBKDevStudio/nightdocs)
 [![CI](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml/badge.svg)](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
