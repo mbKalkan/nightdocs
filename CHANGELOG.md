@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-14
+
+Nightdocs now runs in VS Code for the Web and opens Office templates and macro-enabled files.
+
 ### Added
 
 - Nightdocs runs in VS Code for the Web: open Word, Excel and PowerPoint files on vscode.dev and
@@ -213,7 +217,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/mbKalkan/nightdocs/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mbKalkan/nightdocs/compare/v0.6.0...v1.0.0
 [0.6.0]: https://github.com/mbKalkan/nightdocs/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mbKalkan/nightdocs/compare/v0.4.0...v0.5.0
