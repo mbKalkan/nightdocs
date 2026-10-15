@@ -1323,6 +1323,35 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   outline-offset: -1px;
 }
 
+/* What a copied reference points at: the paragraph or slide right-clicked last. Drawn over
+   the page by reference.ts, so the paragraph's own shading and layout stay as they are. */
+
+.ov-ref-mark {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--vscode-focusBorder);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vscode-focusBorder) 12%, transparent);
+  pointer-events: none;
+}
+
+.ov-ref-mark-fading {
+  /* Total time matches FADE_MS in reference.ts. */
+  animation: ov-ref-fade 0.4s ease-in 1.2s forwards;
+}
+
+@keyframes ov-ref-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-ref-mark-fading {
+    animation-duration: 0s;
+  }
+}
+
 /* Comparing two versions side by side. Colors come from VS Code's diff editor and its
    change markers in the gutter, so a comparison reads like any other diff in VS Code. */
 

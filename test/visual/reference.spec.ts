@@ -89,6 +89,52 @@ test('names how a long paragraph begins, but not a heading again', async ({ page
   expect(viewer.problems).toEqual([]);
 });
 
+for (const theme of ['dark', 'light'] as const) {
+  test(`marks what a reference points at until it is copied (${theme})`, async ({ page }) => {
+    const viewer = await openViewer(page, theme);
+    await viewer.load('sample.docx');
+    const paragraph = page.locator('.docx-wrapper p', { hasText: 'Retention reached' }).first();
+    await paragraph.click({ button: 'right' });
+    const mark = page.locator('.ov-ref-mark');
+    // The mark covers the paragraph, bullet included, and leaves the paragraph as it was.
+    const expectCovered = async () => {
+      await expect(mark).toHaveCount(1);
+      const [box, text] = await Promise.all([mark.boundingBox(), paragraph.boundingBox()]);
+      expect(box!.x).toBeLessThan(text!.x - 8);
+      expect(box!.y).toBeLessThanOrEqual(text!.y);
+      expect(box!.y + box!.height).toBeGreaterThanOrEqual(text!.y + text!.height);
+      expect(box!.y + box!.height).toBeLessThan(text!.y + text!.height + 12);
+    };
+    await expectCovered();
+    expect(await paragraph.getAttribute('class')).not.toContain('ov-ref');
+    await page
+      .locator('.docx-wrapper > section.docx')
+      .first()
+      .screenshot({ path: `test-results/screenshots/reference-mark-docx-${theme}.png` });
+
+    await viewer.post({ type: 'command', command: 'copyReference' });
+    await expect(page.locator('.ov-ref-mark')).toHaveCount(0, { timeout: 4000 });
+
+    // Zoomed in, the mark is still drawn over the paragraph.
+    await viewer.post({ type: 'zoom', action: 'in' });
+    await viewer.post({ type: 'zoom', action: 'in' });
+    await expect(page.locator('.ov-zoom-label')).toHaveText('125%');
+    await paragraph.click({ button: 'right' });
+    await expectCovered();
+    await viewer.post({ type: 'zoom', action: 'reset' });
+
+    await viewer.load('sample.pptx');
+    const slide = page.locator('.pptx-slide').nth(1);
+    await slide.click({ button: 'right', position: { x: 40, y: 40 } });
+    await expect(page.locator('.ov-ref-mark')).toHaveCount(1);
+    await slide.screenshot({ path: `test-results/screenshots/reference-mark-pptx-${theme}.png` });
+    // Dismissing the menu and clicking on moves on without a copy.
+    await page.mouse.click(10, 10);
+    await expect(page.locator('.ov-ref-mark')).toHaveCount(0);
+    expect(viewer.problems).toEqual([]);
+  });
+}
+
 test('describes the page in view when nothing was right-clicked', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('long.docx');

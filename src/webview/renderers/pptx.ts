@@ -173,6 +173,12 @@ export const pptxRenderer: Renderer = {
         const text = selectedTextIn(deck) || blockLines(slide);
         return { location, text: text ? quote(text) : undefined };
       },
+      referenceMark(hit) {
+        // The slide only, not its speaker notes; a reference names the slide.
+        const frame = hit.element.closest<HTMLElement>('.pptx-slide');
+        const slide = frame?.firstElementChild;
+        return frame && slide ? { element: slide, page: frame } : undefined;
+      },
       summary: async () => ({ format: 'pptx', slides: await summarize() }),
       compare: async (peer, side, context) =>
         peer.format === 'pptx'

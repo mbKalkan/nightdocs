@@ -11,7 +11,7 @@ import { isDamaged } from './damaged';
 import { isDarkTheme, readPalette } from './darkColors';
 import { DiffController } from './diff/controller';
 import { picked } from './picker';
-import { lastContextTarget, trackContextMenu } from './reference';
+import { fadeMark, lastContextTarget, trackContextMenu } from './reference';
 import { loadRenderer } from './renderers';
 import type { NavigationContent, RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
@@ -46,7 +46,7 @@ const shell = new Shell(document.getElementById('app') as HTMLElement, {
   onToggleColors: toggleColors,
 });
 shell.setZoomEnabled(false);
-trackContextMenu(shell.viewport);
+trackContextMenu(shell.viewport, (hit) => current?.referenceMark?.(hit));
 
 const zoom = new ZoomController(
   {
@@ -152,7 +152,9 @@ vscode.postMessage({ type: 'ready' });
 /** Hands the host the place last right-clicked, or in view, to put on the clipboard. */
 function copyReference(withText: boolean): void {
   const reference = current?.reference?.(lastContextTarget(), withText);
-  if (reference) vscode.postMessage({ type: 'reference', ...reference });
+  if (!reference) return;
+  vscode.postMessage({ type: 'reference', ...reference });
+  fadeMark();
 }
 
 async function show(message: LoadMessage): Promise<void> {
