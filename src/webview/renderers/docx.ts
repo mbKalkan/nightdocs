@@ -10,7 +10,7 @@ import { paginate } from '../paginate';
 import { describe, pick } from '../picker';
 import { NavList } from '../navList';
 import { quote } from '../../shared/reference';
-import { blockText, selectedTextIn } from '../reference';
+import { blockOpening, blockText, selectedTextIn } from '../reference';
 import type {
   NavigationContent,
   RenderContext,
@@ -92,17 +92,23 @@ export const docxRenderer: Renderer = {
         const page = hit?.element.closest<HTMLElement>('.docx-wrapper > section.docx');
         const index = page ? pages.indexOf(page) : (navigator?.current ?? 0);
         if (index < 0 || index >= pages.length) return undefined;
-        const heading = headingBefore(outline(), page ? hit?.element : undefined, index);
+        const element = page ? hit?.element : undefined;
+        const heading = headingBefore(outline(), element, index);
+        const text = withText
+          ? selectedTextIn(wrapper ?? target) || (element ? blockText(element) : '')
+          : '';
+        // Documents without headings would otherwise be placed by their page alone; how the
+        // paragraph begins is something an assistant can search the document for.
+        const opening =
+          !text && element && !heading?.element.contains(element) ? blockOpening(element) : '';
         const location = [
           options.strings.refPage.replace('{0}', String(index + 1)),
           heading && options.strings.refUnder.replace('{0}', heading.text),
+          opening && options.strings.refAt.replace('{0}', opening),
         ]
           .filter(Boolean)
           .join(', ');
-        if (!withText) return { location };
-        const text =
-          selectedTextIn(wrapper ?? target) || (page && hit ? blockText(hit.element) : '');
-        return { location, text: text ? quote(text) : undefined };
+        return text ? { location, text: quote(text) } : { location };
       },
       navigation(context) {
         return headingsPane(context.viewport, outline(), options.strings);

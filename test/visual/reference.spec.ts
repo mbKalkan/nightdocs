@@ -40,7 +40,11 @@ test('references the page, heading and paragraph under the pointer in a Word doc
   await paragraph.click({ button: 'right' });
 
   await viewer.post({ type: 'command', command: 'copyReference' });
-  await expect.poll(() => reference(viewer)).toEqual({ location: 'page 1, under "Key points"' });
+  await expect
+    .poll(() => reference(viewer))
+    .toEqual({
+      location: 'page 1, under "Key points", at "Retention reached an all-time high."',
+    });
 
   await viewer.post({ type: 'command', command: 'copyReferenceWithText' });
   await expect
@@ -59,6 +63,29 @@ test('references the page, heading and paragraph under the pointer in a Word doc
   await expect
     .poll(async () => (await reference(viewer))?.text)
     .toBe('> Onboarding time dropped by two days.');
+  expect(viewer.problems).toEqual([]);
+});
+
+test('names how a long paragraph begins, but not a heading again', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('sample.docx');
+  await page
+    .locator('.docx-wrapper p', { hasText: 'Revenue grew' })
+    .first()
+    .click({ button: 'right', position: { x: 4, y: 4 } });
+  await viewer.post({ type: 'command', command: 'copyReference' });
+  await expect
+    .poll(() => reference(viewer))
+    .toEqual({
+      location: 'page 1, under "Summary", at "Revenue grew in three of four regions1. Highlights…"',
+    });
+
+  await page
+    .locator('.docx-wrapper p', { hasText: 'Key points' })
+    .first()
+    .click({ button: 'right' });
+  await viewer.post({ type: 'command', command: 'copyReference' });
+  await expect.poll(() => reference(viewer)).toEqual({ location: 'page 1, under "Key points"' });
   expect(viewer.problems).toEqual([]);
 });
 

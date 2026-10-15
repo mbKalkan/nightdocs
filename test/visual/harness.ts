@@ -90,6 +90,7 @@ export const strings: ViewerStrings = {
   nextChange: 'Next Change',
   refPage: 'page {0}',
   refUnder: 'under "{0}"',
+  refAt: 'at "{0}"',
   refSheet: 'sheet "{0}"',
   refCell: 'cell {0}',
   refCells: 'cells {0}',

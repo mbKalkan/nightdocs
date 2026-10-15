@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Copy Reference** in a Word document now also names how the right-clicked paragraph begins,
+  for example `page 4, under "Summary", at "Revenue grew in three of four…"`. Documents without
+  headings were placed by their page alone, which left an assistant guessing where on the page.
+
 ## [1.2.1] - 2026-10-14
 
 ### Fixed
