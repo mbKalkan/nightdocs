@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Copy Reference** in a Word document now also names how the right-clicked paragraph begins,
   for example `page 4, under "Summary", at "Revenue grew in three of four…"`. Documents without
   headings were placed by their page alone, which left an assistant guessing where on the page.
+- A right-click in a Word document or presentation now marks the paragraph or slide that
+  **Copy Reference** would point at. The mark fades once the reference is copied and goes away
+  with the next click or key press.
 
 ## [1.2.1] - 2026-10-14
 

@@ -7,7 +7,7 @@ import type {
   ViewerCommand,
   ViewerStrings,
 } from '../../shared/protocol';
-import type { ContextTarget } from '../reference';
+import type { ContextTarget, MarkTarget } from '../reference';
 
 /** A place in the document for the clipboard; the host adds the file's path in front. */
 export interface Reference {
@@ -51,6 +51,8 @@ export interface RenderedDocument {
    * `withText`, also the selected text or what is at the place.
    */
   reference?(hit: ContextTarget | undefined, withText: boolean): Reference | undefined;
+  /** What a reference to a right-clicked place points at, to mark while the menu is open. */
+  referenceMark?(hit: ContextTarget): MarkTarget | undefined;
   /** What the navigation pane lists for this document, made when the pane opens. */
   navigation?(context: RenderContext): NavigationContent | undefined;
   /** View state to carry over when the same file is rendered again. */

@@ -10,7 +10,7 @@ import { paginate } from '../paginate';
 import { describe, pick } from '../picker';
 import { NavList } from '../navList';
 import { quote } from '../../shared/reference';
-import { blockOpening, blockText, selectedTextIn } from '../reference';
+import { blockOf, blockOpening, blockText, selectedTextIn } from '../reference';
 import type {
   NavigationContent,
   RenderContext,
@@ -109,6 +109,11 @@ export const docxRenderer: Renderer = {
           .filter(Boolean)
           .join(', ');
         return text ? { location, text: quote(text) } : { location };
+      },
+      referenceMark(hit) {
+        const page = hit.element.closest<HTMLElement>('.docx-wrapper > section.docx');
+        const block = page && blockOf(hit.element);
+        return block && page.contains(block) ? { element: block, page } : undefined;
       },
       navigation(context) {
         return headingsPane(context.viewport, outline(), options.strings);
