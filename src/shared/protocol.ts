@@ -89,9 +89,10 @@ export interface ViewerStrings {
   changePosition: string;
   previousChange: string;
   nextChange: string;
-  /** Parts of a copied reference: `page {0}`, `under "{0}"`, `sheet "{0}"`, `cell {0}`, … */
+  /** Parts of a copied reference: `page {0}`, `under "{0}"`, `at "{0}"`, `sheet "{0}"`, `cell {0}`, … */
   refPage: string;
   refUnder: string;
+  refAt: string;
   refSheet: string;
   refCell: string;
   refCells: string;

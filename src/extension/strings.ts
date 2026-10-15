@@ -77,6 +77,7 @@ export function viewerStrings(appName: string): ViewerStrings {
     nextChange: vscode.l10n.t('Next Change'),
     refPage: vscode.l10n.t('page {0}'),
     refUnder: vscode.l10n.t('under "{0}"'),
+    refAt: vscode.l10n.t('at "{0}"'),
     refSheet: vscode.l10n.t('sheet "{0}"'),
     refCell: vscode.l10n.t('cell {0}'),
     refCells: vscode.l10n.t('cells {0}'),

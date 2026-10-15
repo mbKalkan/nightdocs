@@ -39,6 +39,18 @@ export function blockText(element: Element): string {
   return oneLine(textOf(element.closest(BLOCK) ?? element));
 }
 
+/** Words enough to find a paragraph again by searching for them, yet short in a location. */
+const OPENING_WORDS = 8;
+
+/** How the paragraph or table cell an element is in begins, or '' outside one. */
+export function blockOpening(element: Element): string {
+  const block = element.closest(BLOCK);
+  const words = block ? oneLine(textOf(block)).split(' ').filter(Boolean) : [];
+  return words.length > OPENING_WORDS
+    ? `${words.slice(0, OPENING_WORDS).join(' ')}…`
+    : words.join(' ');
+}
+
 /** The text of an element with pictures left out and each block on its own line. */
 export function blockLines(element: Element): string {
   return textOf(element).split('\n').map(oneLine).filter(Boolean).join('\n');
