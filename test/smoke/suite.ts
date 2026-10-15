@@ -42,6 +42,11 @@ function describeEditors(): string {
   }. Extension ${extension ? (extension.isActive ? 'active' : 'inactive') : 'missing'}.`;
 }
 
+async function openTab(uri: vscode.Uri, find: () => vscode.Tab | undefined): Promise<vscode.Tab> {
+  await vscode.commands.executeCommand('vscode.open', uri);
+  return waitFor(find);
+}
+
 interface Repository {
   git(...args: string[]): Buffer;
   /** Writes a file in the repository and returns its path. */
@@ -95,18 +100,27 @@ async function assertReadsDocument(head: vscode.Uri): Promise<void> {
 
 const tests: Record<string, () => Promise<void>> = {
   async 'opens .docx files in the viewer by default'() {
-    await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(`${FIXTURES}/sample.docx`));
-    // Right after startup the workbench may still be settling, so look across all groups.
-    const input = await waitFor(() => {
-      for (const group of vscode.window.tabGroups.all) {
-        for (const tab of group.tabs) {
-          if (tab.input instanceof vscode.TabInputCustom && tab.input.uri.path.endsWith('.docx')) {
-            return tab.input;
-          }
-        }
+    const uri = vscode.Uri.file(`${FIXTURES}/sample.docx`);
+    const findTab = () =>
+      vscode.window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .find((tab) => (tab.input as { uri?: vscode.Uri } | undefined)?.uri?.path === uri.path);
+    // Right after startup the workbench can open the file before it has registered the
+    // extension's editors, in a plain tab with the extension still inactive (seen on CI).
+    // A user opening it a moment later gets the viewer, so close that tab and open again.
+    let tab = await openTab(uri, findTab);
+    for (let retry = 1; !(tab.input instanceof vscode.TabInputCustom); retry++) {
+      if (retry > 5) {
+        throw new Error(`sample.docx never opened in the viewer. ${describeEditors()}`);
       }
-      return undefined;
-    });
+      console.log(
+        `    sample.docx opened outside the viewer; retry ${retry}. ${describeEditors()}`,
+      );
+      await vscode.window.tabGroups.close(tab);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      tab = await openTab(uri, findTab);
+    }
+    const input = tab.input;
     assert.equal(input.viewType, VIEW_TYPE);
     assert.ok(vscode.extensions.getExtension(EXTENSION_ID)?.isActive);
   },
