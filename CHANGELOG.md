@@ -6,14 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-15
+
+### Added
+
+- A right-click in a Word document or presentation marks the paragraph or slide that
+  **Copy Reference** would point at. The mark fades once the reference is copied and goes away
+  with the next click or key press.
+
 ### Changed
 
 - **Copy Reference** in a Word document now also names how the right-clicked paragraph begins,
   for example `page 4, under "Summary", at "Revenue grew in three of four…"`. Documents without
   headings were placed by their page alone, which left an assistant guessing where on the page.
-- A right-click in a Word document or presentation now marks the paragraph or slide that
-  **Copy Reference** would point at. The mark fades once the reference is copied and goes away
-  with the next click or key press.
 
 ## [1.2.1] - 2026-10-14
 
@@ -247,7 +252,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/mbKalkan/nightdocs/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/mbKalkan/nightdocs/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/mbKalkan/nightdocs/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/mbKalkan/nightdocs/compare/v1.0.0...v1.1.0
