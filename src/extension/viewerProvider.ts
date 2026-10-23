@@ -27,6 +27,12 @@ const TYPING_DELAY_MS = 250;
 
 const sameFile = (a: vscode.Uri, b: vscode.Uri) => a.toString() === b.toString();
 
+const ONLINE_CONTENT_SETTING = 'nightdocs.markdown.showOnlineContent';
+
+/** Whether the user chose to see pictures from the web in Markdown files without asking. */
+const showOnlineContent = () =>
+  vscode.workspace.getConfiguration().get<boolean>(ONLINE_CONTENT_SETTING, false);
+
 export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   static readonly viewType = 'nightdocs.viewer';
 
@@ -106,6 +112,8 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       scriptUri: panel.webview.asWebviewUri(vscode.Uri.joinPath(distWebview, 'main.js')).toString(),
       styleUri: panel.webview.asWebviewUri(vscode.Uri.joinPath(distWebview, 'main.css')).toString(),
       lang: vscode.env.language,
+      // Markdown may show pictures from the web, when the user chooses to.
+      webPictures: isTextFormat(info.format),
     });
 
     const post = (message: HostToWebviewMessage) => panel.webview.postMessage(message);
@@ -218,7 +226,8 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   /**
    * Keeps a Markdown view in step with the file's text editor: it shows unsaved changes as they
-   * are typed, and scrolls along when the editor beside it scrolls.
+   * are typed, and scrolls along when the editor beside it scrolls. It also shows pictures from
+   * the web as soon as the setting for them is turned on.
    */
   private followTextEditor(
     uri: vscode.Uri,
@@ -238,6 +247,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
         if (!panel.visible || member.side || !sameFile(textEditor.document.uri, uri)) return;
         const top = visibleRanges[0]?.start.line;
         if (top !== undefined) void panel.webview.postMessage({ type: 'revealLine', line: top });
+      }),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration(ONLINE_CONTENT_SETTING)) reload();
       }),
       { dispose: () => clearTimeout(typing) },
     ];
@@ -296,7 +308,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     this.fragments.delete(uri.toString());
     // Opened beside its text editor, a Markdown view starts where the editor is.
     const line = text && !reload ? this.editorTop(uri) : undefined;
-    // Copy into a standalone buffer: small Node buffers can be views into a shared pool.
+    // A plain copy: a Node Buffer turns itself into JSON numbers on the way to the webview.
     await post({
       type: 'load',
       data: new Uint8Array(data),
@@ -306,6 +318,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       locale: Intl.DateTimeFormat().resolvedOptions().locale,
       fragment,
       line,
+      onlineContent: text && showOnlineContent(),
       ...common,
     });
   }

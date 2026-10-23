@@ -631,6 +631,34 @@ body.vscode-high-contrast-light .md-page {
   color: var(--md-tok-tag);
 }
 
+/* The bar offering to show pictures from the web, like VS Code's notifications. */
+
+.md-online {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background: var(--md-tint);
+  color: var(--md-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.md-online > svg {
+  flex: none;
+}
+
+.md-online-text {
+  flex: 1;
+}
+
+.md-online .md-online-show {
+  flex: none;
+}
+
 /* Pictures the viewer doesn't show: from the web, or missing. */
 
 .md-body .md-badge,

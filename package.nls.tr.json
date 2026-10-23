@@ -19,5 +19,6 @@
   "command.copyReferenceWithText": "Referansı Metinle Kopyala",
   "customEditor.markdownDisplayName": "Nightdocs Markdown Görüntüleyici",
   "command.openMarkdown": "Nightdocs ile Aç",
-  "config.markdown.compareRendered": "Markdown dosyalarının karşılaştırmalarını (Kaynak Denetimi değişiklikleri gibi) metin yerine Nightdocs ile işlenmiş olarak gösterin. Görüntüleyicideki **Düzenle**, karşılaştırmayı yeniden metne çevirir."
+  "config.markdown.compareRendered": "Markdown dosyalarının karşılaştırmalarını (Kaynak Denetimi değişiklikleri gibi) metin yerine Nightdocs ile işlenmiş olarak gösterin. Görüntüleyicideki **Düzenle**, karşılaştırmayı yeniden metne çevirir.",
+  "config.markdown.showOnlineContent": "Markdown dosyalarındaki web'den gelen resimleri (rozetler gibi) sormadan gösterin. Kapalıyken böyle resimleri olan dosya **Çevrimiçi İçeriği Göster** düğmesini sunar. Resimler yüklenince geldikleri siteler dosyanın açıldığını görebilir."
 }

@@ -3,7 +3,12 @@ import { basename, dirname, extname, join, resolve } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
 import { formatForPath } from '../../src/shared/formats';
-import type { ColorMode, HostToWebviewMessage, ViewerStrings } from '../../src/shared/protocol';
+import type {
+  ColorMode,
+  HostToWebviewMessage,
+  LoadMessage,
+  ViewerStrings,
+} from '../../src/shared/protocol';
 import { themes, type ThemeName } from './themes';
 
 interface Theme {
@@ -104,7 +109,11 @@ export const strings: ViewerStrings = {
   frontMatterError: "The front matter isn't valid YAML: {0}",
   copyCode: 'Copy',
   copied: 'Copied',
-  remoteImage: "Pictures from the web aren't loaded; Nightdocs stays offline. {0}",
+  remoteImage: 'Picture from the web, not shown: {0}',
+  onlineContentHidden: "Pictures from the web aren't shown, so nothing goes online.",
+  showOnlineContent: 'Show Online Content',
+  showOnlineContentHint:
+    "Show this file's pictures from the web. To always show them, turn on Nightdocs › Markdown: Show Online Content.",
   missingImage: 'Picture not found: {0}',
 };
 
@@ -112,7 +121,12 @@ export const strings: ViewerStrings = {
  * Loads the built webview (dist/webview) the way VS Code does: same HTML, same CSP,
  * a stubbed `acquireVsCodeApi`, and theme variables on the root element.
  */
-export async function openViewer(page: Page, theme: ThemeName) {
+export async function openViewer(
+  page: Page,
+  theme: ThemeName,
+  /** As for Markdown views: the page may load pictures from the web (https). */
+  { webPictures = false } = {},
+) {
   const problems: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') problems.push(message.text());
@@ -141,6 +155,7 @@ export async function openViewer(page: Page, theme: ThemeName) {
           scriptUri: `${ORIGIN}/dist/webview/main.js`,
           styleUri: `${ORIGIN}/dist/webview/main.css`,
           lang: 'en',
+          webPictures,
         }),
       });
       return;
@@ -217,13 +232,23 @@ export async function openViewer(page: Page, theme: ThemeName) {
         { payload, bytes },
       );
     },
-    async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
-      await this.send(join('test/fixtures', fixture), reload, colorMode);
+    async load(
+      fixture: string,
+      reload = false,
+      colorMode: ColorMode = 'dark',
+      extra: Partial<LoadMessage> = {},
+    ) {
+      await this.send(join('test/fixtures', fixture), reload, colorMode, extra);
       await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .md-page, .ov-error');
       await page.waitForSelector('.ov-progress', { state: 'hidden' });
     },
     /** Hands the viewer a file, as the extension host does, without waiting for it to show. */
-    async send(path: string, reload = false, colorMode: ColorMode = 'dark') {
+    async send(
+      path: string,
+      reload = false,
+      colorMode: ColorMode = 'dark',
+      extra: Partial<LoadMessage> = {},
+    ) {
       const info = formatForPath(path) ?? { format: 'docx', appName: 'Word' };
       documentDir = dirname(path);
       // Like the extension host, remember whether the navigation pane was left open.
@@ -244,6 +269,7 @@ export async function openViewer(page: Page, theme: ThemeName) {
           ...strings,
           openInOffice: info.format === 'md' ? 'Edit' : `Open in ${info.appName}`,
         },
+        ...extra,
       });
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */

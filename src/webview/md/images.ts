@@ -1,5 +1,6 @@
 import type { ViewerStrings } from '../../shared/protocol';
 import { requestResource } from '../resources';
+import { PICTURE_SRC, PICTURE_SRCSET } from './sanitize';
 
 /** Pictures read once per viewer: the file shown is the same one, saved again and again. */
 const cache = new Map<string, Promise<string | undefined>>();
@@ -7,32 +8,52 @@ const cache = new Map<string, Promise<string | undefined>>();
 /** How long a render waits for pictures, so the layout is mostly settled when it shows. */
 const WAIT_MS = 800;
 
-/** Hosts that serve status badges, shown as a label with their text instead of a picture. */
+/** Hosts that serve status badges, shown as a label with their text until they are shown. */
 const BADGE_HOSTS =
   /(^|\.)(shields\.io|badgen\.net|badge\.fury\.io|vsmarketplacebadges\.dev|codecov\.io|coveralls\.io|circleci\.com|travis-ci\.(org|com)|codacy\.com|snyk\.io|deepwiki\.com|pepy\.tech|npmjs\.com)$/i;
 
 const isWeb = (src: string) => /^(https?:)?\/\//i.test(src);
 
+/** Only pictures served securely are loaded from the web (the webview's policy allows https). */
+const canLoad = (url: string) => /^https:\/\//i.test(url);
+
+export interface Pictures {
+  /** How many pictures from the web aren't shown yet and could be. */
+  readonly hidden: number;
+  /** Shows the pictures from the web; the viewer goes online for them. */
+  showOnline(): void;
+}
+
 /**
  * Shows the pictures of a rendered Markdown file. Files next to it are read through the host.
- * Pictures on the web aren't downloaded, since the viewer never goes online: a badge shows its
- * text, another picture a placeholder with its description.
+ * Pictures on the web are only loaded with `online` (the user's choice); until then a badge
+ * shows its text and another picture a placeholder with its description.
  */
 export async function showPictures(
   root: HTMLElement,
   strings: ViewerStrings,
   darkTheme: boolean,
-): Promise<void> {
+  online: boolean,
+): Promise<Pictures> {
   for (const picture of root.querySelectorAll('picture')) choosePictureSource(picture, darkTheme);
 
   const loads: Promise<void>[] = [];
+  const waiting = new Map<HTMLElement, { img: HTMLImageElement; url: string }>();
   for (const img of root.querySelectorAll('img')) {
-    const src = img.getAttribute('src')?.trim() ?? '';
-    if (!src || /^data:image\//i.test(src)) continue;
-    img.removeAttribute('src');
-    img.removeAttribute('srcset');
-    if (isWeb(src)) {
-      img.replaceWith(webPlaceholder(img, src, strings));
+    const src = img.getAttribute(PICTURE_SRC)?.trim() ?? '';
+    img.removeAttribute(PICTURE_SRC);
+    img.removeAttribute(PICTURE_SRCSET);
+    if (!src) continue;
+    if (/^data:image\//i.test(src)) {
+      img.src = src;
+    } else if (isWeb(src)) {
+      const url = src.startsWith('//') ? `https:${src}` : src;
+      const shown = webPlaceholder(img, url, strings);
+      img.dataset.src = url;
+      img.replaceWith(shown);
+      if (!canLoad(url)) continue;
+      if (online) loadWeb(img, url, shown);
+      else waiting.set(shown, { img, url });
     } else {
       img.dataset.href = src;
       loads.push(load(img, src, strings));
@@ -44,6 +65,13 @@ export async function showPictures(
       new Promise((resolve) => setTimeout(resolve, WAIT_MS)),
     ]);
   }
+  return {
+    hidden: waiting.size,
+    showOnline() {
+      for (const [shown, { img, url }] of waiting) loadWeb(img, url, shown);
+      waiting.clear();
+    },
+  };
 }
 
 /**
@@ -56,9 +84,18 @@ function choosePictureSource(picture: HTMLPictureElement, darkTheme: boolean): v
   const source = [...picture.querySelectorAll('source')].find((s) =>
     (s.getAttribute('media') ?? '').includes(`prefers-color-scheme: ${scheme}`),
   );
-  const srcset = source?.getAttribute('srcset')?.trim().split(/\s+/)[0];
-  if (img && srcset) img.setAttribute('src', srcset);
+  const srcset = source?.getAttribute(PICTURE_SRCSET)?.trim().split(/\s+/)[0];
+  if (img && srcset) img.setAttribute(PICTURE_SRC, srcset);
   picture.querySelectorAll('source').forEach((s) => s.remove());
+}
+
+/** Swaps a placeholder for its picture from the web; the placeholder comes back if it fails. */
+function loadWeb(img: HTMLImageElement, url: string, shown: HTMLElement): void {
+  // The webview's address says nothing useful to the site, and nothing it should learn.
+  img.referrerPolicy = 'no-referrer';
+  img.addEventListener('error', () => img.replaceWith(shown), { once: true });
+  img.src = url;
+  shown.replaceWith(img);
 }
 
 async function load(img: HTMLImageElement, href: string, strings: ViewerStrings): Promise<void> {
@@ -74,20 +111,24 @@ async function load(img: HTMLImageElement, href: string, strings: ViewerStrings)
   const blob = await url;
   if (blob) {
     img.src = blob;
-    await img.decode().catch(() => undefined);
-  } else {
-    const missing = placeholder(
-      'md-missing-image',
-      img.alt || href,
-      strings.missingImage.replace('{0}', href),
+    const shown = await img.decode().then(
+      () => true,
+      () => false,
     );
-    missing.dataset.href = href;
-    img.replaceWith(missing);
+    if (shown) return;
   }
+  // Asked again next time: the file may be added or fixed while the view is open.
+  if (cache.get(href) === url) cache.delete(href);
+  const missing = placeholder(
+    'md-missing-image',
+    img.alt || href,
+    strings.missingImage.replace('{0}', href),
+  );
+  missing.dataset.href = href;
+  img.replaceWith(missing);
 }
 
-function webPlaceholder(img: HTMLImageElement, src: string, strings: ViewerStrings): HTMLElement {
-  const url = src.startsWith('//') ? `https:${src}` : src;
+function webPlaceholder(img: HTMLImageElement, url: string, strings: ViewerStrings): HTMLElement {
   let host = '';
   try {
     host = new URL(url).hostname;

@@ -119,22 +119,86 @@ test('renders GitHub features: alerts, tasks, tables, footnotes, details', async
   expect(viewer.problems).toEqual([]);
 });
 
-test('shows pictures next to the file and stays offline for the web ones', async ({ page }) => {
-  const viewer = await openViewer(page, 'dark');
+/** Answers requests for pictures on the web with a small picture, and lists them. */
+async function serveWebPictures(page: Page): Promise<string[]> {
+  const requested: string[] = [];
+  await page.route('https://**/*', (route) => {
+    requested.push(route.request().url());
+    return route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20"><rect width="90" height="20" fill="#4c1"/></svg>',
+    });
+  });
+  return requested;
+}
+
+test('shows pictures next to the file, and web pictures only when asked', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark', { webPictures: true });
+  const requested = await serveWebPictures(page);
   await viewer.load('markdown/sample.md');
 
   const flow = page.locator('img[alt="Release flow"]');
   await expect(flow).toHaveAttribute('src', /^blob:/);
   expect(await flow.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(560);
-  // Badges show their text; other web pictures a placeholder. Nothing is downloaded.
-  await expect(page.locator('.md-badge')).toHaveText(['Build', 'Coverage']);
-  await expect(page.locator('.md-web-image')).toHaveText('Store listing');
-  await expect(page.locator('.md-web-image')).toHaveAttribute('title', /stays offline/);
-  await expect(page.locator('img[src^="http"]')).toHaveCount(0);
-  const requested = (await viewer.sent()).filter((m) => m.type === 'resource');
-  expect(requested).toEqual([
+  expect((await viewer.sent()).filter((m) => m.type === 'resource')).toEqual([
     { type: 'resource', id: expect.any(Number), href: 'images/flow.svg' },
   ]);
+
+  // Until asked, badges show their text and other web pictures a placeholder, offline.
+  await expect(page.locator('.md-badge')).toHaveText(['Build', 'Coverage']);
+  await expect(page.locator('.md-web-image')).toHaveText('Store listing');
+  await expect(page.locator('.md-online')).toContainText("aren't shown");
+  await page.screenshot({ path: `${SCREENS}/markdown-online-bar-dark.png` });
+  expect(requested).toEqual([]);
+
+  await page.locator('.md-online-show').click();
+  await expect(page.locator('.md-online')).toHaveCount(0);
+  await expect(page.locator('img[alt="Build"]')).toHaveAttribute(
+    'src',
+    'https://img.shields.io/badge/build-passing-green',
+  );
+  await expect(page.locator('img[alt="Store listing"]')).toHaveJSProperty('naturalWidth', 90);
+  await expect(page.locator('.md-badge, .md-web-image')).toHaveCount(0);
+  expect(requested.sort()).toEqual([
+    'https://example.com/store-listing.png',
+    'https://img.shields.io/badge/build-passing-green',
+    'https://img.shields.io/badge/coverage-92%25-blue',
+  ]);
+
+  // The choice holds when the file is saved again.
+  await viewer.load('markdown/sample.md', true);
+  await expect(page.locator('img[alt="Coverage"]')).toHaveCount(1);
+  await expect(page.locator('.md-online')).toHaveCount(0);
+  expect(viewer.problems).toEqual([]);
+});
+
+test('says which pictures next to the file are missing or damaged', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/pictures.md');
+
+  await expect(page.locator('img[alt="Release flow"]')).toHaveJSProperty('naturalWidth', 560);
+  await expect(page.locator('.md-missing-image')).toHaveText(['Not there', 'Damaged']);
+  await expect(page.locator('.md-missing-image').first()).toHaveAttribute(
+    'title',
+    'Picture not found: images/missing.png',
+  );
+
+  // Not remembered: a picture added while the view is open shows on the next save.
+  const asked = async () => (await viewer.sent()).filter((m) => m.type === 'resource').length;
+  const before = await asked();
+  await viewer.load('markdown/pictures.md', true);
+  await expect(page.locator('.md-missing-image')).toHaveCount(2);
+  expect((await asked()) - before).toBe(2);
+  expect(viewer.problems).toEqual([]);
+});
+
+test('shows web pictures without asking when the setting says so', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark', { webPictures: true });
+  await serveWebPictures(page);
+  await viewer.load('markdown/sample.md', false, 'dark', { onlineContent: true });
+
+  await expect(page.locator('img[alt="Build"]')).toHaveJSProperty('naturalWidth', 90);
+  await expect(page.locator('.md-online')).toHaveCount(0);
   expect(viewer.problems).toEqual([]);
 });
 

@@ -10,7 +10,7 @@ import { icons } from '../icons';
 import { markdownBlocks } from '../md/blocks';
 import { highlightCode } from '../md/code';
 import { splitFrontMatter } from '../md/frontmatter';
-import { showPictures } from '../md/images';
+import { showPictures, type Pictures } from '../md/images';
 import {
   lineAtTop,
   lineElement,
@@ -33,6 +33,8 @@ import type { RenderContext, RenderedDocument, Renderer } from './types';
 interface MarkdownState {
   /** The front matter is shown as YAML rather than as a list of properties. */
   source: boolean;
+  /** The user chose to show this file's pictures from the web. */
+  online: boolean;
 }
 
 /** How long a copy button says it copied. */
@@ -74,7 +76,19 @@ export const mdRenderer: Renderer = {
       revealTop(view.viewport, scrollTopOf(view.viewport, element.getBoundingClientRect().top));
     };
     followLinks(page, reveal);
-    await Promise.all([highlightCode(page), showPictures(article, strings, isDarkTheme())]);
+    let online = Boolean(options.onlineContent || previous?.online);
+    const [, pictures] = await Promise.all([
+      highlightCode(page),
+      showPictures(article, strings, isDarkTheme(), online),
+    ]);
+    if (pictures.hidden > 0) {
+      page.prepend(
+        onlineBar(pictures, strings, () => {
+          online = true;
+          forget();
+        }),
+      );
+    }
 
     let headings: OutlineHeading[] | undefined;
     const outline = () => (headings ??= findHeadings(article));
@@ -93,7 +107,7 @@ export const mdRenderer: Renderer = {
         properties?.element.querySelector('.md-props-toggle')?.addEventListener('click', forget);
       },
       refresh: forget,
-      state: (): MarkdownState => ({ source: properties?.showingSource ?? false }),
+      state: (): MarkdownState => ({ source: properties?.showingSource ?? false, online }),
       command(command) {
         if (command !== 'goTo' || !view) return;
         void goToHeading(view, outline(), strings, (heading, current) =>
@@ -227,6 +241,32 @@ function headingBefore(
     found = heading;
   }
   return found;
+}
+
+/**
+ * The bar above a file with pictures from the web, which stay hidden so that the viewer doesn't
+ * go online on its own; its button shows them. The setting shows them without asking.
+ */
+function onlineBar(pictures: Pictures, strings: ViewerStrings, shown: () => void): HTMLElement {
+  const bar = document.createElement('div');
+  bar.className = 'md-online';
+  bar.setAttribute('role', 'note');
+  bar.innerHTML = icons.globe;
+  const text = document.createElement('span');
+  text.className = 'md-online-text';
+  text.textContent = strings.onlineContentHidden;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'ov-button md-online-show';
+  button.textContent = strings.showOnlineContent;
+  button.title = strings.showOnlineContentHint;
+  button.addEventListener('click', () => {
+    pictures.showOnline();
+    bar.remove();
+    shown();
+  });
+  bar.append(text, button);
+  return bar;
 }
 
 const ALERT_ICONS: Record<string, string> = {

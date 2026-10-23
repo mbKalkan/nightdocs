@@ -96,7 +96,14 @@ export function viewerStrings({ format, appName }: FormatInfo): ViewerStrings {
     frontMatterError: vscode.l10n.t("The front matter isn't valid YAML: {0}"),
     copyCode: vscode.l10n.t('Copy'),
     copied: vscode.l10n.t('Copied'),
-    remoteImage: vscode.l10n.t("Pictures from the web aren't loaded; Nightdocs stays offline. {0}"),
+    remoteImage: vscode.l10n.t('Picture from the web, not shown: {0}'),
+    onlineContentHidden: vscode.l10n.t(
+      "Pictures from the web aren't shown, so nothing goes online.",
+    ),
+    showOnlineContent: vscode.l10n.t('Show Online Content'),
+    showOnlineContentHint: vscode.l10n.t(
+      "Show this file's pictures from the web. To always show them, turn on Nightdocs › Markdown: Show Online Content.",
+    ),
     missingImage: vscode.l10n.t('Picture not found: {0}'),
   };
 }

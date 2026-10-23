@@ -5,6 +5,8 @@ export interface WebviewHtmlOptions {
   styleUri: string;
   lang: string;
   nonce?: string;
+  /** Let the page load pictures from the web (https only); the page decides when. */
+  webPictures?: boolean;
 }
 
 /** Web Crypto, so the same code runs in the Node extension host and in VS Code for the Web. */
@@ -13,11 +15,16 @@ export function createNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-export function buildContentSecurityPolicy(cspSource: string, nonce: string): string {
+export function buildContentSecurityPolicy(
+  cspSource: string,
+  nonce: string,
+  webPictures = false,
+): string {
   return [
     "default-src 'none'",
     // Documents carry their images and fonts inside the file; the renderer exposes them as blob: URLs.
-    `img-src ${cspSource} blob: data:`,
+    // Markdown links to pictures on the web, shown only when the user chooses to.
+    `img-src ${cspSource} blob: data:${webPictures ? ' https:' : ''}`,
     `font-src ${cspSource} blob: data:`,
     // Audio and video embedded in presentations play from blob: URLs too.
     'media-src blob:',
@@ -32,7 +39,7 @@ export function buildContentSecurityPolicy(cspSource: string, nonce: string): st
 
 export function buildWebviewHtml(options: WebviewHtmlOptions): string {
   const nonce = options.nonce ?? createNonce();
-  const csp = buildContentSecurityPolicy(options.cspSource, nonce);
+  const csp = buildContentSecurityPolicy(options.cspSource, nonce, options.webPictures);
   return `<!DOCTYPE html>
 <html lang="${escapeAttribute(options.lang)}">
 <head>

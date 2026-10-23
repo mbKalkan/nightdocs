@@ -19,5 +19,6 @@
   "command.copyReferenceWithText": "Copy Reference with Text",
   "customEditor.markdownDisplayName": "Nightdocs Markdown Viewer",
   "command.openMarkdown": "Open in Nightdocs",
-  "config.markdown.compareRendered": "Show comparisons of Markdown files, such as changes in Source Control, rendered in Nightdocs instead of as text. **Edit** in the viewer switches a comparison back to text."
+  "config.markdown.compareRendered": "Show comparisons of Markdown files, such as changes in Source Control, rendered in Nightdocs instead of as text. **Edit** in the viewer switches a comparison back to text.",
+  "config.markdown.showOnlineContent": "Show the pictures of Markdown files that come from the web, such as badges, without asking. When off, a file with such pictures offers **Show Online Content**. Loading them lets the sites they come from see that the file was opened."
 }
