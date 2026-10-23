@@ -49,6 +49,79 @@ async function openTab(uri: vscode.Uri, find: () => vscode.Tab | undefined): Pro
   return waitFor(find);
 }
 
+/**
+ * Opens a comparison of the Markdown fixtures in the viewer side by side, shows it inline and
+ * side by side again, as the button in its status bar does. With `floating`, the comparison is
+ * in a window of its own: VS Code still reports the main window's group as the active one.
+ */
+async function switchLayouts(floating: boolean): Promise<void> {
+  const label = 'sample.md (Working Tree)';
+  const original = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
+  const modified = vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`);
+  const tabs = () => vscode.window.tabGroups.all.flatMap((group) => group.tabs);
+  const find = (match: (tab: vscode.Tab) => boolean) => () => tabs().find(match);
+  const textComparison = find((tab) => tab.input instanceof vscode.TabInputTextDiff);
+  const sideBySide = find((tab) => tab.input === undefined && tab.label === label);
+  const inline = find(
+    (tab) =>
+      tab.input instanceof vscode.TabInputCustom && tab.input.uri.scheme === 'nightdocs-compare',
+  );
+  const openTextComparison = async () => {
+    await vscode.commands.executeCommand('vscode.diff', original, modified, label);
+    await waitFor(textComparison);
+  };
+  // The toggle works once the comparison is on screen; ask again until it is.
+  const toggleUntil = async (shown: () => vscode.Tab | undefined) => {
+    let asked = 0;
+    return waitFor(() => {
+      const tab = shown();
+      if (tab === undefined && asked++ % 10 === 0) {
+        void vscode.commands.executeCommand('nightdocs.toggleInlineView');
+      }
+      return tab;
+    });
+  };
+
+  try {
+    await openTextComparison();
+    if (floating) {
+      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      await waitFor(() =>
+        textComparison()?.group.viewColumn !== vscode.ViewColumn.One ? true : undefined,
+      );
+    }
+    // As the button in the comparison's title bar does, naming the file.
+    await vscode.commands.executeCommand('nightdocs.openMarkdown', modified);
+    const column = (await waitFor(sideBySide)).group.viewColumn;
+
+    // Inline replaces the side by side comparison, in the same place.
+    const shown = await toggleUntil(inline);
+    const input = shown.input as vscode.TabInputCustom;
+    assert.equal(input.viewType, MARKDOWN_VIEW_TYPE);
+    assert.ok(input.uri.path.endsWith('/markdown/sample-revised.md'));
+    assert.ok(input.uri.query.includes('sample.md'), input.uri.query);
+    assert.equal(shown.group.viewColumn, column);
+    assert.equal(tabs().length, 1, describeEditors());
+
+    if (!floating) {
+      // The choice holds: the next comparison opens inline.
+      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+      await openTextComparison();
+      await vscode.commands.executeCommand('nightdocs.openMarkdown', modified);
+      await waitFor(inline);
+      assert.equal(tabs().length, 1, describeEditors());
+    }
+
+    // And back to side by side, with the comparison's own title, in the same place.
+    const back = await toggleUntil(sideBySide);
+    assert.equal(back.group.viewColumn, floating ? column : vscode.ViewColumn.One);
+    assert.equal(tabs().length, 1, describeEditors());
+  } finally {
+    // Closing every tab closes a floating window too.
+    await vscode.window.tabGroups.close(tabs(), true);
+  }
+}
+
 interface Repository {
   git(...args: string[]): Buffer;
   /** Writes a file in the repository and returns its path. */
@@ -268,68 +341,11 @@ const tests: Record<string, () => Promise<void>> = {
   },
 
   async 'shows a Markdown comparison inline, and side by side again'() {
-    const label = 'sample.md (Working Tree)';
-    const openTextComparison = async () => {
-      await vscode.commands.executeCommand(
-        'vscode.diff',
-        vscode.Uri.file(`${FIXTURES}/markdown/sample.md`),
-        vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`),
-        label,
-      );
-      await waitFor(() =>
-        vscode.window.tabGroups.activeTabGroup.activeTab?.input instanceof vscode.TabInputTextDiff
-          ? true
-          : undefined,
-      );
-    };
-    const active = () => vscode.window.tabGroups.activeTabGroup.activeTab;
-    const sideBySide = () => {
-      const tab = active();
-      return tab && tab.input === undefined && tab.label === label ? tab : undefined;
-    };
-    const inline = () => {
-      const input = active()?.input;
-      return input instanceof vscode.TabInputCustom && input.uri.scheme === 'nightdocs-compare'
-        ? input
-        : undefined;
-    };
-    // The toggle works once the comparison is on screen; ask again until it is.
-    const toggleUntil = async <T>(shown: () => T | undefined): Promise<T> => {
-      let asked = 0;
-      return waitFor(() => {
-        const result = shown();
-        if (result === undefined && asked++ % 10 === 0) {
-          void vscode.commands.executeCommand('nightdocs.toggleInlineView');
-        }
-        return result;
-      });
-    };
-    const tabCount = () => vscode.window.tabGroups.all.flatMap((group) => group.tabs).length;
+    await switchLayouts(false);
+  },
 
-    try {
-      await openTextComparison();
-      await vscode.commands.executeCommand('nightdocs.openMarkdown');
-      await waitFor(sideBySide);
-      // Inline replaces the side by side comparison, in the same place.
-      const input = await toggleUntil(inline);
-      assert.equal(input.viewType, MARKDOWN_VIEW_TYPE);
-      assert.ok(input.uri.path.endsWith('/markdown/sample-revised.md'));
-      assert.ok(input.uri.query.includes('sample.md'), input.uri.query);
-      assert.equal(tabCount(), 1, describeEditors());
-
-      // The choice holds: the next comparison opens inline.
-      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-      await openTextComparison();
-      await vscode.commands.executeCommand('nightdocs.openMarkdown');
-      await waitFor(inline);
-      assert.equal(tabCount(), 1, describeEditors());
-
-      // And back to side by side, with the comparison's own title.
-      await toggleUntil(sideBySide);
-      assert.equal(tabCount(), 1, describeEditors());
-    } finally {
-      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-    }
+  async 'switches a comparison in a floating window, which never counts as active'() {
+    await switchLayouts(true);
   },
 
   async 'hands pictures next to a Markdown file to the view as bytes of their own'() {

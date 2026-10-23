@@ -21,12 +21,14 @@ import {
 import {
   editInline,
   editMarkdown,
+  isSideBySideTab,
   MARKDOWN_VIEW_TYPE,
   openInViewer,
   openLink,
   readPicture,
   showInline,
   showSideBySide,
+  showText,
 } from './markdown';
 import { isExternalLink } from './markdownLinks';
 import { openWithDefaultApp } from './openWithDefaultApp';
@@ -55,6 +57,8 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private static readonly colorModeKey = 'nightdocs.colorMode';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
+  /** The view last active, while it may have lost focus to something else. */
+  private lastActive: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
   private readonly panels = new Set<{ panel: vscode.WebviewPanel; uri: vscode.Uri }>();
   private readonly diffs = new DiffPairs();
   /** Where to scroll a Markdown file opened from a link to `file.md#heading`. */
@@ -169,13 +173,21 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'openInOffice':
             if (inline) void editInline(inline, message.line);
-            else if (text) void editMarkdown(uri, member.side !== undefined, message.line);
+            else if (text && member.side)
+              this.showComparisonAs('text', member, panel, message.line);
+            else if (text) void editMarkdown(uri, message.line);
             else void this.openInOffice(uri, info);
             break;
           case 'setInline':
             setPrefersInline(message.inline);
-            if (inline && !message.inline) void showSideBySide(inline);
-            else if (!inline && message.inline) this.showInline(member, panel);
+            if (inline && !message.inline) {
+              void showSideBySide(inline, (tab) => {
+                const input = tab.input;
+                return input instanceof vscode.TabInputCustom && sameFile(input.uri, uri);
+              });
+            } else if (!inline && message.inline) {
+              this.showComparisonAs('inline', member, panel);
+            }
             break;
           case 'resource':
             void readPicture(source, message.href).then((picture) =>
@@ -255,6 +267,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
     panel.onDidDispose(() => {
       this.panels.delete(entry);
+      if (this.lastActive?.panel === panel) this.lastActive = undefined;
       subscriptions.forEach((s) => s.dispose());
       this.diffs.remove(member);
       if (this.activePanel?.panel === panel) {
@@ -264,8 +277,16 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     });
   }
 
-  /** Shows the side by side comparison `member` is a side of inline, in its place. */
-  private showInline(member: DiffMember, panel: vscode.WebviewPanel): void {
+  /**
+   * Shows the side by side comparison `member` is a side of inline, or as text (Edit, at `line`),
+   * in its place. Its tab is the one showing in the viewer's group.
+   */
+  private showComparisonAs(
+    how: 'inline' | 'text',
+    member: DiffMember,
+    panel: vscode.WebviewPanel,
+    line?: number,
+  ): void {
     const { peer, side } = member;
     if (!peer || !side) return;
     const [original, modified] = side === 'original' ? [member, peer] : [peer, member];
@@ -273,10 +294,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     const label =
       vscode.window.tabGroups.all.find((group) => group.viewColumn === column)?.activeTab?.label ??
       '';
-    void showInline(
-      { original: original.uri, modified: modified.uri, label },
-      (tab) => tab.group.viewColumn === column && tab.input === undefined && tab.label === label,
-    );
+    const comparison = { original: original.uri, modified: modified.uri, label };
+    const replaced = isSideBySideTab(column, label);
+    if (how === 'inline') void showInline(comparison, replaced);
+    else void showText(comparison, replaced, line);
   }
 
   /**
@@ -314,7 +335,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   private trackActive(panel: vscode.WebviewPanel, uri: vscode.Uri): void {
     if (panel.active) {
-      this.activePanel = { panel, uri };
+      this.activePanel = this.lastActive = { panel, uri };
     } else if (this.activePanel?.panel === panel) {
       this.activePanel = undefined;
     }
@@ -422,7 +443,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private commandTarget(): { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined {
     if (this.activePanel) return this.activePanel;
     const column = vscode.window.tabGroups.activeTabGroup.viewColumn;
-    return [...this.panels].find(({ panel }) => panel.visible && panel.viewColumn === column);
+    const visible = [...this.panels].filter(({ panel }) => panel.visible);
+    return (
+      visible.find(({ panel }) => panel.viewColumn === column) ??
+      visible.find(({ panel }) => panel === this.lastActive?.panel)
+    );
   }
 
   private sendCommand(command: ViewerCommand): void {
