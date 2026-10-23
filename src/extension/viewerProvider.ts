@@ -21,12 +21,14 @@ import {
 import {
   editInline,
   editMarkdown,
+  isSideBySideTab,
   MARKDOWN_VIEW_TYPE,
   openInViewer,
   openLink,
   readPicture,
   showInline,
   showSideBySide,
+  showText,
 } from './markdown';
 import { isExternalLink } from './markdownLinks';
 import { openWithDefaultApp } from './openWithDefaultApp';
@@ -169,13 +171,21 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'openInOffice':
             if (inline) void editInline(inline, message.line);
-            else if (text) void editMarkdown(uri, member.side !== undefined, message.line);
+            else if (text && member.side)
+              this.showComparisonAs('text', member, panel, message.line);
+            else if (text) void editMarkdown(uri, message.line);
             else void this.openInOffice(uri, info);
             break;
           case 'setInline':
             setPrefersInline(message.inline);
-            if (inline && !message.inline) void showSideBySide(inline);
-            else if (!inline && message.inline) this.showInline(member, panel);
+            if (inline && !message.inline) {
+              void showSideBySide(inline, (tab) => {
+                const input = tab.input;
+                return input instanceof vscode.TabInputCustom && sameFile(input.uri, uri);
+              });
+            } else if (!inline && message.inline) {
+              this.showComparisonAs('inline', member, panel);
+            }
             break;
           case 'resource':
             void readPicture(source, message.href).then((picture) =>
@@ -264,8 +274,16 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     });
   }
 
-  /** Shows the side by side comparison `member` is a side of inline, in its place. */
-  private showInline(member: DiffMember, panel: vscode.WebviewPanel): void {
+  /**
+   * Shows the side by side comparison `member` is a side of inline, or as text (Edit, at `line`),
+   * in its place. Its tab is the one showing in the viewer's group.
+   */
+  private showComparisonAs(
+    how: 'inline' | 'text',
+    member: DiffMember,
+    panel: vscode.WebviewPanel,
+    line?: number,
+  ): void {
     const { peer, side } = member;
     if (!peer || !side) return;
     const [original, modified] = side === 'original' ? [member, peer] : [peer, member];
@@ -273,10 +291,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     const label =
       vscode.window.tabGroups.all.find((group) => group.viewColumn === column)?.activeTab?.label ??
       '';
-    void showInline(
-      { original: original.uri, modified: modified.uri, label },
-      (tab) => tab.group.viewColumn === column && tab.input === undefined && tab.label === label,
-    );
+    const comparison = { original: original.uri, modified: modified.uri, label };
+    const replaced = isSideBySideTab(column, label);
+    if (how === 'inline') void showInline(comparison, replaced);
+    else void showText(comparison, replaced, line);
   }
 
   /**
