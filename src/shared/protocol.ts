@@ -288,4 +288,6 @@ export type WebviewToHostMessage =
    * A place in the document to put on the clipboard, for pasting into a chat with an AI
    * assistant or a note: the host prepends the file's path. `text` is what is there, quoted.
    */
-  | { type: 'reference'; location: string; text?: string };
+  | { type: 'reference'; location: string; text?: string }
+  /** A web or mail link followed in the document, for VS Code to open. */
+  | { type: 'openLink'; href: string };

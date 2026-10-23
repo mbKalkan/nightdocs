@@ -120,6 +120,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
           case 'openInOffice':
             void this.openInOffice(uri, info);
             break;
+          case 'openLink':
+            // VS Code asks before opening a site it doesn't trust.
+            if (/^(https?|mailto):/i.test(message.href)) {
+              void vscode.env.openExternal(vscode.Uri.parse(message.href));
+            }
+            break;
           case 'setColorMode':
             void this.state.update(ViewerProvider.colorModeKey, message.mode);
             break;
