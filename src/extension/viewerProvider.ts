@@ -15,6 +15,7 @@ import { readGitBlob } from './gitBlob';
 import {
   keepLayoutIn,
   parseInlineUri,
+  prefersInline,
   setPrefersInline,
   type InlineComparison,
 } from './inlineCompare';
@@ -148,6 +149,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     const member: DiffMember = { uri, post, ready: false };
     this.diffs.add(member, panel.viewColumn);
     const text = isTextFormat(info.format);
+    // A Markdown comparison VS Code opened side by side (from Source Control, when Markdown
+    // comparisons are associated with the viewer) is shown inline when that was the choice.
+    if (text && member.peer && prefersInline()) {
+      setTimeout(() => this.showComparisonAs('inline', member, panel));
+    }
 
     const subscriptions: vscode.Disposable[] = [
       panel.webview.onDidReceiveMessage((message: WebviewToHostMessage) => {
@@ -175,7 +181,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             if (inline) void editInline(inline, message.line);
             else if (text && member.side)
               this.showComparisonAs('text', member, panel, message.line);
-            else if (text) void editMarkdown(uri, message.line);
+            else if (text) void editMarkdown(uri, message.line, panel.viewColumn);
             else void this.openInOffice(uri, info);
             break;
           case 'setInline':

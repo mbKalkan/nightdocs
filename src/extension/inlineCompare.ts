@@ -54,8 +54,13 @@ export function keepLayoutIn(state: vscode.Memento): void {
   memento = state;
 }
 
-/** Whether Markdown comparisons are shown inline, as the user last chose. */
-export const prefersInline = () => memento?.get<boolean>(INLINE_KEY, false) ?? false;
+/**
+ * Whether Markdown comparisons are shown inline: as the user last chose in the viewer, or else
+ * as VS Code's own diff editor is set to (Diff Editor: Render Side By Side).
+ */
+export const prefersInline = () =>
+  memento?.get<boolean>(INLINE_KEY) ??
+  !vscode.workspace.getConfiguration('diffEditor').get<boolean>('renderSideBySide', true);
 
 export function setPrefersInline(inline: boolean): void {
   void memento?.update(INLINE_KEY, inline);
