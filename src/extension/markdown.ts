@@ -72,16 +72,24 @@ export async function showInline(comparison: InlineComparison, replaced: TabMatc
   await close(replaced);
 }
 
-/** Shows a comparison in the viewer side by side, in the place of the tab `replaced` finds. */
-export async function showSideBySide(
+/** VS Code's own text editor, and its text comparison. */
+const TEXT_EDITOR = 'default';
+
+/**
+ * Opens a comparison in `editor`, the viewer or VS Code's text comparison, at `place`, with
+ * `line` of the new version in view. Markdown comparisons may be associated with the viewer
+ * (workbench.diffEditorAssociations), so vscode.diff alone could open either; this goes through
+ * the command behind it, which can name the editor. Its column counts from 0, the API's from 1.
+ */
+async function openComparison(
   comparison: InlineComparison,
-  replaced: TabMatch,
+  editor: string,
+  { column, preview }: { column?: vscode.ViewColumn; preview: boolean },
+  line?: number,
 ): Promise<void> {
-  const { column, preview } = placeOf(replaced);
   const { original, modified, label } = comparison;
+  const at = line === undefined ? undefined : new vscode.Range(line, 0, line, 0);
   try {
-    // The command behind vscode.diff, which can also name the editor to compare in. Its
-    // column counts from 0, where the API's counts from 1.
     await vscode.commands.executeCommand(
       '_workbench.diff',
       original,
@@ -89,17 +97,32 @@ export async function showSideBySide(
       label || undefined,
       [
         column === undefined ? undefined : column - 1,
-        { override: MARKDOWN_VIEW_TYPE, pinned: !preview },
+        {
+          override: editor,
+          pinned: !preview,
+          selection: at && { startLineNumber: line! + 1, startColumn: 1 },
+        },
       ],
     );
   } catch {
-    // Without it: the text comparison, reopened in the viewer (it is the active editor now).
+    // Without it: VS Code's comparison, reopened in the viewer (it is the active editor now).
     await vscode.commands.executeCommand('vscode.diff', original, modified, label || undefined, {
       viewColumn: column,
       preview,
+      selection: at,
     } satisfies vscode.TextDocumentShowOptions);
-    await vscode.commands.executeCommand('reopenActiveEditorWith', MARKDOWN_VIEW_TYPE);
+    if (editor !== TEXT_EDITOR) {
+      await vscode.commands.executeCommand('reopenActiveEditorWith', editor);
+    }
   }
+}
+
+/** Shows a comparison in the viewer side by side, in the place of the tab `replaced` finds. */
+export async function showSideBySide(
+  comparison: InlineComparison,
+  replaced: TabMatch,
+): Promise<void> {
+  await openComparison(comparison, MARKDOWN_VIEW_TYPE, placeOf(replaced));
   await close(replaced);
 }
 
@@ -113,18 +136,7 @@ export async function showText(
   line?: number,
 ): Promise<void> {
   keptAsText.add(comparisonKey(comparison));
-  const { column, preview } = placeOf(replaced);
-  await vscode.commands.executeCommand(
-    'vscode.diff',
-    comparison.original,
-    comparison.modified,
-    comparison.label || undefined,
-    {
-      viewColumn: column,
-      preview,
-      selection: line === undefined ? undefined : new vscode.Range(line, 0, line, 0),
-    } satisfies vscode.TextDocumentShowOptions,
-  );
+  await openComparison(comparison, TEXT_EDITOR, placeOf(replaced), line);
   await close(replaced);
 }
 
@@ -235,9 +247,13 @@ export async function openLink(
 
 /**
  * The Edit button: the text of the file, at `line`. A text editor already showing it is used;
- * otherwise the viewer is swapped for one, as Reopen Editor With does.
+ * otherwise the viewer in `column` is swapped for one, as Reopen Editor With does.
  */
-export async function editMarkdown(document: vscode.Uri, line: number | undefined): Promise<void> {
+export async function editMarkdown(
+  document: vscode.Uri,
+  line: number | undefined,
+  column: vscode.ViewColumn | undefined,
+): Promise<void> {
   const at = line === undefined ? undefined : new vscode.Range(line, 0, line, 0);
   const shown = vscode.window.visibleTextEditors.find((editor) =>
     sameFile(editor.document.uri, document),
@@ -247,9 +263,23 @@ export async function editMarkdown(document: vscode.Uri, line: number | undefine
     if (at) reveal(editor, at);
     return;
   }
-  await vscode.commands.executeCommand('reopenActiveEditorWith', 'default');
-  const editor = vscode.window.activeTextEditor;
-  if (editor && at && sameFile(editor.document.uri, document)) reveal(editor, at);
+  const viewer: TabMatch = (tab) =>
+    tab.group.viewColumn === column &&
+    tab.input instanceof vscode.TabInputCustom &&
+    tab.input.viewType === MARKDOWN_VIEW_TYPE &&
+    sameFile(tab.input.uri, document);
+  const { preview } = placeOf(viewer);
+  // Named, not "the active editor": that can be in another window than the viewer's.
+  await vscode.commands.executeCommand('vscode.openWith', document, TEXT_EDITOR, {
+    viewColumn: column,
+    preview,
+    selection: at,
+  } satisfies vscode.TextDocumentShowOptions);
+  await close(viewer);
+  const editor = vscode.window.visibleTextEditors.find(
+    (e) => sameFile(e.document.uri, document) && e.viewColumn === column,
+  );
+  if (editor && at) reveal(editor, at);
 }
 
 function reveal(editor: vscode.TextEditor, range: vscode.Range): void {
