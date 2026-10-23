@@ -2,7 +2,10 @@ import type { DocumentFormat } from './protocol';
 
 export interface FormatInfo {
   format: DocumentFormat;
-  /** Desktop app that usually handles the format, used in "Open in …" labels. */
+  /**
+   * The app that edits the format, used in "Open in …" labels and messages: Word, Excel or
+   * PowerPoint, and for Markdown the name of the format itself (it is edited in VS Code).
+   */
   appName: string;
 }
 
@@ -11,7 +14,7 @@ export interface FormatInfo {
  * parts as their plain siblings; only the content type of the main part differs. Macros are
  * never run.
  */
-const FORMATS: Readonly<Record<string, FormatInfo>> = {
+const OFFICE_FORMATS: Readonly<Record<string, FormatInfo>> = {
   '.docx': { format: 'docx', appName: 'Word' },
   '.docm': { format: 'docx', appName: 'Word' },
   '.dotx': { format: 'docx', appName: 'Word' },
@@ -28,6 +31,21 @@ const FORMATS: Readonly<Record<string, FormatInfo>> = {
   '.potm': { format: 'pptx', appName: 'PowerPoint' },
 };
 
+/** `.mdc` is Markdown with front matter, as Cursor keeps its rules for AI assistants. */
+const MARKDOWN_FORMATS: Readonly<Record<string, FormatInfo>> = {
+  '.md': { format: 'md', appName: 'Markdown' },
+  '.markdown': { format: 'md', appName: 'Markdown' },
+  '.mdc': { format: 'md', appName: 'Markdown' },
+};
+
+const FORMATS: Readonly<Record<string, FormatInfo>> = { ...OFFICE_FORMATS, ...MARKDOWN_FORMATS };
+
+/** Office file extensions, with the leading dot; the viewer is their default editor. */
+export const OFFICE_EXTENSIONS: readonly string[] = Object.keys(OFFICE_FORMATS);
+
+/** Markdown file extensions; VS Code's text editor stays their default, the viewer is an option. */
+export const MARKDOWN_EXTENSIONS: readonly string[] = Object.keys(MARKDOWN_FORMATS);
+
 /** File extensions the viewer opens, with the leading dot. */
 export const SUPPORTED_EXTENSIONS: readonly string[] = Object.keys(FORMATS);
 
@@ -37,6 +55,11 @@ export function formatForPath(path: string): FormatInfo | undefined {
     return undefined;
   }
   return FORMATS[path.slice(dot).toLowerCase()];
+}
+
+/** Formats stored as text, which VS Code itself edits, rather than as Office containers. */
+export function isTextFormat(format: DocumentFormat): boolean {
+  return format === 'md';
 }
 
 export type ContainerKind = 'zip' | 'cfb' | 'unknown';

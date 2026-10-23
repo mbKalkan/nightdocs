@@ -1,6 +1,6 @@
 {
   "displayName": "Nightdocs — Office Viewer & Diff for Word, Excel & PowerPoint",
-  "description": "View Word, Excel and PowerPoint files (.docx, .xlsx, .pptx) in dark mode and diff versions side by side, straight from Git. Fast, private and view-only.",
+  "description": "View Word, Excel and PowerPoint (.docx, .xlsx, .pptx) and Markdown files in dark mode and diff versions side by side, straight from Git. Markdown front matter for AI agents, skills and rules. Fast, private and view-only.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Open in Office",
@@ -16,5 +16,8 @@
   "command.toggleNavigation": "Toggle Navigation Pane",
   "command.copyAsMarkdown": "Copy as Markdown Table",
   "command.copyReference": "Copy Reference",
-  "command.copyReferenceWithText": "Copy Reference with Text"
+  "command.copyReferenceWithText": "Copy Reference with Text",
+  "customEditor.markdownDisplayName": "Nightdocs Markdown Viewer",
+  "command.openMarkdown": "Open in Nightdocs",
+  "config.markdown.compareRendered": "Show comparisons of Markdown files, such as changes in Source Control, rendered in Nightdocs instead of as text. **Edit** in the viewer switches a comparison back to text."
 }

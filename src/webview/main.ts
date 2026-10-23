@@ -1,6 +1,7 @@
 import './styles/viewer.css';
+import './styles/markdown.css';
 import { formatCssColor } from '../shared/color';
-import { detectContainer } from '../shared/formats';
+import { detectContainer, isTextFormat } from '../shared/formats';
 import type {
   HostToWebviewMessage,
   LoadMessage,
@@ -13,6 +14,7 @@ import { DiffController } from './diff/controller';
 import { picked } from './picker';
 import { fadeMark, lastContextTarget, trackContextMenu } from './reference';
 import { loadRenderer } from './renderers';
+import { resourceArrived } from './resources';
 import type { NavigationContent, RenderContext, RenderedDocument } from './renderers/types';
 import { Shell } from './shell';
 import { vscode, type ViewState } from './vscodeApi';
@@ -42,7 +44,8 @@ const shell = new Shell(document.getElementById('app') as HTMLElement, {
   onZoomIn: () => zoom.zoomIn(),
   onZoomOut: () => zoom.zoomOut(),
   onResetZoom: () => zoom.reset(),
-  onOpenInOffice: () => vscode.postMessage({ type: 'openInOffice' }),
+  // Markdown opens in the text editor where the view is.
+  onOpenInOffice: () => vscode.postMessage({ type: 'openInOffice', line: current?.sourceLine?.() }),
   onToggleColors: toggleColors,
 });
 shell.setZoomEnabled(false);
@@ -104,6 +107,12 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'peerZoom':
       if (hasContent) diff.followZoom(message.zoom, (value) => zoom.set(value));
       break;
+    case 'resource':
+      resourceArrived(message);
+      break;
+    case 'revealLine':
+      if (hasContent && !comparing) current?.revealLine?.(message.line);
+      break;
   }
 });
 
@@ -164,8 +173,8 @@ async function show(message: LoadMessage): Promise<void> {
   const keepOnFailure = message.reload && hasContent;
   shell.setDocument(message.fileName, message.format, message.canOpenInOffice, message.strings);
 
-  const container = detectContainer(message.data);
-  if (container !== 'zip') {
+  const container = isTextFormat(message.format) ? 'text' : detectContainer(message.data);
+  if (container !== 'zip' && container !== 'text') {
     if (!keepOnFailure) {
       // An empty file is common: VS Code's "New File…" with a .docx or .xlsx name makes one.
       const reason =
@@ -195,6 +204,8 @@ async function show(message: LoadMessage): Promise<void> {
       locale: message.locale,
       strings: message.strings,
       previous: current?.state?.(),
+      fragment: message.reload ? undefined : message.fragment,
+      line: message.reload ? undefined : message.line,
     });
     if (id !== renderId) {
       rendered.dispose?.();
@@ -204,7 +215,11 @@ async function show(message: LoadMessage): Promise<void> {
     replaceCurrent(rendered);
     shell.content.replaceChildren(...stage.childNodes);
     hasContent = true;
-    shell.setColors(darkTheme, message.colorMode === 'dark', message.strings);
+    shell.setColors(
+      darkTheme && rendered.adaptsColors !== false,
+      message.colorMode === 'dark',
+      message.strings,
+    );
     shell.setZoomEnabled(true);
     zoom.setNaturalWidth(rendered.naturalWidth);
     restoreScroll(scrollRatio);

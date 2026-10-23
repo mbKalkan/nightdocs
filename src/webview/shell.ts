@@ -1,8 +1,14 @@
 import type { DocumentFormat, ViewerStrings } from '../shared/protocol';
+import { isTextFormat } from '../shared/formats';
 import { formatZoom } from '../shared/zoom';
 import { icons } from './icons';
 
-const SKELETONS: Record<DocumentFormat, string> = { docx: 'page', xlsx: 'grid', pptx: 'slides' };
+const SKELETONS: Record<DocumentFormat, string> = {
+  docx: 'page',
+  xlsx: 'grid',
+  pptx: 'slides',
+  md: 'text',
+};
 
 export interface ShellHandlers {
   onToggleNavigation(): void;
@@ -32,6 +38,7 @@ export class Shell {
   private readonly zoomIn: HTMLButtonElement;
   private readonly openButton: HTMLButtonElement;
   private readonly openLabel: HTMLElement;
+  private readonly openIcon: HTMLElement;
   private readonly separator: HTMLElement;
   private readonly progress: HTMLElement;
   private readonly navigationButton: HTMLButtonElement;
@@ -57,7 +64,7 @@ export class Shell {
             <button class="ov-icon-button" data-action="zoom-in" type="button">${icons.zoomIn}</button>
             <span class="ov-separator" data-separator="open" role="separator"></span>
             <button class="ov-button" data-action="open" type="button" hidden>
-              ${icons.openExternal}<span class="ov-button-label"></span>
+              <span class="ov-button-icon">${icons.openExternal}</span><span class="ov-button-label"></span>
             </button>
           </div>
         </header>
@@ -91,6 +98,7 @@ export class Shell {
     this.zoomIn = find('[data-action="zoom-in"]');
     this.openButton = find('[data-action="open"]');
     this.openLabel = find('.ov-button-label');
+    this.openIcon = find('.ov-button-icon');
     this.separator = find('[data-separator="open"]');
     this.progress = find('.ov-progress');
     this.viewport = find('.ov-viewport');
@@ -143,6 +151,8 @@ export class Shell {
     // The zoom label is named by its percentage; what a click does goes in the tooltip.
     this.zoomLabel.title = strings.resetZoom;
     this.openLabel.textContent = strings.openInOffice;
+    // Markdown opens in VS Code's own text editor; Office files in a desktop app.
+    this.openIcon.innerHTML = isTextFormat(format) ? icons.edit : icons.openExternal;
     this.openButton.title = strings.openInOfficeTooltip;
     this.openButton.hidden = !canOpenInOffice;
     this.separator.hidden = !canOpenInOffice;
@@ -181,7 +191,7 @@ export class Shell {
     const skeleton = document.createElement('div');
     skeleton.className = `ov-skeleton ov-skeleton-${SKELETONS[format]}`;
     skeleton.setAttribute('aria-hidden', 'true');
-    if (format === 'docx') {
+    if (format === 'docx' || format === 'md') {
       skeleton.innerHTML = '<span></span>'.repeat(12);
     } else if (format === 'pptx') {
       skeleton.innerHTML = '<span></span>'.repeat(3);
@@ -213,7 +223,7 @@ export class Shell {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ov-button ov-button-primary';
-      button.innerHTML = `${icons.openExternal}<span></span>`;
+      button.innerHTML = `${this.openIcon.innerHTML}<span></span>`;
       (button.querySelector('span') as HTMLElement).textContent = actionLabel;
       button.addEventListener('click', () => this.openButton.click());
       this.content.querySelector('.ov-error')?.append(button);

@@ -25,15 +25,11 @@
   "keywords": [
     "docx",
     "xlsx",
-    "xlsm",
     "pptx",
-    "pptm",
-    "ppsx",
     "word",
     "excel",
     "powerpoint",
     "office",
-    "microsoft office",
     "spreadsheet",
     "presentation",
     "slides",
@@ -49,10 +45,14 @@
     "xlsx viewer",
     "pptx viewer",
     "dark mode",
-    "dark theme",
     "diff",
     "compare",
-    "git diff"
+    "git diff",
+    "markdown",
+    "markdown viewer",
+    "markdown diff",
+    "markdown preview",
+    "frontmatter"
   ],
   "pricing": "Free",
   "galleryBanner": {
@@ -72,7 +72,9 @@
     },
     "virtualWorkspaces": true
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "contributes": {
     "languages": [
       {
@@ -163,9 +165,31 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "nightdocs.markdown",
+        "displayName": "%customEditor.markdownDisplayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          },
+          {
+            "filenamePattern": "*.mdc"
+          }
+        ],
+        "priority": "option"
       }
     ],
     "commands": [
+      {
+        "command": "nightdocs.openMarkdown",
+        "title": "%command.openMarkdown%",
+        "category": "%category%",
+        "icon": "$(book)"
+      },
       {
         "command": "nightdocs.openInOffice",
         "title": "%command.openInOffice%",
@@ -241,77 +265,95 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "nightdocs.openMarkdown",
+          "when": "(resourceLangId == markdown || resourceExtname == .mdc) && activeCustomEditorId != nightdocs.markdown"
+        },
+        {
           "command": "nightdocs.openInOffice",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.zoomIn",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.zoomOut",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.resetZoom",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.nextSheet",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.previousSheet",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.goToSheet",
-          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == xlsx"
         },
         {
           "command": "nightdocs.goToSlide",
-          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == pptx"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == pptx"
         },
         {
           "command": "nightdocs.goToHeading",
-          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == docx"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat =~ /^(docx|md)$/"
         },
         {
           "command": "nightdocs.find",
-          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == xlsx"
         },
         {
           "command": "nightdocs.toggleNavigation",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.copyAsMarkdown",
-          "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == xlsx"
         },
         {
           "command": "nightdocs.copyReference",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         },
         {
           "command": "nightdocs.copyReferenceWithText",
-          "when": "activeCustomEditorId == nightdocs.viewer"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./"
         }
       ],
       "webview/context": [
         {
           "command": "nightdocs.copyReference",
-          "when": "webviewId == 'nightdocs.viewer'",
+          "when": "(webviewId == 'nightdocs.viewer' || webviewId == 'nightdocs.markdown')",
           "group": "9_cutcopypaste@1"
         },
         {
           "command": "nightdocs.copyReferenceWithText",
-          "when": "webviewId == 'nightdocs.viewer'",
+          "when": "(webviewId == 'nightdocs.viewer' || webviewId == 'nightdocs.markdown')",
           "group": "9_cutcopypaste@2"
         },
         {
           "command": "nightdocs.copyAsMarkdown",
-          "when": "webviewId == 'nightdocs.viewer' && nightdocs.activeFormat == xlsx",
+          "when": "(webviewId == 'nightdocs.viewer' || webviewId == 'nightdocs.markdown') && nightdocs.activeFormat == xlsx",
           "group": "9_cutcopypaste@3"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "nightdocs.openMarkdown",
+          "when": "(resourceLangId == markdown || resourceExtname == .mdc) && (activeEditor == workbench.editors.files.textFileEditor || activeEditor == workbench.editors.textDiffEditor)",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "nightdocs.openMarkdown",
+          "when": "(resourceLangId == markdown || resourceExtname == .mdc) && !explorerResourceIsFolder",
+          "group": "navigation@20"
         }
       ]
     },
@@ -320,75 +362,85 @@
         "command": "nightdocs.zoomIn",
         "key": "ctrl+=",
         "mac": "cmd+=",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.zoomIn",
         "key": "ctrl+numpad_add",
         "mac": "cmd+numpad_add",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.zoomIn",
         "key": "ctrl+shift+=",
         "mac": "cmd+shift+=",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.zoomOut",
         "key": "ctrl+-",
         "mac": "cmd+-",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.zoomOut",
         "key": "ctrl+numpad_subtract",
         "mac": "cmd+numpad_subtract",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.resetZoom",
         "key": "ctrl+numpad0",
         "mac": "cmd+numpad0",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.nextSheet",
         "key": "ctrl+alt+pagedown",
         "mac": "cmd+alt+pagedown",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.previousSheet",
         "key": "ctrl+alt+pageup",
         "mac": "cmd+alt+pageup",
-        "when": "activeCustomEditorId == nightdocs.viewer"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./"
       },
       {
         "command": "nightdocs.goToSheet",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == xlsx"
       },
       {
         "command": "nightdocs.goToSlide",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == pptx"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == pptx"
       },
       {
         "command": "nightdocs.goToHeading",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == docx"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat =~ /^(docx|md)$/"
       },
       {
         "command": "nightdocs.find",
         "key": "ctrl+f",
         "mac": "cmd+f",
-        "when": "activeCustomEditorId == nightdocs.viewer && nightdocs.activeFormat == xlsx"
+        "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat == xlsx"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Nightdocs",
+      "properties": {
+        "nightdocs.markdown.compareRendered": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.markdown.compareRendered%"
+        }
+      }
+    }
   },
   "files": [
     "dist/**",
@@ -441,7 +493,12 @@
   "dependencies": {
     "@aiden0z/pptx-renderer": "1.3.0",
     "docx-preview": "^0.4.1",
+    "dompurify": "^3.4.17",
+    "highlight.js": "^11.12.0",
+    "js-yaml": "^5.4.3",
     "jszip": "^3.10.2",
+    "markdown-it": "^15.0.2",
+    "markdown-it-footnote": "^4.0.0",
     "ssf": "^0.11.2"
   }
 }

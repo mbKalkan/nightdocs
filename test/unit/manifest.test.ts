@@ -1,6 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SUPPORTED_EXTENSIONS } from '../../src/shared/formats';
+import {
+  MARKDOWN_EXTENSIONS,
+  OFFICE_EXTENSIONS,
+  SUPPORTED_EXTENSIONS,
+} from '../../src/shared/formats';
 
 const readJson = (path: string) =>
   JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
@@ -10,7 +14,11 @@ const manifest = readJson('package.json') as {
   browser: string;
   engines: { vscode: string };
   contributes: {
-    customEditors: { selector: { filenamePattern: string }[] }[];
+    customEditors: {
+      viewType: string;
+      priority: string;
+      selector: { filenamePattern: string }[];
+    }[];
     languages: { extensions: string[] }[];
   };
   keywords: string[];
@@ -42,9 +50,26 @@ describe('extension manifest', () => {
     expect(patterns.sort()).toEqual(SUPPORTED_EXTENSIONS.map((ext) => `*${ext}`).sort());
   });
 
-  it('declares the same file types as languages, so the Marketplace lists it for them', () => {
+  it('declares the Office file types as languages, so the Marketplace lists it for them', () => {
     const extensions = manifest.contributes.languages.flatMap((language) => language.extensions);
-    expect(extensions.sort()).toEqual([...SUPPORTED_EXTENSIONS].sort());
+    // VS Code itself declares Markdown.
+    expect(extensions.sort()).toEqual([...OFFICE_EXTENSIONS].sort());
+  });
+
+  it('opens Office files by default and Markdown only when asked', () => {
+    const editor = (viewType: string) =>
+      manifest.contributes.customEditors.find((e) => e.viewType === viewType)!;
+    const patterns = (viewType: string) =>
+      editor(viewType)
+        .selector.map((s) => s.filenamePattern)
+        .sort();
+    expect(editor('nightdocs.viewer').priority).toBe('default');
+    expect(patterns('nightdocs.viewer')).toEqual(OFFICE_EXTENSIONS.map((ext) => `*${ext}`).sort());
+    // People edit Markdown; the text editor stays its default.
+    expect(editor('nightdocs.markdown').priority).toBe('option');
+    expect(patterns('nightdocs.markdown')).toEqual(
+      MARKDOWN_EXTENSIONS.map((ext) => `*${ext}`).sort(),
+    );
   });
 
   it('stays within the Marketplace limit of 30 keywords', () => {

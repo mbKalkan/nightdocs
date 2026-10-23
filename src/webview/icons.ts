@@ -34,6 +34,25 @@ export const icons = {
   document: svg(
     '<path d="M9.5 1.5H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/><path d="M9.5 1.5V5H13M5.5 8h5M5.5 10.5h5"/>',
   ),
+  edit: svg('<path d="M10.5 2.5 13.5 5.5 6 13H3v-3zM9 4l3 3"/>'),
+  copy: svg(
+    '<rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/>',
+  ),
+  check: svg('<path d="M3 8.5l3 3 7-7"/>'),
+  code: svg('<path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/>'),
+  braces: svg(
+    '<path d="M6 2.5H5A1.5 1.5 0 0 0 3.5 4v2.5L2.5 8l1 1.5V12A1.5 1.5 0 0 0 5 13.5h1M10 2.5h1A1.5 1.5 0 0 1 12.5 4v2.5l1 1.5-1 1.5V12a1.5 1.5 0 0 1-1.5 1.5h-1"/>',
+  ),
+  image: svg(
+    '<rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="5.5" cy="6.5" r="1"/><path d="M14 11l-3.5-3.5L4 13"/>',
+  ),
+  note: svg('<circle cx="8" cy="8" r="6"/><path d="M8 7.5V11M8 5v.5"/>'),
+  tip: svg(
+    '<path d="M6 12.5h4M6.5 14.5h3M8 1.5a4.5 4.5 0 0 0-2.5 8.2V11h5V9.7A4.5 4.5 0 0 0 8 1.5z"/>',
+  ),
+  important: svg('<path d="M2.5 3h11v7.5h-6L5 13v-2.5H2.5zM8 5v2.5M8 9.25v.25"/>'),
+  warning: svg('<path d="M8 2 1.5 13.5h13zM8 6.5v3M8 11.25v.25"/>'),
+  caution: svg('<path d="M5.5 1.5h5l4 4v5l-4 4h-5l-4-4v-5zM8 5v3.5M8 10.75v.25"/>'),
   error: svg(
     '<path d="M9.5 1.5H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/><path d="M9.5 1.5V5H13M6.25 8.25l3.5 3.5M9.75 8.25l-3.5 3.5"/>',
   ),

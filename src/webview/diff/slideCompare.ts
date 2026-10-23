@@ -2,7 +2,7 @@ import type { DiffSide, SlideSummary } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
 import { align } from './align';
 import { clearMarks, MARK, markWords, otherChange, ownChange, textOf } from './marks';
-import { revealByTops, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
+import { revealByTops, revealTop, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
 
 /** A chart as drawn on a slide. */
 export interface SlideChart {
@@ -121,6 +121,8 @@ export function compareSlides(
   // Both sides show the same rows, so a row's index is all the other side needs to scroll along.
   const elements: HTMLElement[] = [];
   const stops: HTMLElement[] = [];
+  /** For each stop, which version has a slide there, for the overview ruler. */
+  const lanes: { removed: boolean; added: boolean }[] = [];
   const standIns: HTMLElement[] = [];
 
   for (const row of rows) {
@@ -133,12 +135,18 @@ export function compareSlides(
       standIns.push(standIn);
       elements.push(standIn);
       stops.push(standIn);
+      lanes.push({ removed: !original, added: original });
       continue;
     }
     const frame = frames[mine];
     elements.push(frame);
     if (!row.changed) continue;
     stops.push(frame);
+    lanes.push(
+      theirs === undefined
+        ? { removed: original, added: !original }
+        : { removed: true, added: true },
+    );
     if (theirs === undefined) {
       frame.classList.add(ONLY, mark);
       continue;
@@ -166,6 +174,16 @@ export function compareSlides(
   return {
     count: stops.length,
     go: (direction) => revealByTops(context.viewport, tops(), direction),
+    goTo: (index) => revealTop(context.viewport, tops()[index]),
+    overview: () =>
+      stops.map((stop, index) => {
+        const rect = stop.getBoundingClientRect();
+        return {
+          top: scrollTopOf(context.viewport, rect.top),
+          bottom: scrollTopOf(context.viewport, rect.bottom),
+          ...lanes[index],
+        };
+      }),
     anchor: () => scrollAnchor(context.viewport, elements, identity),
     scrollTo: (anchor) => scrollToAnchor(context.viewport, elements, anchor),
     dispose: () => {

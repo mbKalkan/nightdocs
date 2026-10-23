@@ -9,12 +9,16 @@
 [![CI](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml/badge.svg)](https://github.com/mbKalkan/nightdocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Read Word, Excel and PowerPoint files in VS Code, in your dark theme.**
+**Read Word, Excel, PowerPoint and Markdown files in VS Code, in your dark theme.**
 
 Nightdocs is a lightweight, view-only Office viewer for Word (`.docx`), Excel (`.xlsx`) and
 PowerPoint (`.pptx`) files, templates and macro-enabled files included. Documents take on your
 editor's colors so a white page doesn't light up a dark room. Changed files from Git open side by side with the differences
 marked, and when you need to edit, one click opens the file in Word, Excel or PowerPoint.
+
+Markdown (`.md`) gets a modern reading view and a rendered comparison, with front matter shown
+as properties: made for the agent, skill, command and rule files of AI tools as much as for
+READMEs.
 
 ![Nightdocs showing a Word document in dark and original colors, an Excel workbook with a sum and charts, and a PowerPoint presentation with its slide pane](docs/images/demo.gif)
 
@@ -25,8 +29,9 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
   ◐ shows the original colors.
 - **Fast and view-only.** Files open in about a second, and sheets with 100,000 rows scroll
   smoothly. Nothing can be changed by accident.
-- **See what changed.** Compare two versions of a document, workbook or presentation side by side,
-  straight from Source Control, with the changes marked down to the word or cell.
+- **See what changed.** Compare two versions of a document, workbook, presentation or Markdown
+  file side by side, straight from Source Control, with the changes marked down to the word or
+  cell, and an overview beside the scrollbar of where they are.
 - **Edit in Office when you need to.** **Open in Word**, **Open in Excel** or **Open in
   PowerPoint** hands the file to its desktop app. The view refreshes when the file is saved.
 - **Private.** No telemetry and no network access. Your files never leave your machine.
@@ -85,12 +90,41 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 
 ![A PowerPoint presentation in Nightdocs with charts adapted to a dark theme](docs/images/powerpoint-dark.png)
 
+### Markdown (`.md`, `.markdown`, `.mdc`)
+
+![A Markdown file in Nightdocs: front matter as properties, a note, and the headings in the navigation pane](docs/images/markdown-dark.png)
+
+- **Open in Nightdocs** (the book icon in the title bar of a Markdown file, or right-click it in
+  the Explorer) opens the view beside the text editor, which stays the default for Markdown. The
+  view follows your typing and scrolls along with the editor; **Edit** takes you back to the text
+  at the place you were reading
+- GitHub Flavored Markdown: tables, task lists, strikethrough, footnotes, alerts (`> [!NOTE]`,
+  `> [!WARNING]` and the rest), bare links, and `<details>` and other safe HTML
+- Front matter as a card of properties: text, numbers, yes/no, lists as chips and nested values,
+  or the YAML itself with **Show as YAML**. YAML that doesn't parse is reported with its line,
+  before an AI tool quietly ignores your agent, skill, command or rule file
+- Tags that structure prompts, like `<instructions>` or `<example>`, frame what they hold instead
+  of disappearing as they would in a browser
+- Code blocks colored like your editor, with a copy button
+- Pictures next to the file are shown. Pictures on the web aren't downloaded, since Nightdocs
+  stays offline: badges show their text, other pictures a placeholder
+- Links to other Markdown files open in Nightdocs at the heading they point to; links to code open
+  it, at the lines of a `#L12-L20` link
+- The headings in the navigation pane and in **Go to Heading…**
+- **Copy Reference** gives `docs/guide.md, lines 12-18, under "Setup"`; with text, it adds the
+  Markdown of those lines
+
+![An AI agent file in Nightdocs: its tools as chips and its instructions and example framed](docs/images/markdown-agent-dark.png)
+
 ### Comparing versions
 
 - Open a changed Word document, Excel workbook or PowerPoint presentation from **Source Control**
   (changes or staged changes), or compare two files with **Select for Compare**, and Nightdocs
   shows both versions side by side. There is nothing to set up: VS Code uses Nightdocs for both
   sides.
+- Markdown comparisons open as text, as before; **Open in Nightdocs** in their title bar shows them
+  rendered. To always see them rendered, turn on **Nightdocs › Markdown: Compare Rendered**
+  (`nightdocs.markdown.compareRendered`); **Edit** turns one back into text.
 - Word: edited, added and removed paragraphs and table cells are marked, down to the changed words
 - Excel: changed cells and added and removed rows and columns are marked, and sheet tabs with
   changes get a dot; moving between changes goes from sheet to sheet, and switching sheets on one side switches
@@ -99,8 +133,14 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - PowerPoint: edited slides are outlined with their changed words, pictures and charts marked;
   added and removed slides are tinted, with an empty stand-in on the other side so both decks line
   up
+- Markdown: edited, added and removed paragraphs, list items, table rows, lines of code and front
+  matter properties are marked, down to the changed words
 - Both sides scroll and zoom together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes
+- Beside the scrollbar, an overview shows where the changes are in the whole file, as in VS Code's
+  diff editor: removed content on the left, added on the right. Click a change to go to it
+
+![Two versions of a Markdown file side by side in Nightdocs, with the changes marked and the overview of changes beside the scrollbar](docs/images/markdown-compare-dark.png)
 
 ![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)
 
@@ -122,8 +162,8 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 - Dark, light and high contrast themes
 - Keyboard and screen reader support
 - English and Turkish
-- Works in VS Code for the Web too: open Office files on [vscode.dev](https://vscode.dev) and
-  [github.dev](https://github.dev) without installing anything
+- Works in VS Code for the Web too: open Office and Markdown files on
+  [vscode.dev](https://vscode.dev) and [github.dev](https://github.dev) without installing anything
 
 ## Getting started
 
@@ -135,18 +175,28 @@ marked, and when you need to edit, one click opens the file in Word, Excel or Po
 2. Open a Word, Excel or PowerPoint file: `.docx`, `.xlsx` or `.pptx`, or one of their
    macro-enabled (`.docm`, `.xlsm`, `.pptm`, `.ppsm`) and template (`.dotx`, `.xltx`, `.potx`)
    variants. Nightdocs is the default viewer for these files.
+3. Open a Markdown file and choose **Open in Nightdocs** in its title bar. Markdown keeps opening
+   in the text editor.
 
 If another extension also opens these files, right-click the file and choose
-**Open With… › Nightdocs**, then **Configure default editor**. Or add this to your settings:
+**Open With… › Nightdocs**, then **Configure default editor**. Or add this to your settings;
+the last line opens Markdown in Nightdocs too, for those who mostly read it:
 
 ```json
 "workbench.editorAssociations": {
   "*.docx": "nightdocs.viewer",
   "*.xlsx": "nightdocs.viewer",
   "*.xlsm": "nightdocs.viewer",
-  "*.pptx": "nightdocs.viewer"
+  "*.pptx": "nightdocs.viewer",
+  "*.md": "nightdocs.markdown"
 }
 ```
+
+## Settings
+
+| Setting                              | Default | What it does                                                                                                  |
+| ------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `nightdocs.markdown.compareRendered` | `false` | Shows comparisons of Markdown files (Source Control changes, Compare Selected) rendered instead of as text |
 
 ## Keyboard shortcuts
 
@@ -177,6 +227,8 @@ If another extension also opens these files, right-click the file and choose
 - PowerPoint animations and transitions aren't shown. Embedded audio and video play only in
   formats VS Code can decode, which usually leaves out MP4 video. Some pasted vector pictures
   (EMF/WMF) appear as placeholders.
+- Markdown: Mermaid diagrams and math are shown as code. Pictures on the web aren't loaded. Raw
+  HTML is limited to what is safe to show: no scripts, styles, forms or embedded frames.
 
 ## Contributing
 

@@ -10,6 +10,7 @@ import { readGitBlob } from '../../src/extension/gitBlob';
 
 const EXTENSION_ID = 'MBKDevStudio.nightdocs';
 const VIEW_TYPE = 'nightdocs.viewer';
+const MARKDOWN_VIEW_TYPE = 'nightdocs.markdown';
 const FIXTURES = path.resolve(__dirname, '../../test/fixtures');
 
 async function waitFor<T>(probe: () => T | undefined, timeoutMs = 30_000): Promise<T> {
@@ -188,6 +189,83 @@ const tests: Record<string, () => Promise<void>> = {
     }, assertReadsDocument);
   },
 
+  async 'keeps the text editor as the default for Markdown'() {
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+    const uri = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
+    await vscode.commands.executeCommand('vscode.open', uri);
+    const tab = await waitFor(() => {
+      const active = vscode.window.tabGroups.activeTabGroup.activeTab;
+      return active?.label === 'sample.md' ? active : undefined;
+    });
+    assert.ok(tab.input instanceof vscode.TabInputText, describeEditors());
+  },
+
+  async 'opens Markdown in the viewer beside its text editor'() {
+    // The text editor of sample.md is active, as after the test before.
+    await vscode.commands.executeCommand('nightdocs.openMarkdown');
+    const input = await waitFor(() =>
+      vscode.window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .map((tab) => tab.input)
+        .find(
+          (input): input is vscode.TabInputCustom =>
+            input instanceof vscode.TabInputCustom && input.viewType === MARKDOWN_VIEW_TYPE,
+        ),
+    );
+    assert.ok(input.uri.path.endsWith('/markdown/sample.md'));
+    const group = vscode.window.tabGroups.all.find((g) => g.tabs.some((t) => t.input === input));
+    assert.equal(group?.viewColumn, vscode.ViewColumn.Two, 'opened beside the text editor');
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  },
+
+  async 'turns a text comparison of Markdown into the viewer comparison'() {
+    const original = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
+    const modified = vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`);
+    // Git titles its comparisons this way; the viewers pair up without the usual "a ↔ b".
+    await vscode.commands.executeCommand(
+      'vscode.diff',
+      original,
+      modified,
+      'sample.md (Working Tree)',
+    );
+    await waitFor(() =>
+      vscode.window.tabGroups.activeTabGroup.activeTab?.input instanceof vscode.TabInputTextDiff
+        ? true
+        : undefined,
+    );
+    await vscode.commands.executeCommand('nightdocs.openMarkdown');
+    const tab = await waitFor(() => {
+      const active = vscode.window.tabGroups.activeTabGroup.activeTab;
+      return active && active.input === undefined ? active : undefined;
+    });
+    assert.equal(tab.label, 'sample.md (Working Tree)');
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  },
+
+  async 'shows Markdown comparisons rendered when that is turned on'() {
+    const settings = vscode.workspace.getConfiguration('nightdocs');
+    await settings.update('markdown.compareRendered', true, vscode.ConfigurationTarget.Global);
+    try {
+      await vscode.commands.executeCommand(
+        'vscode.diff',
+        vscode.Uri.file(`${FIXTURES}/markdown/sample.md`),
+        vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`),
+      );
+      const tab = await waitFor(() => {
+        const active = vscode.window.tabGroups.activeTabGroup.activeTab;
+        return active && active.input === undefined ? active : undefined;
+      });
+      assert.ok(tab.label.includes(' ↔ '), describeEditors());
+    } finally {
+      await settings.update(
+        'markdown.compareRendered',
+        undefined,
+        vscode.ConfigurationTarget.Global,
+      );
+      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+    }
+  },
+
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
     for (const id of [
@@ -204,6 +282,7 @@ const tests: Record<string, () => Promise<void>> = {
       'copyAsMarkdown',
       'copyReference',
       'copyReferenceWithText',
+      'openMarkdown',
     ]) {
       assert.ok(commands.includes(`nightdocs.${id}`), `missing nightdocs.${id}`);
     }

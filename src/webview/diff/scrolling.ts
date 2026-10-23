@@ -53,6 +53,11 @@ export function scrollToAnchor(
   viewport.scrollTop = scrollTopOf(viewport, rect.top + anchor.fraction * rect.height);
 }
 
+/** Scrolls so that what is at `top` (scroll coordinates) shows near the top of the window. */
+export function revealTop(viewport: HTMLElement, top: number): void {
+  viewport.scrollTop = Math.max(0, top - REVEAL_MARGIN);
+}
+
 /**
  * Scrolls to the next (1) or previous (-1) of the changes at `tops` (scroll positions, top to
  * bottom) from where the view is, wrapping around, and returns which one.
@@ -69,6 +74,6 @@ export function revealByTops(
       ? tops.findIndex((top) => top > at + 1)
       : tops.length - 1 - [...tops].reverse().findIndex((top) => top < at - 1);
   if (index < 0 || index >= tops.length) index = direction > 0 ? 0 : tops.length - 1;
-  viewport.scrollTop = Math.max(0, tops[index] - REVEAL_MARGIN);
+  revealTop(viewport, tops[index]);
   return index;
 }
