@@ -30,7 +30,8 @@ Markdown, read and compared the way Office files are.
   property by property. **Open in Nightdocs** in the title bar of a text comparison switches to it;
   the **Nightdocs › Markdown: Compare Rendered** setting opens them that way from Source Control.
   **Inline View** shows the changes in one rendered file, as VS Code's inline diff does: the old
-  version of each change just above the new one. Nightdocs remembers which you chose.
+  version of each change just above the new one. Nightdocs remembers which you chose, and until
+  then follows VS Code's **Diff Editor: Render Side By Side**.
 - **An overview of the changes** beside the scrollbar of a comparison, as in VS Code's diff editor:
   removed content on the left, added on the right. Click a change to go to it. In Word,
   PowerPoint and Markdown comparisons.
