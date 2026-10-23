@@ -55,6 +55,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private static readonly colorModeKey = 'nightdocs.colorMode';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
+  private readonly panels = new Set<{ panel: vscode.WebviewPanel; uri: vscode.Uri }>();
   private readonly diffs = new DiffPairs();
   /** Where to scroll a Markdown file opened from a link to `file.md#heading`. */
   private readonly fragments = new Map<string, string>();
@@ -249,8 +250,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       subscriptions.push(...this.followTextEditor(files, panel, member, () => load(true)));
     }
     this.trackActive(panel, uri);
+    const entry = { panel, uri };
+    this.panels.add(entry);
 
     panel.onDidDispose(() => {
+      this.panels.delete(entry);
       subscriptions.forEach((s) => s.dispose());
       this.diffs.remove(member);
       if (this.activePanel?.panel === panel) {
@@ -411,15 +415,25 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     return active && info ? this.openInOffice(active.uri, info) : undefined;
   }
 
+  /**
+   * The view a command goes to: the one with focus, or else one showing in the active editor
+   * group (a side by side comparison just opened has no side with focus).
+   */
+  private commandTarget(): { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined {
+    if (this.activePanel) return this.activePanel;
+    const column = vscode.window.tabGroups.activeTabGroup.viewColumn;
+    return [...this.panels].find(({ panel }) => panel.visible && panel.viewColumn === column);
+  }
+
   private sendCommand(command: ViewerCommand): void {
-    void this.activePanel?.panel.webview.postMessage({
+    void this.commandTarget()?.panel.webview.postMessage({
       type: 'command',
       command,
     } satisfies HostToWebviewMessage);
   }
 
   private zoomActive(action: ZoomAction): void {
-    void this.activePanel?.panel.webview.postMessage({
+    void this.commandTarget()?.panel.webview.postMessage({
       type: 'zoom',
       action,
     } satisfies HostToWebviewMessage);
