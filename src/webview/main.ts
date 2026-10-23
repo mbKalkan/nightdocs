@@ -206,6 +206,7 @@ async function show(message: LoadMessage): Promise<void> {
       previous: current?.state?.(),
       fragment: message.reload ? undefined : message.fragment,
       line: message.reload ? undefined : message.line,
+      onlineContent: message.onlineContent,
     });
     if (id !== renderId) {
       rendered.dispose?.();

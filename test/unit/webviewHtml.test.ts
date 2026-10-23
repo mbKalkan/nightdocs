@@ -25,6 +25,13 @@ describe('buildContentSecurityPolicy', () => {
     // No scheme-wide sources such as a bare `https:` or `*`.
     expect(csp).not.toMatch(/(^|\s)(https?:|\*)(\s|;|$)/);
   });
+
+  it('lets Markdown views load pictures from secure sites, and nothing else from the web', () => {
+    const markdown = buildContentSecurityPolicy(source, 'abc123', true);
+    expect(markdown).toContain(`img-src ${source} blob: data: https:;`);
+    expect(markdown.replace(/img-src[^;]*;/, '')).not.toMatch(/(^|\s)(https?:|\*)(\s|;|$)/);
+    expect(markdown).not.toMatch(/connect-src|frame-src|child-src/);
+  });
 });
 
 describe('buildWebviewHtml', () => {

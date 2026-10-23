@@ -110,8 +110,12 @@ export interface ViewerStrings {
   /** The button on code blocks, and what it says once it has copied. */
   copyCode: string;
   copied: string;
-  /** `{0}` is the address of a picture on the web, which the viewer doesn't download. */
+  /** `{0}` is the address of a picture on the web, not shown until the user chooses to. */
   remoteImage: string;
+  /** The bar above a Markdown file whose pictures from the web are hidden, and its button. */
+  onlineContentHidden: string;
+  showOnlineContent: string;
+  showOnlineContentHint: string;
   /** `{0}` is the path of a picture that isn't there. */
   missingImage: string;
 }
@@ -199,6 +203,8 @@ export interface LoadMessage {
   fragment?: string;
   /** For Markdown opened beside its text editor: the line (0-based) the editor shows at its top. */
   line?: number;
+  /** For Markdown: the user's setting to show pictures from the web without asking. */
+  onlineContent?: boolean;
   /** The user's locale, for dates and numbers shown the way their Office would. */
   locale: string;
   strings: ViewerStrings;

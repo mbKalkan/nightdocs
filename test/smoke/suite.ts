@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { readGitBlob } from '../../src/extension/gitBlob';
+import { readPicture } from '../../src/extension/markdown';
 
 const EXTENSION_ID = 'MBKDevStudio.nightdocs';
 const VIEW_TYPE = 'nightdocs.viewer';
@@ -264,6 +265,20 @@ const tests: Record<string, () => Promise<void>> = {
       );
       await vscode.commands.executeCommand('workbench.action.closeAllEditors');
     }
+  },
+
+  async 'hands pictures next to a Markdown file to the view as bytes of their own'() {
+    const document = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
+    const picture = await readPicture(document, 'images/flow.svg');
+    assert.ok(picture, 'the picture was not read');
+    assert.equal(picture.mime, 'image/svg+xml');
+    // VS Code sends webview messages as JSON and passes byte arrays alongside, but a Node
+    // Buffer's toJSON runs first: the picture would arrive as {type: 'Buffer', data: [...]}.
+    const sent = JSON.stringify({ data: picture.data }, (_key, value: unknown) =>
+      ArrayBuffer.isView(value) ? 'bytes' : value,
+    );
+    assert.equal(sent, '{"data":"bytes"}');
+    assert.ok(Buffer.from(picture.data).toString('utf8').startsWith('<svg'));
   },
 
   async 'registers its commands'() {

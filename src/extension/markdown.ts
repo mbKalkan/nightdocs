@@ -59,7 +59,8 @@ export async function readPicture(
   try {
     const { size } = await vscode.workspace.fs.stat(target.uri);
     if (size > MAX_PICTURE_BYTES) return undefined;
-    return { data: await vscode.workspace.fs.readFile(target.uri), mime };
+    // A plain copy: a Node Buffer turns itself into JSON numbers on the way to the webview.
+    return { data: new Uint8Array(await vscode.workspace.fs.readFile(target.uri)), mime };
   } catch {
     return undefined;
   }

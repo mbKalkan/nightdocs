@@ -28,6 +28,8 @@ export interface RenderOptions {
   fragment?: string;
   /** For Markdown: the source line (0-based) to show at the top, where the text editor is. */
   line?: number;
+  /** For Markdown: show pictures from the web without asking (the user's setting). */
+  onlineContent?: boolean;
 }
 
 /** Live parts of the viewer a rendered document can use once it is on screen. */

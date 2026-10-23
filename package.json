@@ -438,6 +438,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.markdown.compareRendered%"
+        },
+        "nightdocs.markdown.showOnlineContent": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.markdown.showOnlineContent%"
         }
       }
     }

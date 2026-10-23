@@ -34,7 +34,9 @@ READMEs.
   cell, and an overview beside the scrollbar of where they are.
 - **Edit in Office when you need to.** **Open in Word**, **Open in Excel** or **Open in
   PowerPoint** hands the file to its desktop app. The view refreshes when the file is saved.
-- **Private.** No telemetry and no network access. Your files never leave your machine.
+- **Private.** No telemetry, and nothing goes online unless you ask: pictures from the web in a
+  Markdown file load only after you choose **Show Online Content**. Your files never leave your
+  machine.
 
 ## Features
 
@@ -106,8 +108,9 @@ READMEs.
 - Tags that structure prompts, like `<instructions>` or `<example>`, frame what they hold instead
   of disappearing as they would in a browser
 - Code blocks colored like your editor, with a copy button
-- Pictures next to the file are shown. Pictures on the web aren't downloaded, since Nightdocs
-  stays offline: badges show their text, other pictures a placeholder
+- Pictures next to the file are shown. Pictures on the web, such as badges, wait until you choose
+  **Show Online Content** (or turn on `nightdocs.markdown.showOnlineContent`); until then badges
+  show their text and other pictures a placeholder
 - Links to other Markdown files open in Nightdocs at the heading they point to; links to code open
   it, at the lines of a `#L12-L20` link
 - The headings in the navigation pane and in **Go to Heading…**
@@ -194,9 +197,10 @@ the last line opens Markdown in Nightdocs too, for those who mostly read it:
 
 ## Settings
 
-| Setting                              | Default | What it does                                                                                                  |
-| ------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `nightdocs.markdown.compareRendered` | `false` | Shows comparisons of Markdown files (Source Control changes, Compare Selected) rendered instead of as text |
+| Setting                                | Default | What it does                                                                                               |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `nightdocs.markdown.compareRendered`   | `false` | Shows comparisons of Markdown files (Source Control changes, Compare Selected) rendered instead of as text |
+| `nightdocs.markdown.showOnlineContent` | `false` | Shows the pictures of Markdown files that come from the web, such as badges, without asking                |
 
 ## Keyboard shortcuts
 
@@ -227,8 +231,8 @@ the last line opens Markdown in Nightdocs too, for those who mostly read it:
 - PowerPoint animations and transitions aren't shown. Embedded audio and video play only in
   formats VS Code can decode, which usually leaves out MP4 video. Some pasted vector pictures
   (EMF/WMF) appear as placeholders.
-- Markdown: Mermaid diagrams and math are shown as code. Pictures on the web aren't loaded. Raw
-  HTML is limited to what is safe to show: no scripts, styles, forms or embedded frames.
+- Markdown: Mermaid diagrams and math are shown as code. Pictures on the web load only over
+  HTTPS. Raw HTML is limited to what is safe to show: no scripts, styles, forms or embedded frames.
 
 ## Contributing
 

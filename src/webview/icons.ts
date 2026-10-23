@@ -46,6 +46,9 @@ export const icons = {
   image: svg(
     '<rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="5.5" cy="6.5" r="1"/><path d="M14 11l-3.5-3.5L4 13"/>',
   ),
+  globe: svg(
+    '<circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.7 1.6 2.5 3.6 2.5 6S9.7 12.4 8 14C6.3 12.4 5.5 10.4 5.5 8S6.3 3.6 8 2z"/>',
+  ),
   note: svg('<circle cx="8" cy="8" r="6"/><path d="M8 7.5V11M8 5v.5"/>'),
   tip: svg(
     '<path d="M6 12.5h4M6.5 14.5h3M8 1.5a4.5 4.5 0 0 0-2.5 8.2V11h5V9.7A4.5 4.5 0 0 0 8 1.5z"/>',
