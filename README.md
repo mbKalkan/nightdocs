@@ -148,6 +148,8 @@ READMEs.
 
 ![Two versions of a Markdown file side by side in Nightdocs, with the changes marked and the overview of changes beside the scrollbar](docs/images/markdown-compare-dark.png)
 
+![A Markdown comparison in Nightdocs's Inline View: each removed or edited block of the old version just above the new one](docs/images/markdown-inline-dark.png)
+
 ![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)
 
 ![Two versions of an Excel workbook side by side in Nightdocs, with changed cells and rows marked](docs/images/excel-compare-dark.png)
