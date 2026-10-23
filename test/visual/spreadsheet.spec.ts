@@ -208,16 +208,11 @@ test("shows the selected cell's formula like Excel's formula bar", async ({ page
 test('follows links in cells with Ctrl+click or from the status bar', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('sample.xlsx');
-  // Web links go to VS Code, which asks before opening them; record them instead.
-  await page.evaluate(() => {
-    const followed: string[] = [];
-    Object.assign(window, { __followed: followed });
-    HTMLAnchorElement.prototype.click = function () {
-      followed.push(this.href);
-    };
-  });
-  const followed = () =>
-    page.evaluate(() => (window as unknown as { __followed: string[] }).__followed);
+  // Web links go to the extension host, which has VS Code open them (asking first).
+  const followed = async () =>
+    ((await viewer.sent()) as { type: string; href?: string }[])
+      .filter((message) => message.type === 'openLink')
+      .map((message) => message.href);
   const link = page.locator('.ov-status-link');
 
   // Hovering says where a link goes; a plain click only selects the cell.

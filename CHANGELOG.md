@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Ctrl+click on a web link in an Excel cell, the link in the status bar, and links on PowerPoint
+  shapes did nothing in recent versions of VS Code, which ignore clicks made by scripts. They open
+  again, after VS Code asks for sites it doesn't trust.
+
 ## [1.3.0] - 2026-10-15
 
 ### Added
