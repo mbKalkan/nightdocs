@@ -215,10 +215,10 @@ test('shows front matter whose YAML aliases refer to themselves', async ({ page 
   // A value shown once, then as "…": the alias inside itself, and the one copied.
   const props = page.locator('.md-props-list:not(.md-props-nested) > .md-prop');
   await expect(props).toHaveCount(4);
-  await expect(page.locator('.md-prop[data-key="loop"] .md-prop[data-key="again"] dd')).toHaveText(
+  await expect(page.locator('.md-prop[data-key="loop"] .md-props-nested .md-prop > dd')).toHaveText(
     '…',
   );
-  await expect(page.locator('.md-prop[data-key="shared"] dd')).toContainText('Ada');
+  await expect(page.locator('.md-prop[data-key="shared"] > dd')).toContainText('Ada');
   await expect(page.locator('.md-prop[data-key="copy"] > dd')).toHaveText('…');
   expect(viewer.problems).toEqual([]);
 });

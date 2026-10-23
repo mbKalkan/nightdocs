@@ -145,7 +145,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       webPictures: isTextFormat(info.format),
     });
 
-    const post = (message: HostToWebviewMessage) => panel.webview.postMessage(message);
+    let disposed = false;
+    // A view closed while its file was being read (or switched to inline) takes nothing more.
+    const post = (message: HostToWebviewMessage): Thenable<boolean> =>
+      disposed
+        ? Promise.resolve(false)
+        : panel.webview.postMessage(message).then(undefined, () => false);
     const load = (reload: boolean) => this.loadInto(uri, info, reload, post, inline);
     const member: DiffMember = { uri, post, ready: false };
     this.diffs.add(member, panel.viewColumn);
@@ -222,10 +227,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
                 viewColumn: panel.viewColumn,
               });
               if (fragment && open) {
-                void open.panel.webview.postMessage({
-                  type: 'revealFragment',
-                  fragment,
-                } satisfies HostToWebviewMessage);
+                open.panel.webview
+                  .postMessage({ type: 'revealFragment', fragment } satisfies HostToWebviewMessage)
+                  .then(undefined, () => undefined);
               }
             });
             break;
@@ -286,6 +290,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     this.panels.add(entry);
 
     panel.onDidDispose(() => {
+      disposed = true;
       this.panels.delete(entry);
       if (this.lastActive?.panel === panel) this.lastActive = undefined;
       subscriptions.forEach((s) => s.dispose());

@@ -8,7 +8,7 @@ import type {
   PeerShowOnlineMessage,
   PeerZoomMessage,
 } from '../shared/protocol';
-import { DIFF_LABEL_SEPARATOR, orderSides, type DiffCandidate } from './diffSides';
+import { orderSides, type DiffCandidate } from './diffSides';
 
 /** The two viewers of a comparison are created together; a lone one stops waiting after this. */
 const PAIRING_WINDOW_MS = 5000;
@@ -53,14 +53,7 @@ export class DiffPairs {
       clearTimeout(waiting.timer);
       this.waiting.delete(column);
     }
-    // A comparison's tab names both files ("a.md ↔ b.md"), or both sides are the same file
-    // (Git's "a.md (Working Tree)"); other tabs without an input aren't comparisons.
-    const sameName = waiting && describe(waiting.member).name === describe(member).name;
-    if (
-      waiting &&
-      waiting.label === tab.label &&
-      (tab.label.includes(DIFF_LABEL_SEPARATOR) || sameName)
-    ) {
+    if (waiting && waiting.label === tab.label) {
       const [original, modified] = orderSides(waiting.member, member, describe, tab.label);
       this.pair(original, modified);
     } else {
