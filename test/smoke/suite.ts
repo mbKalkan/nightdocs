@@ -303,6 +303,30 @@ const tests: Record<string, () => Promise<void>> = {
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
   },
 
+  async 'opens the file its button is on, with a comparison of it in another group'() {
+    const { original, modified } = COMPARED;
+    try {
+      await vscode.commands.executeCommand('vscode.diff', original, modified, COMPARED.label, {
+        viewColumn: vscode.ViewColumn.Two,
+      } satisfies vscode.TextDocumentShowOptions);
+      await waitFor(textComparison);
+      await vscode.window.showTextDocument(modified, { viewColumn: vscode.ViewColumn.One });
+      // As the button in the title bar of the file's text editor does.
+      await vscode.commands.executeCommand('nightdocs.openMarkdown', modified);
+      await waitFor(
+        find(
+          (tab) =>
+            tab.input instanceof vscode.TabInputCustom &&
+            tab.input.viewType === MARKDOWN_VIEW_TYPE &&
+            tab.input.uri.toString() === modified.toString(),
+        ),
+      );
+      assert.ok(textComparison(), `the comparison stays text. ${describeEditors()}`);
+    } finally {
+      await vscode.window.tabGroups.close(tabs(), true);
+    }
+  },
+
   async 'turns a text comparison of Markdown into the viewer comparison'() {
     const original = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
     const modified = vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`);

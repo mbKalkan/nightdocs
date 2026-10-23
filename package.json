@@ -275,7 +275,7 @@
         },
         {
           "command": "nightdocs.openInOffice",
-          "when": "activeCustomEditorId =~ /^nightdocs\\./"
+          "when": "activeCustomEditorId == nightdocs.viewer"
         },
         {
           "command": "nightdocs.zoomIn",

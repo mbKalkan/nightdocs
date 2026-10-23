@@ -292,31 +292,39 @@ function reveal(editor: vscode.TextEditor, range: vscode.Range): void {
  * comparison turns into the viewer's comparison in place; a file opens beside its text editor,
  * like VS Code's preview, or in place from the Explorer.
  */
-export async function openInViewer(resource: unknown): Promise<void> {
+export async function openInViewer(resource: unknown, selected?: unknown): Promise<void> {
   const uri = resource instanceof vscode.Uri ? resource : undefined;
-  // The button of a comparison names its file; the comparison may be in a window without focus.
+  // From the Explorer, which passes the files selected along: that file, not a comparison of it.
+  const fromExplorer = Array.isArray(selected);
+  // The tab the button is on: in the active group, or else in another group (a floating
+  // window's group doesn't count as active).
   const { activeTabGroup, all } = vscode.window.tabGroups;
-  const comparison = (uri ? [activeTabGroup, ...all] : [activeTabGroup])
+  const groups = uri ? [activeTabGroup, ...all.filter((group) => group !== activeTabGroup)] : [];
+  const shown = (uri ? groups : [activeTabGroup])
     .map((group) => group.activeTab)
     .find((tab) => {
       const input = textComparison(tab);
-      return input && (!uri || sameFile(uri, input.modified) || sameFile(uri, input.original));
+      if (input) return !uri || sameFile(uri, input.modified) || sameFile(uri, input.original);
+      return uri && tab?.input instanceof vscode.TabInputText && sameFile(tab.input.uri, uri);
     });
-  const input = textComparison(comparison);
-  if (comparison && input) {
-    await renderTextComparison(comparison, input);
+  const input = textComparison(shown);
+  if (shown && input && !fromExplorer) {
+    await renderTextComparison(shown, input);
     return;
   }
   const editor = vscode.window.activeTextEditor;
   const target = uri ?? editor?.document.uri;
   if (!target) return;
   const fromEditor = editor !== undefined && sameFile(editor.document.uri, target);
-  await vscode.commands.executeCommand(
-    'vscode.openWith',
-    target,
-    MARKDOWN_VIEW_TYPE,
-    fromEditor ? { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true } : undefined,
-  );
+  const textTab = !fromExplorer && shown?.input instanceof vscode.TabInputText ? shown : undefined;
+  // Beside its text editor, like VS Code's preview; one in another window gets a tab beside it.
+  const options: vscode.TextDocumentShowOptions | undefined =
+    textTab && textTab.group !== activeTabGroup
+      ? { viewColumn: textTab.group.viewColumn }
+      : fromEditor || textTab
+        ? { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }
+        : undefined;
+  await vscode.commands.executeCommand('vscode.openWith', target, MARKDOWN_VIEW_TYPE, options);
 }
 
 /**

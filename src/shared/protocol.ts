@@ -324,6 +324,12 @@ export interface RevealLineMessage {
   line: number;
 }
 
+/** For Markdown: shows the heading or anchor of a link that led to the file already open. */
+export interface RevealFragmentMessage {
+  type: 'revealFragment';
+  fragment: string;
+}
+
 export type HostToWebviewMessage =
   | LoadMessage
   | ReadErrorMessage
@@ -337,7 +343,8 @@ export type HostToWebviewMessage =
   | PeerShowOnlineMessage
   | PickedMessage
   | ResourceMessage
-  | RevealLineMessage;
+  | RevealLineMessage
+  | RevealFragmentMessage;
 
 export type WebviewToHostMessage =
   | { type: 'ready' }

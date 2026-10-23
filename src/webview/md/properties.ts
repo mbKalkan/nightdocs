@@ -80,8 +80,9 @@ export function renderProperties(
   list.className = 'md-props-list';
   const lines = [...frontMatter.keyLines.values()].sort((a, b) => a - b);
   const closing = frontMatter.firstLine + frontMatter.lineCount - 1;
+  const seen = new Set<object>();
   for (const [key, value] of entries) {
-    const row = property(key, value);
+    const row = property(key, value, seen);
     const line = frontMatter.keyLines.get(key);
     if (line !== undefined) {
       row.dataset.line = String(line);
@@ -137,19 +138,27 @@ function sourceBlock(frontMatter: FrontMatter): HTMLElement {
   return block;
 }
 
-function property(key: string, value: unknown): HTMLElement {
+function property(key: string, value: unknown, seen: Set<object>): HTMLElement {
   const row = document.createElement('div');
   row.className = 'md-prop';
   const name = document.createElement('dt');
   name.textContent = key;
   const content = document.createElement('dd');
-  content.append(valueOf(value, LIST_KEYS.test(key)));
+  content.append(valueOf(value, seen, LIST_KEYS.test(key)));
   row.append(name, content);
   return row;
 }
 
-function valueOf(value: unknown, listLike = false): Node {
+/**
+ * How a value shows. A YAML alias (`*name`) brings back a value already shown, and can even
+ * contain itself; such a value shows once, then as `…`, so the card stays small and finite.
+ */
+function valueOf(value: unknown, seen: Set<object>, listLike = false): Node {
   if (value === null || value === undefined) return span('md-prop-null', 'null');
+  if (typeof value === 'object') {
+    if (seen.has(value)) return span('md-prop-null', '…');
+    seen.add(value);
+  }
   if (typeof value === 'boolean') {
     const element = span('md-prop-bool', String(value));
     element.dataset.value = String(value);
@@ -185,7 +194,7 @@ function valueOf(value: unknown, listLike = false): Node {
     list.className = 'md-prop-items';
     for (const item of value) {
       const entry = document.createElement('li');
-      entry.append(valueOf(item));
+      entry.append(valueOf(item, seen));
       list.append(entry);
     }
     return list;
@@ -195,7 +204,7 @@ function valueOf(value: unknown, listLike = false): Node {
     if (entries.length === 0) return span('md-prop-null', '{ }');
     const nested = document.createElement('dl');
     nested.className = 'md-props-list md-props-nested';
-    for (const [key, item] of entries) nested.append(property(key, item));
+    for (const [key, item] of entries) nested.append(property(key, item, seen));
     return nested;
   }
   return span('md-prop-text', String(value));
