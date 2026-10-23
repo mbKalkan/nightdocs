@@ -26,7 +26,35 @@ interface Segment {
 export const NOT_TEXT = 'data-nd-not-text';
 
 /** Elements that start a new block of text, so their words don't run into the ones before. */
-const BLOCKS = new Set(['DIV', 'P', 'LI', 'TR', 'TD', 'TH', 'BR', 'TABLE', 'SECTION']);
+const BLOCKS = new Set([
+  'DIV',
+  'P',
+  'LI',
+  'TR',
+  'TD',
+  'TH',
+  'BR',
+  'TABLE',
+  'SECTION',
+  'DL',
+  'DT',
+  'DD',
+  'UL',
+  'OL',
+  'PRE',
+  'BLOCKQUOTE',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'HR',
+  'DETAILS',
+  'SUMMARY',
+  'FIGURE',
+  'FIGCAPTION',
+]);
 
 /** The text and pictures of an element in reading order, with where each starts. */
 function segments(root: Element): Segment[] {

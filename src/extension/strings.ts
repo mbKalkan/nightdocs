@@ -1,15 +1,20 @@
 import * as vscode from 'vscode';
+import { isTextFormat, type FormatInfo } from '../shared/formats';
 import type { ViewerStrings } from '../shared/protocol';
 
-export function viewerStrings(appName: string): ViewerStrings {
+export function viewerStrings({ format, appName }: FormatInfo): ViewerStrings {
+  // Markdown is edited in VS Code itself; Office files in their desktop app.
+  const text = isTextFormat(format);
   return {
     zoomIn: vscode.l10n.t('Zoom In'),
     zoomOut: vscode.l10n.t('Zoom Out'),
     resetZoom: vscode.l10n.t('Reset Zoom'),
     showOriginalColors: vscode.l10n.t('Show Original Colors'),
     showDarkColors: vscode.l10n.t('Show Dark Colors'),
-    openInOffice: vscode.l10n.t('Open in {0}', appName),
-    openInOfficeTooltip: vscode.l10n.t('Open the file in its default desktop app to edit it'),
+    openInOffice: text ? vscode.l10n.t('Edit') : vscode.l10n.t('Open in {0}', appName),
+    openInOfficeTooltip: text
+      ? vscode.l10n.t('Open the file in the text editor')
+      : vscode.l10n.t('Open the file in its default desktop app to edit it'),
     loading: vscode.l10n.t('Loading…'),
     errorTitle: vscode.l10n.t("This document can't be displayed"),
     errorDamaged: vscode.l10n.t(
@@ -82,5 +87,16 @@ export function viewerStrings(appName: string): ViewerStrings {
     refCell: vscode.l10n.t('cell {0}'),
     refCells: vscode.l10n.t('cells {0}'),
     refSlide: vscode.l10n.t('slide {0}'),
+    refLine: vscode.l10n.t('line {0}'),
+    refLines: vscode.l10n.t('lines {0}-{1}'),
+    refProperty: vscode.l10n.t('front matter "{0}"'),
+    properties: vscode.l10n.t('Properties'),
+    showYaml: vscode.l10n.t('Show as YAML'),
+    showProperties: vscode.l10n.t('Show as Properties'),
+    frontMatterError: vscode.l10n.t("The front matter isn't valid YAML: {0}"),
+    copyCode: vscode.l10n.t('Copy'),
+    copied: vscode.l10n.t('Copied'),
+    remoteImage: vscode.l10n.t("Pictures from the web aren't loaded; Nightdocs stays offline. {0}"),
+    missingImage: vscode.l10n.t('Picture not found: {0}'),
   };
 }

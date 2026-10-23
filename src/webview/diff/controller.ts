@@ -8,6 +8,7 @@ import type {
 import { icons } from '../icons';
 import type { Comparison, RenderContext, RenderedDocument } from '../renderers/types';
 import { vscode } from '../vscodeApi';
+import { OverviewRuler } from './overview';
 import { BOTTOM, TOP } from './scrolling';
 
 interface Target {
@@ -115,6 +116,7 @@ export class DiffController {
     this.comparison = comparison;
     if (!comparison) return;
     this.showBar(target);
+    this.showOverview(target, comparison);
     this.listen(target.context.viewport);
     // Like VS Code's diff editor, open at the first change. The other side follows.
     if (side === 'modified' && !this.revealed && target.context.viewport.scrollTop === 0) {
@@ -161,6 +163,33 @@ export class DiffController {
       bar.remove();
       footer.hidden = footer.childElementCount === 0;
     });
+  }
+
+  /** The strip beside the scrollbar that shows where the changes are. */
+  private showOverview({ context }: Target, comparison: Comparison): void {
+    const { overview, goTo } = comparison;
+    if (!overview || !goTo || comparison.count === 0) return;
+    const ruler = new OverviewRuler(
+      context.viewport,
+      () => overview.call(comparison),
+      (index) => void this.jump(index),
+    );
+    this.cleanup.push(() => ruler.dispose());
+  }
+
+  /** Goes to change `index`, picked on the overview ruler. */
+  private jump(index: number): Promise<void> {
+    const move = this.moving.then(async () => {
+      const { comparison, target } = this;
+      if (!comparison?.goTo || !target) return;
+      await comparison.goTo(index);
+      if (comparison !== this.comparison) return;
+      this.position = index;
+      const status = target.context.footer.querySelector<HTMLElement>('.ov-diff-status');
+      if (status) this.renderStatus(status, target.strings);
+    });
+    this.moving = move.catch(() => undefined);
+    return move;
   }
 
   private renderStatus(status: HTMLElement, strings: ViewerStrings): void {

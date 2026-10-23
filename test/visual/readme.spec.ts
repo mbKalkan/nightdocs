@@ -117,3 +117,28 @@ test('PowerPoint comparison in a dark theme', async ({ context }) => {
     3,
   );
 });
+
+test('Markdown file in a dark theme', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/sample.md');
+  // With the headings pane open, as the outline of a long document.
+  await page.locator('[data-action="navigation"]').click();
+  await page.locator('[data-action="navigation"]').blur();
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: `${OUT}/markdown-dark.png` });
+});
+
+test('AI agent file in a dark theme', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/agent.md');
+  await page.screenshot({ path: `${OUT}/markdown-agent-dark.png` });
+});
+
+test('Markdown comparison in a dark theme', async ({ context }) => {
+  await comparisonShot(
+    context,
+    ['markdown/sample.md', 'markdown/sample-revised.md'],
+    'markdown-compare-dark.png',
+    3,
+  );
+});

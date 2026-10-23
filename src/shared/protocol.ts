@@ -1,6 +1,6 @@
 // Messages exchanged between the extension host and the webview.
 
-export type DocumentFormat = 'docx' | 'xlsx' | 'pptx';
+export type DocumentFormat = 'docx' | 'xlsx' | 'pptx' | 'md';
 
 /** `dark` adapts document colors to dark themes; `original` shows them as authored. */
 export type ColorMode = 'dark' | 'original';
@@ -97,13 +97,30 @@ export interface ViewerStrings {
   refCell: string;
   refCells: string;
   refSlide: string;
+  /** Markdown references: `line {0}`, `lines {0}-{1}`, `front matter "{0}"`. */
+  refLine: string;
+  refLines: string;
+  refProperty: string;
+  /** The front matter of a Markdown file, shown as a list of properties or as its YAML. */
+  properties: string;
+  showYaml: string;
+  showProperties: string;
+  /** `{0}` is the parser's message. */
+  frontMatterError: string;
+  /** The button on code blocks, and what it says once it has copied. */
+  copyCode: string;
+  copied: string;
+  /** `{0}` is the address of a picture on the web, which the viewer doesn't download. */
+  remoteImage: string;
+  /** `{0}` is the path of a picture that isn't there. */
+  missingImage: string;
 }
 
 /** Which version a viewer shows when VS Code compares two files side by side. */
 export type DiffSide = 'original' | 'modified';
 
 /** What a viewer shares with the other side of a comparison to find the differences. */
-export type DocumentSummary = WordSummary | WorkbookSummary | PresentationSummary;
+export type DocumentSummary = WordSummary | WorkbookSummary | PresentationSummary | MarkdownSummary;
 
 export interface WordSummary {
   format: 'docx';
@@ -121,6 +138,17 @@ export interface SheetSummary {
   name: string;
   /** Each row's displayed values, separated by `CELL_SEPARATOR` at their column positions. */
   rows: string[];
+}
+
+export interface MarkdownSummary {
+  format: 'md';
+  /**
+   * Text of each block as rendered, in order: headings, paragraphs, list items, table rows,
+   * lines of code, front matter properties. Pictures count as U+FFFC.
+   */
+  blocks: string[];
+  /** For each block, the addresses of its pictures, so a replaced picture counts as a change. */
+  pictures: string[];
 }
 
 export interface PresentationSummary {
@@ -167,6 +195,10 @@ export interface LoadMessage {
   colorMode: ColorMode;
   /** Whether the navigation pane is open, as last left for this kind of file. */
   navigationPane: boolean;
+  /** For Markdown: the heading to scroll to on opening, from a link to `file.md#heading`. */
+  fragment?: string;
+  /** For Markdown opened beside its text editor: the line (0-based) the editor shows at its top. */
+  line?: number;
   /** The user's locale, for dates and numbers shown the way their Office would. */
   locale: string;
   strings: ViewerStrings;
@@ -256,6 +288,23 @@ export interface PickItem {
   current?: boolean;
 }
 
+/** A picture a Markdown file links to, read by the host; no `data` when it can't be read. */
+export interface ResourceMessage {
+  type: 'resource';
+  id: number;
+  data?: Uint8Array;
+  mime?: string;
+}
+
+/**
+ * The text editor showing the same Markdown file scrolled: `line` (0-based, with a fraction for
+ * how far into it) is at its top.
+ */
+export interface RevealLineMessage {
+  type: 'revealLine';
+  line: number;
+}
+
 export type HostToWebviewMessage =
   | LoadMessage
   | ReadErrorMessage
@@ -266,11 +315,17 @@ export type HostToWebviewMessage =
   | PeerScrollMessage
   | PeerZoomMessage
   | PeerSelectMessage
-  | PickedMessage;
+  | PickedMessage
+  | ResourceMessage
+  | RevealLineMessage;
 
 export type WebviewToHostMessage =
   | { type: 'ready' }
-  | { type: 'openInOffice' }
+  /**
+   * Opens the file in the app that edits it: Office, or for Markdown VS Code's text editor, at
+   * `line` (0-based) when given.
+   */
+  | { type: 'openInOffice'; line?: number }
   | { type: 'setColorMode'; mode: ColorMode }
   | { type: 'setNavigationPane'; open: boolean }
   | { type: 'summary'; summary: DocumentSummary }
@@ -289,5 +344,12 @@ export type WebviewToHostMessage =
    * assistant or a note: the host prepends the file's path. `text` is what is there, quoted.
    */
   | { type: 'reference'; location: string; text?: string }
-  /** A web or mail link followed in the document, for VS Code to open. */
-  | { type: 'openLink'; href: string };
+  /** Asks for a picture a Markdown file links to, by the address written in the file. */
+  | { type: 'resource'; id: number; href: string }
+  /**
+   * A link followed in the document, for VS Code to open: a web or mail link, or from Markdown
+   * also another file.
+   */
+  | { type: 'openLink'; href: string }
+  /** Puts text on the clipboard, such as a code block, and says it did. */
+  | { type: 'copyText'; text: string };

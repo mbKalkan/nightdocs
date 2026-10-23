@@ -61,6 +61,23 @@ const tests: Record<string, () => Promise<void>> = {
     await opensInViewer('sample.pptx');
   },
 
+  async 'opens Markdown in its viewer when asked'() {
+    await vscode.commands.executeCommand(
+      'vscode.openWith',
+      fixture('markdown/sample.md'),
+      'nightdocs.markdown',
+    );
+    await waitFor(() =>
+      vscode.window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .find(
+          (tab) =>
+            tab.input instanceof vscode.TabInputCustom &&
+            tab.input.viewType === 'nightdocs.markdown',
+        ),
+    );
+  },
+
   async 'registers its commands'() {
     const commands = await vscode.commands.getCommands(true);
     for (const id of ['openInOffice', 'zoomIn', 'goToSheet', 'goToSlide', 'goToHeading']) {

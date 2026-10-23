@@ -6,6 +6,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Markdown, read and compared the way Office files are.
+
+### Added
+
+- **Markdown viewer** for `.md`, `.markdown` and `.mdc` files. **Open in Nightdocs** in the title
+  bar of a Markdown file, or in the Explorer's right-click menu, opens it beside the text editor,
+  which stays the default. The view shows unsaved changes as you type, scrolls along with the
+  editor, and **Edit** goes back to the text where you were reading.
+  - GitHub Flavored Markdown: tables, task lists, footnotes, alerts (`> [!NOTE]`, `> [!WARNING]`…),
+    bare links, `<details>` and other safe HTML; code colored like your editor, with a copy button
+  - Front matter as a card of properties, or as YAML; YAML that doesn't parse is reported with its
+    line. Made for the agent, skill, command and rule files of AI tools
+  - Prompt tags such as `<instructions>` and `<example>` frame what they hold instead of vanishing
+  - Pictures next to the file are shown; pictures on the web aren't downloaded (badges show their
+    text)
+  - Links to other Markdown files open in Nightdocs, at the heading they point to
+  - Headings in the navigation pane and in **Go to Heading…**
+  - **Copy Reference** names the lines, such as `docs/guide.md, lines 12-18, under "Setup"`
+- **Markdown comparisons**, rendered side by side with the changed words marked, front matter
+  property by property. **Open in Nightdocs** in the title bar of a text comparison switches to it;
+  the **Nightdocs › Markdown: Compare Rendered** setting opens them that way from Source Control.
+- **An overview of the changes** beside the scrollbar of a comparison, as in VS Code's diff editor:
+  removed content on the left, added on the right. Click a change to go to it. In Word,
+  PowerPoint and Markdown comparisons.
+
 ### Fixed
 
 - Ctrl+click on a web link in an Excel cell, the link in the status bar, and links on PowerPoint

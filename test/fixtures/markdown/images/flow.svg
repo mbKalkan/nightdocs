@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="120" viewBox="0 0 560 120" font-family="Segoe UI, sans-serif" font-size="14">
+  <rect width="560" height="120" rx="8" fill="#f4f6fa"/>
+  <g fill="#ffffff" stroke="#5b7bd5" stroke-width="2">
+    <rect x="24" y="36" width="120" height="48" rx="6"/>
+    <rect x="220" y="36" width="120" height="48" rx="6"/>
+    <rect x="416" y="36" width="120" height="48" rx="6"/>
+  </g>
+  <g stroke="#5b7bd5" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M144 60h68"/>
+    <path d="M340 60h68"/>
+  </g>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0l10 5-10 5z" fill="#5b7bd5"/>
+    </marker>
+  </defs>
+  <g fill="#1f2a44" text-anchor="middle">
+    <text x="84" y="65">Prepare</text>
+    <text x="280" y="65">Verify</text>
+    <text x="476" y="65">Publish</text>
+  </g>
+</svg>

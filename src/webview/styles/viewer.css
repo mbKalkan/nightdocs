@@ -1384,6 +1384,57 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   padding: 0 4px;
 }
 
+/* Where the changes are in the whole document, beside the scrollbar, as in VS Code's diff
+   editor: removed content in the left lane, added in the right. */
+.ov-overview {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 14px;
+  border-left: 1px solid var(--vscode-editorOverviewRuler-border, var(--ov-border));
+  background: var(--vscode-editorOverviewRuler-background, transparent);
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.ov-overview-lanes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ov-overview-mark {
+  position: absolute;
+  width: 5px;
+}
+
+.ov-overview-removed {
+  left: 1px;
+  background: var(--vscode-diffEditorOverview-removedForeground, var(--ov-diff-removed-bar));
+}
+
+.ov-overview-added {
+  right: 1px;
+  background: var(--vscode-diffEditorOverview-insertedForeground, var(--ov-diff-added-bar));
+}
+
+.ov-overview-slider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--vscode-scrollbarSlider-background, rgb(121 121 121 / 40%));
+  pointer-events: none;
+}
+
+.ov-overview:hover .ov-overview-slider {
+  background: var(--vscode-scrollbarSlider-hoverBackground, rgb(100 100 100 / 70%));
+}
+
+.ov-overview:active .ov-overview-slider {
+  background: var(--vscode-scrollbarSlider-activeBackground, rgb(191 191 191 / 40%));
+}
+
 /* A line where the other side has paragraphs this one doesn't. */
 .ov-content .nd-diff-gap-before,
 .ov-content .nd-diff-gap-after {

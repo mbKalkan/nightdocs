@@ -1,6 +1,6 @@
 {
   "displayName": "Nightdocs — Word, Excel ve PowerPoint Görüntüleyici ve Karşılaştırıcı",
-  "description": "Word, Excel ve PowerPoint dosyalarını (.docx, .xlsx, .pptx) koyu temada görüntüleyin, sürümlerini doğrudan Git'ten yan yana karşılaştırın. Hızlı, çevrimdışı ve salt okunur.",
+  "description": "Word, Excel, PowerPoint (.docx, .xlsx, .pptx) ve Markdown dosyalarını koyu temada görüntüleyin, sürümlerini doğrudan Git'ten yan yana karşılaştırın. Yapay zekâ ajanları, yetenekleri ve kuralları için Markdown ön bilgisi. Hızlı, çevrimdışı ve salt okunur.",
   "category": "Nightdocs",
   "customEditor.displayName": "Nightdocs",
   "command.openInOffice": "Office'te Aç",
@@ -16,5 +16,8 @@
   "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat",
   "command.copyAsMarkdown": "Markdown Tablosu Olarak Kopyala",
   "command.copyReference": "Referansı Kopyala",
-  "command.copyReferenceWithText": "Referansı Metinle Kopyala"
+  "command.copyReferenceWithText": "Referansı Metinle Kopyala",
+  "customEditor.markdownDisplayName": "Nightdocs Markdown Görüntüleyici",
+  "command.openMarkdown": "Nightdocs ile Aç",
+  "config.markdown.compareRendered": "Markdown dosyalarının karşılaştırmalarını (Kaynak Denetimi değişiklikleri gibi) metin yerine Nightdocs ile işlenmiş olarak gösterin. Görüntüleyicideki **Düzenle**, karşılaştırmayı yeniden metne çevirir."
 }

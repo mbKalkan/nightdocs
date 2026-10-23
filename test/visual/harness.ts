@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { basename, extname, join } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import type { Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
 import { formatForPath } from '../../src/shared/formats';
@@ -95,6 +95,17 @@ export const strings: ViewerStrings = {
   refCell: 'cell {0}',
   refCells: 'cells {0}',
   refSlide: 'slide {0}',
+  refLine: 'line {0}',
+  refLines: 'lines {0}-{1}',
+  refProperty: 'front matter "{0}"',
+  properties: 'Properties',
+  showYaml: 'Show as YAML',
+  showProperties: 'Show as Properties',
+  frontMatterError: "The front matter isn't valid YAML: {0}",
+  copyCode: 'Copy',
+  copied: 'Copied',
+  remoteImage: "Pictures from the web aren't loaded; Nightdocs stays offline. {0}",
+  missingImage: 'Picture not found: {0}',
 };
 
 /**
@@ -107,6 +118,18 @@ export async function openViewer(page: Page, theme: ThemeName) {
     if (message.type() === 'error') problems.push(message.text());
   });
   page.on('pageerror', (error) => problems.push(error.message));
+
+  // Pictures a Markdown file shows, read the way the extension host reads them.
+  let documentDir = 'test/fixtures';
+  await page.exposeFunction('__readResource', (href: string) => {
+    try {
+      const path = resolve(documentDir, decodeURIComponent(href.split(/[?#]/)[0]));
+      const mime = extname(path) === '.svg' ? 'image/svg+xml' : `image/${extname(path).slice(1)}`;
+      return { data: readFileSync(path).toString('base64'), mime };
+    } catch {
+      return {};
+    }
+  });
 
   await page.route(`${ORIGIN}/**`, async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -153,7 +176,18 @@ export async function openViewer(page: Page, theme: ThemeName) {
       __sent: sent,
       __applyTheme: applyTheme,
       acquireVsCodeApi: () => ({
-        postMessage: (message: unknown) => sent.push(message),
+        postMessage: (message: { type: string; id?: number; href?: string }) => {
+          sent.push(message);
+          if (message.type !== 'resource') return;
+          const read = (window as unknown as Record<string, (href?: string) => Promise<unknown>>)
+            .__readResource;
+          void read(message.href).then((answer) => {
+            const { data, mime } = answer as { data?: string; mime?: string };
+            const bytes = data ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)) : undefined;
+            const reply = { type: 'resource', id: message.id, data: bytes, mime };
+            window.dispatchEvent(new MessageEvent('message', { data: reply }));
+          });
+        },
         getState: () => state,
         setState: (value: unknown) => (state = value),
       }),
@@ -185,12 +219,13 @@ export async function openViewer(page: Page, theme: ThemeName) {
     },
     async load(fixture: string, reload = false, colorMode: ColorMode = 'dark') {
       await this.send(join('test/fixtures', fixture), reload, colorMode);
-      await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .ov-error');
+      await page.waitForSelector('.docx-wrapper, .ng-canvas, .pptx-deck, .md-page, .ov-error');
       await page.waitForSelector('.ov-progress', { state: 'hidden' });
     },
     /** Hands the viewer a file, as the extension host does, without waiting for it to show. */
     async send(path: string, reload = false, colorMode: ColorMode = 'dark') {
       const info = formatForPath(path) ?? { format: 'docx', appName: 'Word' };
+      documentDir = dirname(path);
       // Like the extension host, remember whether the navigation pane was left open.
       const sent = (await this.sent()) as { type: string; open?: boolean }[];
       const navigationPane =
@@ -205,7 +240,10 @@ export async function openViewer(page: Page, theme: ThemeName) {
         colorMode,
         navigationPane,
         locale: 'en-US',
-        strings: { ...strings, openInOffice: `Open in ${info.appName}` },
+        strings: {
+          ...strings,
+          openInOffice: info.format === 'md' ? 'Edit' : `Open in ${info.appName}`,
+        },
       });
     },
     /** Switches the theme the way VS Code does: CSS variables plus body classes. */

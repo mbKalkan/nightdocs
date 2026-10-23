@@ -7,6 +7,7 @@ import type {
   ViewerCommand,
   ViewerStrings,
 } from '../../shared/protocol';
+import type { OverviewMark } from '../diff/overview';
 import type { ContextTarget, MarkTarget } from '../reference';
 
 /** A place in the document for the clipboard; the host adds the file's path in front. */
@@ -23,6 +24,10 @@ export interface RenderOptions {
   strings: ViewerStrings;
   /** What `state()` of the previous render of the same file returned, to restore the view. */
   previous: unknown;
+  /** For Markdown: the heading or anchor to show first, from a link to `file.md#anchor`. */
+  fragment?: string;
+  /** For Markdown: the source line (0-based) to show at the top, where the text editor is. */
+  line?: number;
 }
 
 /** Live parts of the viewer a rendered document can use once it is on screen. */
@@ -41,6 +46,11 @@ export interface RenderContext {
 export interface RenderedDocument {
   /** Width of the widest page at 100% zoom, for fit-to-width; 0 when fitting doesn't apply. */
   naturalWidth: number;
+  /**
+   * False for documents drawn in the theme's own colors (Markdown), which have no original
+   * colors to switch to.
+   */
+  adaptsColors?: boolean;
   /** Called after the rendered content has been moved into the visible viewport. */
   activate?(context: RenderContext): void;
   /** Called when the zoom level changes. */
@@ -55,6 +65,12 @@ export interface RenderedDocument {
   referenceMark?(hit: ContextTarget): MarkTarget | undefined;
   /** What the navigation pane lists for this document, made when the pane opens. */
   navigation?(context: RenderContext): NavigationContent | undefined;
+  /**
+   * For text formats: the line (0-based) at the top of the view, where the text editor should
+   * open; and scrolling to show a line the text editor shows at its top.
+   */
+  sourceLine?(): number | undefined;
+  revealLine?(line: number): void;
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */
@@ -89,6 +105,10 @@ export interface Comparison {
   anchor(): ScrollAnchor | undefined;
   /** Scrolls to a position the other side sent. */
   scrollTo(anchor: ScrollAnchor): void | Promise<void>;
+  /** Where the changes are, for the overview ruler beside the scrollbar; in `go`'s order. */
+  overview?(): OverviewMark[];
+  /** Brings change `index` (0-based, in `go`'s order) into view. */
+  goTo?(index: number): void | Promise<void>;
   /** Selects the cells the other side selected, in this side's rows. */
   select?(selection: CellSelection): void | Promise<void>;
   /** Removes the marks. */

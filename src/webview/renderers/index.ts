@@ -6,6 +6,7 @@ const loaders: Record<DocumentFormat, () => Promise<Renderer>> = {
   docx: () => import('./docx').then((m) => m.docxRenderer),
   xlsx: () => import('./xlsx').then((m) => m.xlsxRenderer),
   pptx: () => import('./pptx').then((m) => m.pptxRenderer),
+  md: () => import('./md').then((m) => m.mdRenderer),
 };
 
 export function loadRenderer(format: DocumentFormat): Promise<Renderer> {

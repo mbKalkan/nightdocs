@@ -77,5 +77,19 @@
   "cells {0}": "{0} hücreleri",
   "slide {0}": "slayt {0}",
   "Copied reference": "Referans kopyalandı",
-  "Copied reference with text": "Referans metniyle kopyalandı"
+  "Copied reference with text": "Referans metniyle kopyalandı",
+  "Edit": "Düzenle",
+  "Open the file in the text editor": "Dosyayı metin düzenleyicide açın",
+  "line {0}": "satır {0}",
+  "lines {0}-{1}": "satır {0}-{1}",
+  "front matter \"{0}\"": "ön bilgi \"{0}\"",
+  "Properties": "Özellikler",
+  "Show as YAML": "YAML Olarak Göster",
+  "Show as Properties": "Özellikler Olarak Göster",
+  "The front matter isn't valid YAML: {0}": "Ön bilgi geçerli bir YAML değil: {0}",
+  "Copy": "Kopyala",
+  "Copied": "Kopyalandı",
+  "Pictures from the web aren't loaded; Nightdocs stays offline. {0}": "Web'deki resimler yüklenmez; Nightdocs çevrimdışı çalışır. {0}",
+  "Picture not found: {0}": "Resim bulunamadı: {0}",
+  "Couldn't find {0}": "{0} bulunamadı"
 }

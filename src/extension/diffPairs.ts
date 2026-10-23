@@ -7,7 +7,7 @@ import type {
   PeerSelectMessage,
   PeerZoomMessage,
 } from '../shared/protocol';
-import { DIFF_LABEL_SEPARATOR, orderSides, type DiffCandidate } from './diffSides';
+import { orderSides, type DiffCandidate } from './diffSides';
 
 /** The two viewers of a comparison are created together; a lone one stops waiting after this. */
 const PAIRING_WINDOW_MS = 5000;
@@ -34,8 +34,10 @@ interface Waiting {
  * together.
  *
  * VS Code compares files that have a custom editor by opening one editor per version side by
- * side, in a tab whose input the API doesn't expose and whose label reads "a.docx ↔ b.docx".
- * Viewers created while such a tab is active in their editor group belong to it.
+ * side, in a tab whose input the API doesn't expose. Its label reads "a.docx ↔ b.docx", or the
+ * title the comparison was opened with, such as Git's "a.md (Working Tree)" when a text
+ * comparison is reopened in the viewer. Two viewers created while the same such tab is active
+ * in their editor group belong to it.
  */
 export class DiffPairs {
   private readonly waiting = new Map<vscode.ViewColumn, Waiting>();
@@ -43,7 +45,7 @@ export class DiffPairs {
   add(member: DiffMember, column: vscode.ViewColumn | undefined): void {
     if (column === undefined) return;
     const tab = vscode.window.tabGroups.all.find((group) => group.viewColumn === column)?.activeTab;
-    if (!tab || tab.input !== undefined || !tab.label.includes(DIFF_LABEL_SEPARATOR)) return;
+    if (!tab || tab.input !== undefined) return;
 
     const waiting = this.waiting.get(column);
     if (waiting) {
