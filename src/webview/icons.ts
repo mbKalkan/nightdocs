@@ -11,6 +11,12 @@ export const icons = {
   chart: svg('<path d="M2.5 13.5h11M4.5 11.5V8M8 11.5V4.5M11.5 11.5V6.5"/>'),
   close: svg('<path d="M4 4l8 8M12 4l-8 8"/>'),
   sidebar: svg('<rect x="2" y="3" width="12" height="10" rx="1"/><path d="M6 3v10"/>'),
+  /** One page with removed and added lines, as VS Code's Inline View. */
+  inline: svg('<rect x="2.5" y="2.5" width="11" height="11" rx="1"/><path d="M5 6h6M5 10h6"/>'),
+  /** Two pages next to each other, as VS Code's side by side comparison. */
+  sideBySide: svg(
+    '<rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M8 2.5v11M3.5 6h3M3.5 9h3M9.5 6h3M9.5 9h3"/>',
+  ),
   chevronDown: svg('<path d="M3.5 6 8 10.5 12.5 6"/>'),
   notes: svg('<path d="M3.5 2.5h9v11h-9zM5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
   link: svg(

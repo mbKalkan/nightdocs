@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { lastSent, openComparison } from './comparison';
 import { lowestTextContrast } from './contrast';
 import { openViewer } from './harness';
@@ -399,6 +400,66 @@ test('fits a comparison in narrow panes, and shows web pictures on both sides', 
 });
 
 for (const theme of ['dark', 'light'] as ThemeName[]) {
+  test(`shows the changes of a Markdown file inline in the ${theme} theme`, async ({ page }) => {
+    await page.setViewportSize({ width: 820, height: 760 });
+    const viewer = await openViewer(page, theme);
+    await viewer.load('markdown/sample-revised.md', false, 'dark', {
+      original: readFileSync('test/fixtures/markdown/sample.md'),
+      fileName: 'sample-revised.md (Working Tree)',
+    });
+
+    // The same changes as side by side, and it opens at the first one.
+    await expect(page.locator('.ov-diff-status')).toHaveText('10 changes');
+    await expect(page.locator('.ov-overview')).toBeVisible();
+    await expect(page.locator('.ov-file-name')).toHaveText('sample-revised.md (Working Tree)');
+    // An edited property: the old version just above the new one, each with its words marked.
+    const descriptions = page.locator('.md-prop[data-key="description"]');
+    await expect(descriptions).toHaveCount(2);
+    await expect(descriptions.nth(0)).toHaveClass(/nd-diff-removed/);
+    await expect(descriptions.nth(0).locator('.nd-diff-word')).toHaveText('publish');
+    await expect(descriptions.nth(1)).toHaveClass(/nd-diff-added/);
+    await expect(descriptions.nth(1).locator('.nd-diff-word')).toHaveText([
+      ',',
+      'publish',
+      'announce',
+    ]);
+    // A list item: the old one as an item of its own, keeping its number.
+    const items = page.locator('ol > li', { hasText: 'Update the version' });
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0).locator('p, .nd-diff-line').first()).toHaveClass(/nd-diff-removed/);
+    expect(await items.nth(0).evaluate((li: HTMLLIElement) => li.value)).toBe(1);
+    // A line of code, inside its code block; a table row, inside its table.
+    const tag = page.locator('.md-line', { hasText: "await git('tag'" });
+    await expect(tag).toHaveCount(2);
+    expect(await tag.nth(0).evaluate((line) => line.closest('pre') !== null)).toBe(true);
+    await expect(tag.nth(0)).toHaveClass(/nd-diff-removed/);
+    await expect(page.locator('tr', { hasText: 'Unit tests' })).toHaveCount(2);
+    // A section only the old version has, and one only the new version has.
+    await expect(page.locator('summary.nd-diff-removed')).toHaveText('Troubleshooting');
+    await expect(page.locator('h2.nd-diff-added')).toHaveText('Announce');
+    // Copies of the old version aren't lines of this file, for Copy Reference and Edit.
+    await expect(page.locator('.nd-inline-inserted [data-line]')).toHaveCount(0);
+    await expect(page.locator('[id].nd-inline-inserted, .nd-inline-inserted [id]')).toHaveCount(0);
+
+    await page.screenshot({ path: `${SCREENS}/markdown-inline-${theme}.png` });
+
+    // Moving between changes, and back to side by side.
+    await page.locator('.ov-diff button[aria-label="Next Change"]').click();
+    await expect(page.locator('.ov-diff-status')).toHaveText('Change 2 of 10');
+    const layout = page.locator('.ov-diff-layout');
+    await expect(layout).toHaveAttribute('title', 'Side by Side View');
+    await layout.click();
+    expect(await lastSent(viewer, 'setInline')).toEqual({ type: 'setInline', inline: false });
+
+    // Saved again, it shows the changes again, once.
+    await viewer.load('markdown/sample-revised.md', true, 'dark', {
+      original: readFileSync('test/fixtures/markdown/sample.md'),
+    });
+    await expect(descriptions).toHaveCount(2);
+    await expect(page.locator('.ov-diff-status')).toHaveText(/10 changes|Change \d+ of 10/);
+    expect(viewer.problems).toEqual([]);
+  });
+
   test(`compares two versions of a Markdown file in the ${theme} theme`, async ({ browser }) => {
     const pages = [await browser.newPage(), await browser.newPage()] as [Page, Page];
     const [original, modified] = await openComparison(
@@ -412,6 +473,8 @@ for (const theme of ['dark', 'light'] as ThemeName[]) {
       await expect(side.page.locator('.ov-diff-status')).toHaveText('10 changes');
       // The overview ruler beside the scrollbar shows where they are.
       await expect(side.page.locator('.ov-overview')).toBeVisible();
+      // Either side switches the comparison to inline.
+      await expect(side.page.locator('.ov-diff-layout')).toHaveAttribute('title', 'Inline View');
     }
     // Properties compare one by one: the description changed, a tag was added.
     await expect(

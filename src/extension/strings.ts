@@ -75,6 +75,8 @@ export function viewerStrings({ format, appName }: FormatInfo): ViewerStrings {
     slidePosition: vscode.l10n.t('Slide {0} of {1}'),
     hiddenSlide: vscode.l10n.t('Hidden slide'),
     noChanges: vscode.l10n.t('No changes'),
+    inlineView: vscode.l10n.t('Inline View'),
+    sideBySideView: vscode.l10n.t('Side by Side View'),
     oneChange: vscode.l10n.t('1 change'),
     changeCount: vscode.l10n.t('{0} changes'),
     changePosition: vscode.l10n.t('Change {0} of {1}'),

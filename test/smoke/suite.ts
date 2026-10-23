@@ -267,6 +267,71 @@ const tests: Record<string, () => Promise<void>> = {
     }
   },
 
+  async 'shows a Markdown comparison inline, and side by side again'() {
+    const label = 'sample.md (Working Tree)';
+    const openTextComparison = async () => {
+      await vscode.commands.executeCommand(
+        'vscode.diff',
+        vscode.Uri.file(`${FIXTURES}/markdown/sample.md`),
+        vscode.Uri.file(`${FIXTURES}/markdown/sample-revised.md`),
+        label,
+      );
+      await waitFor(() =>
+        vscode.window.tabGroups.activeTabGroup.activeTab?.input instanceof vscode.TabInputTextDiff
+          ? true
+          : undefined,
+      );
+    };
+    const active = () => vscode.window.tabGroups.activeTabGroup.activeTab;
+    const sideBySide = () => {
+      const tab = active();
+      return tab && tab.input === undefined && tab.label === label ? tab : undefined;
+    };
+    const inline = () => {
+      const input = active()?.input;
+      return input instanceof vscode.TabInputCustom && input.uri.scheme === 'nightdocs-compare'
+        ? input
+        : undefined;
+    };
+    // The toggle works once the comparison is on screen; ask again until it is.
+    const toggleUntil = async <T>(shown: () => T | undefined): Promise<T> => {
+      let asked = 0;
+      return waitFor(() => {
+        const result = shown();
+        if (result === undefined && asked++ % 10 === 0) {
+          void vscode.commands.executeCommand('nightdocs.toggleInlineView');
+        }
+        return result;
+      });
+    };
+    const tabCount = () => vscode.window.tabGroups.all.flatMap((group) => group.tabs).length;
+
+    try {
+      await openTextComparison();
+      await vscode.commands.executeCommand('nightdocs.openMarkdown');
+      await waitFor(sideBySide);
+      // Inline replaces the side by side comparison, in the same place.
+      const input = await toggleUntil(inline);
+      assert.equal(input.viewType, MARKDOWN_VIEW_TYPE);
+      assert.ok(input.uri.path.endsWith('/markdown/sample-revised.md'));
+      assert.ok(input.uri.query.includes('sample.md'), input.uri.query);
+      assert.equal(tabCount(), 1, describeEditors());
+
+      // The choice holds: the next comparison opens inline.
+      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+      await openTextComparison();
+      await vscode.commands.executeCommand('nightdocs.openMarkdown');
+      await waitFor(inline);
+      assert.equal(tabCount(), 1, describeEditors());
+
+      // And back to side by side, with the comparison's own title.
+      await toggleUntil(sideBySide);
+      assert.equal(tabCount(), 1, describeEditors());
+    } finally {
+      await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+    }
+  },
+
   async 'hands pictures next to a Markdown file to the view as bytes of their own'() {
     const document = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
     const picture = await readPicture(document, 'images/flow.svg');
@@ -293,6 +358,7 @@ const tests: Record<string, () => Promise<void>> = {
       'goToSheet',
       'goToSlide',
       'goToHeading',
+      'toggleInlineView',
       'toggleNavigation',
       'copyAsMarkdown',
       'copyReference',

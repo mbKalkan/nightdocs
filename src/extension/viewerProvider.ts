@@ -12,7 +12,22 @@ import type {
 import { DiffPairs, type DiffMember } from './diffPairs';
 import { watchFile } from './fileWatcher';
 import { readGitBlob } from './gitBlob';
-import { editMarkdown, MARKDOWN_VIEW_TYPE, openInViewer, openLink, readPicture } from './markdown';
+import {
+  keepLayoutIn,
+  parseInlineUri,
+  setPrefersInline,
+  type InlineComparison,
+} from './inlineCompare';
+import {
+  editInline,
+  editMarkdown,
+  MARKDOWN_VIEW_TYPE,
+  openInViewer,
+  openLink,
+  readPicture,
+  showInline,
+  showSideBySide,
+} from './markdown';
 import { isExternalLink } from './markdownLinks';
 import { openWithDefaultApp } from './openWithDefaultApp';
 import { pick } from './quickPick';
@@ -40,6 +55,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private static readonly colorModeKey = 'nightdocs.colorMode';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
+  private readonly panels = new Set<{ panel: vscode.WebviewPanel; uri: vscode.Uri }>();
   private readonly diffs = new DiffPairs();
   /** Where to scroll a Markdown file opened from a link to `file.md#heading`. */
   private readonly fragments = new Map<string, string>();
@@ -51,6 +67,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new ViewerProvider(context.extension, context.globalState);
+    keepLayoutIn(context.globalState);
     const options = {
       webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true },
       supportsMultipleEditorsPerDocument: true,
@@ -79,6 +96,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
         vscode.commands.registerCommand(`nightdocs.${id}`, () => provider.sendCommand('goTo')),
       ),
       vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
+      vscode.commands.registerCommand('nightdocs.toggleInlineView', () =>
+        provider.sendCommand('toggleInline'),
+      ),
       vscode.commands.registerCommand('nightdocs.toggleNavigation', () =>
         provider.sendCommand('toggleNavigation'),
       ),
@@ -100,7 +120,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   resolveCustomEditor(document: vscode.CustomDocument, panel: vscode.WebviewPanel): void {
     const { uri } = document;
-    const info = formatForPath(uri.path);
+    // A Markdown comparison shown inline is a view of the modified version.
+    const inline = parseInlineUri(uri);
+    const source = inline?.modified ?? uri;
+    const info = formatForPath(source.path);
     if (!info) {
       throw new Error(`Unsupported file type: ${uri.path}`);
     }
@@ -117,7 +140,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     });
 
     const post = (message: HostToWebviewMessage) => panel.webview.postMessage(message);
-    const load = (reload: boolean) => this.loadInto(uri, info, reload, post);
+    const load = (reload: boolean) => this.loadInto(uri, info, reload, post, inline);
     const member: DiffMember = { uri, post, ready: false };
     this.diffs.add(member, panel.viewColumn);
     const text = isTextFormat(info.format);
@@ -145,11 +168,17 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             this.diffs.relay(member, { type: 'peerShowOnline' });
             break;
           case 'openInOffice':
-            if (text) void editMarkdown(uri, member.side !== undefined, message.line);
+            if (inline) void editInline(inline, message.line);
+            else if (text) void editMarkdown(uri, member.side !== undefined, message.line);
             else void this.openInOffice(uri, info);
             break;
+          case 'setInline':
+            setPrefersInline(message.inline);
+            if (inline && !message.inline) void showSideBySide(inline);
+            else if (!inline && message.inline) this.showInline(member, panel);
+            break;
           case 'resource':
-            void readPicture(uri, message.href).then((picture) =>
+            void readPicture(source, message.href).then((picture) =>
               post({ type: 'resource', id: message.id, ...picture }),
             );
             break;
@@ -161,7 +190,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
               }
               break;
             }
-            void openLink(uri, message.href, panel.viewColumn, (target, fragment) => {
+            void openLink(source, message.href, panel.viewColumn, (target, fragment) => {
               if (fragment) this.fragments.set(target.toString(), fragment);
               return vscode.commands.executeCommand('vscode.openWith', target, MARKDOWN_VIEW_TYPE, {
                 viewColumn: panel.viewColumn,
@@ -199,7 +228,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'reference':
             void vscode.env.clipboard
-              .writeText(composeReference(referencePath(uri), message.location, message.text))
+              .writeText(composeReference(referencePath(source), message.location, message.text))
               .then(() =>
                 vscode.window.setStatusBarMessage(
                   message.text
@@ -211,13 +240,21 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
         }
       }),
-      watchFile(uri, () => void load(true)),
+      ...(inline ? [inline.modified, inline.original] : [uri]).map((file) =>
+        watchFile(file, () => void load(true)),
+      ),
       panel.onDidChangeViewState(() => this.trackActive(panel, uri)),
     ];
-    if (text) subscriptions.push(...this.followTextEditor(uri, panel, member, () => load(true)));
+    if (text) {
+      const files = inline ? [inline.modified, inline.original] : [uri];
+      subscriptions.push(...this.followTextEditor(files, panel, member, () => load(true)));
+    }
     this.trackActive(panel, uri);
+    const entry = { panel, uri };
+    this.panels.add(entry);
 
     panel.onDidDispose(() => {
+      this.panels.delete(entry);
       subscriptions.forEach((s) => s.dispose());
       this.diffs.remove(member);
       if (this.activePanel?.panel === panel) {
@@ -227,27 +264,44 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     });
   }
 
+  /** Shows the side by side comparison `member` is a side of inline, in its place. */
+  private showInline(member: DiffMember, panel: vscode.WebviewPanel): void {
+    const { peer, side } = member;
+    if (!peer || !side) return;
+    const [original, modified] = side === 'original' ? [member, peer] : [peer, member];
+    const column = panel.viewColumn;
+    const label =
+      vscode.window.tabGroups.all.find((group) => group.viewColumn === column)?.activeTab?.label ??
+      '';
+    void showInline(
+      { original: original.uri, modified: modified.uri, label },
+      (tab) => tab.group.viewColumn === column && tab.input === undefined && tab.label === label,
+    );
+  }
+
   /**
-   * Keeps a Markdown view in step with the file's text editor: it shows unsaved changes as they
-   * are typed, and scrolls along when the editor beside it scrolls. It also shows pictures from
-   * the web as soon as the setting for them is turned on.
+   * Keeps a Markdown view in step with the text editors of its files: it shows unsaved changes
+   * as they are typed, and scrolls along when the editor beside it scrolls. It also shows
+   * pictures from the web as soon as the setting for them is turned on.
    */
   private followTextEditor(
-    uri: vscode.Uri,
+    files: vscode.Uri[],
     panel: vscode.WebviewPanel,
     member: DiffMember,
     reload: () => unknown,
   ): vscode.Disposable[] {
     let typing: ReturnType<typeof setTimeout> | undefined;
+    const followed = (uri: vscode.Uri) => files.some((file) => sameFile(file, uri));
     return [
       vscode.workspace.onDidChangeTextDocument((event) => {
-        if (!sameFile(event.document.uri, uri) || event.contentChanges.length === 0) return;
+        if (!followed(event.document.uri) || event.contentChanges.length === 0) return;
         clearTimeout(typing);
         typing = setTimeout(reload, TYPING_DELAY_MS);
       }),
       vscode.window.onDidChangeTextEditorVisibleRanges(({ textEditor, visibleRanges }) => {
-        // A comparison scrolls with its other side instead.
-        if (!panel.visible || member.side || !sameFile(textEditor.document.uri, uri)) return;
+        // A comparison has its own place; side by side, it scrolls with its other side.
+        const uri = textEditor.document.uri;
+        if (!panel.visible || member.side || files.length > 1 || !followed(uri)) return;
         const top = visibleRanges[0]?.start.line;
         if (top !== undefined) void panel.webview.postMessage({ type: 'revealLine', line: top });
       }),
@@ -278,28 +332,23 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     info: FormatInfo,
     reload: boolean,
     post: (message: HostToWebviewMessage) => Thenable<boolean>,
+    inline?: InlineComparison,
   ): Promise<void> {
     const text = isTextFormat(info.format);
+    const source = inline?.modified ?? uri;
+    const name = source.path.slice(source.path.lastIndexOf('/') + 1);
     const common = {
-      fileName: uri.path.slice(uri.path.lastIndexOf('/') + 1),
+      fileName: inline?.label || name,
       format: info.format,
       // Markdown's text editor is always there to switch to, even on the web.
       canOpenInOffice: text || this.canOpenInOffice(uri),
       strings: viewerStrings(info),
     };
     let data: Uint8Array;
+    let original: Uint8Array | undefined;
     try {
-      // An open text editor may have unsaved changes; show what it shows.
-      const open = text
-        ? vscode.workspace.textDocuments.find((document) => sameFile(document.uri, uri))
-        : undefined;
-      data = open
-        ? new TextEncoder().encode(open.getText())
-        : await vscode.workspace.fs.readFile(uri);
-      // A version from Git can come back converted to text; Office files are never text.
-      if (!text && uri.scheme === 'git' && detectContainer(data) === 'unknown') {
-        data = (await readGitBlob(uri)) ?? data;
-      }
+      data = await readVersion(source, text);
+      if (inline) original = await readVersion(inline.original, text);
     } catch {
       // A save in progress can briefly remove the file; keep showing the last good render.
       if (!reload) {
@@ -307,10 +356,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       }
       return;
     }
-    const fragment = reload ? undefined : this.fragments.get(uri.toString());
+    const fragment = reload || inline ? undefined : this.fragments.get(uri.toString());
     this.fragments.delete(uri.toString());
     // Opened beside its text editor, a Markdown view starts where the editor is.
-    const line = text && !reload ? this.editorTop(uri) : undefined;
+    const line = text && !reload && !inline ? this.editorTop(uri) : undefined;
     // A plain copy: a Node Buffer turns itself into JSON numbers on the way to the webview.
     await post({
       type: 'load',
@@ -322,6 +371,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       fragment,
       line,
       onlineContent: text && showOnlineContent(),
+      original: original && new Uint8Array(original),
       ...common,
     });
   }
@@ -365,19 +415,45 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     return active && info ? this.openInOffice(active.uri, info) : undefined;
   }
 
+  /**
+   * The view a command goes to: the one with focus, or else one showing in the active editor
+   * group (a side by side comparison just opened has no side with focus).
+   */
+  private commandTarget(): { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined {
+    if (this.activePanel) return this.activePanel;
+    const column = vscode.window.tabGroups.activeTabGroup.viewColumn;
+    return [...this.panels].find(({ panel }) => panel.visible && panel.viewColumn === column);
+  }
+
   private sendCommand(command: ViewerCommand): void {
-    void this.activePanel?.panel.webview.postMessage({
+    void this.commandTarget()?.panel.webview.postMessage({
       type: 'command',
       command,
     } satisfies HostToWebviewMessage);
   }
 
   private zoomActive(action: ZoomAction): void {
-    void this.activePanel?.panel.webview.postMessage({
+    void this.commandTarget()?.panel.webview.postMessage({
       type: 'zoom',
       action,
     } satisfies HostToWebviewMessage);
   }
+}
+
+/**
+ * Reads a version of a file. An open text editor may have unsaved changes; that is what it shows.
+ * A version from Git can come back converted to text; Office files are never text.
+ */
+async function readVersion(uri: vscode.Uri, text: boolean): Promise<Uint8Array> {
+  const open = text
+    ? vscode.workspace.textDocuments.find((document) => sameFile(document.uri, uri))
+    : undefined;
+  if (open) return new TextEncoder().encode(open.getText());
+  const data = await vscode.workspace.fs.readFile(uri);
+  if (!text && uri.scheme === 'git' && detectContainer(data) === 'unknown') {
+    return (await readGitBlob(uri)) ?? data;
+  }
+  return data;
 }
 
 /**

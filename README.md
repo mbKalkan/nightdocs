@@ -137,13 +137,18 @@ READMEs.
   added and removed slides are tinted, with an empty stand-in on the other side so both decks line
   up
 - Markdown: edited, added and removed paragraphs, list items, table rows, lines of code and front
-  matter properties are marked, down to the changed words
+  matter properties are marked, down to the changed words. **Inline View** in the status bar (or
+  **Nightdocs: Toggle Inline View**) shows one rendered file instead, as VS Code's inline diff
+  does: what was removed or edited just above what replaced it, inside the same list, table or
+  code block. The choice holds for the next comparisons
 - Both sides scroll and zoom together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes
 - Beside the scrollbar, an overview shows where the changes are in the whole file, as in VS Code's
   diff editor: removed content on the left, added on the right. Click a change to go to it
 
 ![Two versions of a Markdown file side by side in Nightdocs, with the changes marked and the overview of changes beside the scrollbar](docs/images/markdown-compare-dark.png)
+
+![A Markdown comparison in Nightdocs's Inline View: each removed or edited block of the old version just above the new one](docs/images/markdown-inline-dark.png)
 
 ![Two versions of a Word document side by side in Nightdocs, with the changes marked](docs/images/word-compare-dark.png)
 

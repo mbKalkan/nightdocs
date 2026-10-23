@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import type { CellSelection } from '../../src/shared/protocol';
 import { lastSent, openComparison, relayScroll } from './comparison';
@@ -116,6 +116,21 @@ test('PowerPoint comparison in a dark theme', async ({ context }) => {
     'powerpoint-compare-dark.png',
     3,
   );
+});
+
+test('Markdown comparison inline in a dark theme', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/sample-revised.md', false, 'dark', {
+    original: readFileSync('test/fixtures/markdown/sample.md'),
+    fileName: 'sample-revised.md (Working Tree)',
+  });
+  await expect(page.locator('.ov-diff-status')).toHaveText('10 changes');
+  // The steps: an edited and an added item, a changed line of code, a ticked box.
+  await page
+    .locator('.ov-viewport')
+    .evaluate((viewport) => (viewport.scrollTop = viewport.querySelector('h2')!.offsetTop - 16));
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: `${OUT}/markdown-inline-dark.png` });
 });
 
 test('Markdown file in a dark theme', async ({ page }) => {

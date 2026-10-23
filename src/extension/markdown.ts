@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { MARKDOWN_EXTENSIONS } from '../shared/formats';
+import { comparisonKey, inlineUri, prefersInline, type InlineComparison } from './inlineCompare';
 import { hasScheme, isExternalLink, lineFragment, pictureType, resolveHref } from './markdownLinks';
 
 /** The viewer for Markdown; VS Code's text editor stays the default for these files. */
@@ -17,9 +18,90 @@ const sameFile = (a: vscode.Uri, b: vscode.Uri) => a.toString() === b.toString()
 const keptAsText = new Set<string>();
 /** Edit is switching a comparison to text: the next text comparison is that one. */
 let switchingToText = false;
+/** Comparisons going from inline back to side by side, through their text comparison. */
+const sideBySideNext = new Set<string>();
 
-const comparisonKey = ({ original, modified }: vscode.TabInputTextDiff) =>
-  `${original.toString()} ${modified.toString()}`;
+function findTab(matches: (tab: vscode.Tab) => boolean): vscode.Tab | undefined {
+  return vscode.window.tabGroups.all.flatMap((group) => group.tabs).find(matches);
+}
+
+const isInlineTab = (comparison: InlineComparison) => (tab: vscode.Tab) =>
+  tab.input instanceof vscode.TabInputCustom &&
+  tab.input.uri.toString() === inlineUri(comparison).toString();
+
+const isTextComparisonTab = (key: string) => (tab: vscode.Tab) =>
+  tab.input instanceof vscode.TabInputTextDiff && comparisonKey(tab.input) === key;
+
+/** Closes the tab `replaced` finds, if it is still open (a preview tab is replaced already). */
+async function close(replaced: (tab: vscode.Tab) => boolean): Promise<void> {
+  const tab = findTab(replaced);
+  if (tab) await vscode.window.tabGroups.close(tab, true);
+}
+
+/** Shows a comparison inline, in the place of the tab `replaced` finds. */
+export async function showInline(
+  comparison: InlineComparison,
+  replaced: (tab: vscode.Tab) => boolean,
+): Promise<void> {
+  const tab = findTab(replaced);
+  await vscode.commands.executeCommand(
+    'vscode.openWith',
+    inlineUri(comparison),
+    MARKDOWN_VIEW_TYPE,
+    { viewColumn: tab?.group.viewColumn, preview: tab?.isPreview ?? false },
+  );
+  await close(replaced);
+}
+
+/**
+ * Shows a comparison shown inline side by side again. It opens as text, as other comparisons
+ * do, and the text comparison is reopened in the viewer.
+ */
+export async function showSideBySide(comparison: InlineComparison): Promise<void> {
+  const key = comparisonKey(comparison);
+  keptAsText.delete(key);
+  sideBySideNext.add(key);
+  await openTextComparison(comparison);
+}
+
+/** Edit in a comparison shown inline: VS Code's text comparison, at `line` of the new version. */
+export async function editInline(comparison: InlineComparison, line?: number): Promise<void> {
+  keptAsText.add(comparisonKey(comparison));
+  await openTextComparison(comparison, line);
+}
+
+async function openTextComparison(comparison: InlineComparison, line?: number): Promise<void> {
+  const inline = isInlineTab(comparison);
+  const tab = findTab(inline);
+  await vscode.commands.executeCommand(
+    'vscode.diff',
+    comparison.original,
+    comparison.modified,
+    comparison.label || undefined,
+    {
+      viewColumn: tab?.group.viewColumn,
+      preview: tab?.isPreview ?? false,
+      selection: line === undefined ? undefined : new vscode.Range(line, 0, line, 0),
+    } satisfies vscode.TextDocumentShowOptions,
+  );
+  await close(inline);
+}
+
+/** Shows the text comparison in the active tab rendered: inline or side by side, as last chosen. */
+async function renderTextComparison(
+  tab: vscode.Tab,
+  input: vscode.TabInputTextDiff,
+): Promise<void> {
+  if (!prefersInline()) {
+    await vscode.commands.executeCommand('reopenActiveEditorWith', MARKDOWN_VIEW_TYPE);
+    return;
+  }
+  const { original, modified } = input;
+  await showInline(
+    { original, modified, label: tab.label },
+    isTextComparisonTab(comparisonKey(input)),
+  );
+}
 
 /**
  * What a Markdown file's links resolve against. A version from Git (the old side of a
@@ -156,7 +238,7 @@ export async function openInViewer(resource: unknown): Promise<void> {
     isMarkdown(tab.input.modified) &&
     (!uri || sameFile(uri, tab.input.modified) || sameFile(uri, tab.input.original))
   ) {
-    await vscode.commands.executeCommand('reopenActiveEditorWith', MARKDOWN_VIEW_TYPE);
+    await renderTextComparison(tab, tab.input);
     return;
   }
   const editor = vscode.window.activeTextEditor;
@@ -183,13 +265,17 @@ export function renderComparisons(): vscode.Disposable {
     const key = input && isMarkdown(input.modified) ? comparisonKey(input) : undefined;
     if (key === shown) return;
     shown = key;
-    if (!key) return;
+    if (!tab || !input || !key) return;
+    if (sideBySideNext.delete(key)) {
+      void vscode.commands.executeCommand('reopenActiveEditorWith', MARKDOWN_VIEW_TYPE);
+      return;
+    }
     if (switchingToText) keptAsText.add(key);
     if (keptAsText.has(key)) return;
     const enabled = vscode.workspace
       .getConfiguration('nightdocs')
       .get<boolean>('markdown.compareRendered', false);
-    if (enabled) void vscode.commands.executeCommand('reopenActiveEditorWith', MARKDOWN_VIEW_TYPE);
+    if (enabled) void renderTextComparison(tab, input);
   };
   check();
   return vscode.Disposable.from(

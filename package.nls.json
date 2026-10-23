@@ -12,6 +12,7 @@
   "command.goToSheet": "Go to Sheet…",
   "command.goToSlide": "Go to Slide…",
   "command.goToHeading": "Go to Heading…",
+  "command.toggleInlineView": "Toggle Inline View",
   "command.find": "Find in Sheet",
   "command.toggleNavigation": "Toggle Navigation Pane",
   "command.copyAsMarkdown": "Copy as Markdown Table",

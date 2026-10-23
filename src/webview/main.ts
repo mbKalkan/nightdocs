@@ -86,6 +86,7 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       if (message.command === 'toggleNavigation') toggleNavigation();
       else if (message.command === 'copyReference') copyReference(false);
       else if (message.command === 'copyReferenceWithText') copyReference(true);
+      else if (message.command === 'toggleInline') diff.toggleInline();
       else current?.command?.(message.command);
       break;
     case 'picked':
@@ -210,6 +211,8 @@ async function show(message: LoadMessage): Promise<void> {
       fragment: message.reload ? undefined : message.fragment,
       line: message.reload ? undefined : message.line,
       onlineContent: message.onlineContent,
+      original: message.original,
+      rerender,
     });
     if (id !== renderId) {
       rendered.dispose?.();
@@ -236,6 +239,7 @@ async function show(message: LoadMessage): Promise<void> {
       setBusy: (busy) => shell.setBusy(busy),
     };
     rendered.activate?.(context);
+    diff.setInline(message.original !== undefined);
     diff.attach(rendered, context, message.strings);
     renderContext = context;
     if (!comparing) navigationOpen = message.navigationPane;
