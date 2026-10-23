@@ -57,6 +57,8 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private static readonly colorModeKey = 'nightdocs.colorMode';
 
   private activePanel: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
+  /** The view last active, while it may have lost focus to something else. */
+  private lastActive: { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined;
   private readonly panels = new Set<{ panel: vscode.WebviewPanel; uri: vscode.Uri }>();
   private readonly diffs = new DiffPairs();
   /** Where to scroll a Markdown file opened from a link to `file.md#heading`. */
@@ -265,6 +267,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
     panel.onDidDispose(() => {
       this.panels.delete(entry);
+      if (this.lastActive?.panel === panel) this.lastActive = undefined;
       subscriptions.forEach((s) => s.dispose());
       this.diffs.remove(member);
       if (this.activePanel?.panel === panel) {
@@ -332,7 +335,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   private trackActive(panel: vscode.WebviewPanel, uri: vscode.Uri): void {
     if (panel.active) {
-      this.activePanel = { panel, uri };
+      this.activePanel = this.lastActive = { panel, uri };
     } else if (this.activePanel?.panel === panel) {
       this.activePanel = undefined;
     }
@@ -440,7 +443,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
   private commandTarget(): { panel: vscode.WebviewPanel; uri: vscode.Uri } | undefined {
     if (this.activePanel) return this.activePanel;
     const column = vscode.window.tabGroups.activeTabGroup.viewColumn;
-    return [...this.panels].find(({ panel }) => panel.visible && panel.viewColumn === column);
+    const visible = [...this.panels].filter(({ panel }) => panel.visible);
+    return (
+      visible.find(({ panel }) => panel.viewColumn === column) ??
+      visible.find(({ panel }) => panel === this.lastActive?.panel)
+    );
   }
 
   private sendCommand(command: ViewerCommand): void {
