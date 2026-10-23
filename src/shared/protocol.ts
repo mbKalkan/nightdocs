@@ -280,6 +280,11 @@ export interface PeerZoomMessage {
   zoom: number | null;
 }
 
+/** The other side of a Markdown comparison was asked to show its pictures from the web. */
+export interface PeerShowOnlineMessage {
+  type: 'peerShowOnline';
+}
+
 /** The item picked from the list a `pick` message asked for; -1 when it was dismissed. */
 export interface PickedMessage {
   type: 'picked';
@@ -321,6 +326,7 @@ export type HostToWebviewMessage =
   | PeerScrollMessage
   | PeerZoomMessage
   | PeerSelectMessage
+  | PeerShowOnlineMessage
   | PickedMessage
   | ResourceMessage
   | RevealLineMessage;
@@ -341,6 +347,8 @@ export type WebviewToHostMessage =
   | { type: 'select'; selection: CellSelection }
   /** The zoom the user set while comparing, for the other side to match. */
   | { type: 'zoomed'; zoom: number | null }
+  /** The user chose to show a Markdown file's pictures from the web; the other side follows. */
+  | { type: 'showOnline' }
   /** Asks VS Code to list items to pick one from; the answer is a `picked` message. */
   | { type: 'pick'; placeholder: string; items: PickItem[] }
   /** Puts text on the clipboard; `rows` says how much, for the confirmation. */

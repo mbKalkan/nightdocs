@@ -113,6 +113,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'revealLine':
       if (hasContent && !comparing) current?.revealLine?.(message.line);
       break;
+    case 'peerShowOnline':
+      current?.showOnline?.();
+      break;
   }
 });
 

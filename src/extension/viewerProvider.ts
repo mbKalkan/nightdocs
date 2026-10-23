@@ -141,6 +141,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
           case 'zoomed':
             this.diffs.relay(member, { type: 'peerZoom', zoom: message.zoom });
             break;
+          case 'showOnline':
+            this.diffs.relay(member, { type: 'peerShowOnline' });
+            break;
           case 'openInOffice':
             if (text) void editMarkdown(uri, member.side !== undefined, message.line);
             else void this.openInOffice(uri, info);

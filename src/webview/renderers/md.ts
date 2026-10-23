@@ -10,7 +10,7 @@ import { icons } from '../icons';
 import { markdownBlocks } from '../md/blocks';
 import { highlightCode } from '../md/code';
 import { splitFrontMatter } from '../md/frontmatter';
-import { showPictures, type Pictures } from '../md/images';
+import { showPictures } from '../md/images';
 import {
   lineAtTop,
   lineElement,
@@ -81,13 +81,21 @@ export const mdRenderer: Renderer = {
       highlightCode(page),
       showPictures(article, strings, isDarkTheme(), online),
     ]);
+    let bar: HTMLElement | undefined;
+    const showOnline = () => {
+      if (online) return;
+      online = true;
+      pictures.showOnline();
+      bar?.remove();
+      forget();
+    };
     if (pictures.hidden > 0) {
-      page.prepend(
-        onlineBar(pictures, strings, () => {
-          online = true;
-          forget();
-        }),
-      );
+      bar = onlineBar(strings, () => {
+        showOnline();
+        // The other side of a comparison shows its pictures too.
+        vscode.postMessage({ type: 'showOnline' });
+      });
+      page.prepend(bar);
     }
 
     let headings: OutlineHeading[] | undefined;
@@ -107,6 +115,7 @@ export const mdRenderer: Renderer = {
         properties?.element.querySelector('.md-props-toggle')?.addEventListener('click', forget);
       },
       refresh: forget,
+      showOnline,
       state: (): MarkdownState => ({ source: properties?.showingSource ?? false, online }),
       command(command) {
         if (command !== 'goTo' || !view) return;
@@ -247,7 +256,7 @@ function headingBefore(
  * The bar above a file with pictures from the web, which stay hidden so that the viewer doesn't
  * go online on its own; its button shows them. The setting shows them without asking.
  */
-function onlineBar(pictures: Pictures, strings: ViewerStrings, shown: () => void): HTMLElement {
+function onlineBar(strings: ViewerStrings, show: () => void): HTMLElement {
   const bar = document.createElement('div');
   bar.className = 'md-online';
   bar.setAttribute('role', 'note');
@@ -260,11 +269,7 @@ function onlineBar(pictures: Pictures, strings: ViewerStrings, shown: () => void
   button.className = 'ov-button md-online-show';
   button.textContent = strings.showOnlineContent;
   button.title = strings.showOnlineContentHint;
-  button.addEventListener('click', () => {
-    pictures.showOnline();
-    bar.remove();
-    shown();
-  });
+  button.addEventListener('click', show);
   bar.append(text, button);
   return bar;
 }

@@ -20,8 +20,9 @@ Markdown, read and compared the way Office files are.
     line. Made for the agent, skill, command and rule files of AI tools
   - Prompt tags such as `<instructions>` and `<example>` frame what they hold instead of vanishing
   - Pictures next to the file are shown. Pictures on the web, such as badges, load when you choose
-    **Show Online Content**; the **Nightdocs › Markdown: Show Online Content** setting shows them
-    without asking. Until then badges show their text, and nothing goes online
+    **Show Online Content** (in a comparison, on both sides); the **Nightdocs › Markdown: Show
+    Online Content** setting shows them without asking. Until then badges show their text, and
+    nothing goes online
   - Links to other Markdown files open in Nightdocs, at the heading they point to
   - Headings in the navigation pane and in **Go to Heading…**
   - **Copy Reference** names the lines, such as `docs/guide.md, lines 12-18, under "Setup"`

@@ -27,11 +27,12 @@ export async function openComparison(
   theme: ThemeName,
   files: [string, string],
   width = 820,
+  options?: Parameters<typeof openViewer>[2],
 ): Promise<[Side, Side]> {
   const sides = await Promise.all(
     pages.map(async (page, i) => {
       await page.setViewportSize({ width, height: 760 });
-      const viewer = await openViewer(page, theme);
+      const viewer = await openViewer(page, theme, options);
       await viewer.load(files[i]);
       await viewer.post({ type: 'diff', side: i === 0 ? 'original' : 'modified' });
       return { page, viewer };
