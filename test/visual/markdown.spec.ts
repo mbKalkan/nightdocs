@@ -347,6 +347,57 @@ test('says when a Markdown file is empty', async ({ page }) => {
   expect(viewer.problems).toEqual([]);
 });
 
+test('fits a comparison in narrow panes, and shows web pictures on both sides', async ({
+  browser,
+}) => {
+  const pages = [await browser.newPage(), await browser.newPage()] as [Page, Page];
+  await Promise.all(pages.map((page) => serveWebPictures(page)));
+  const [original, modified] = await openComparison(
+    pages,
+    'dark',
+    ['markdown/sample.md', 'markdown/sample-revised.md'],
+    340,
+    { webPictures: true },
+  );
+  const box = (side: typeof original, selector: string) =>
+    side.page.locator(selector).first().boundingBox() as Promise<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>;
+
+  for (const side of [original, modified]) {
+    // The bar's button goes below its text rather than squeezing it to a word per line.
+    const text = await box(side, '.md-online-text');
+    const button = await box(side, '.md-online-show');
+    expect(text.height).toBeLessThan(60);
+    expect(button.y).toBeGreaterThan(text.y + text.height - 1);
+    // A property's name sits above its value; nested values keep whole words on a line.
+    const name = await box(side, '.md-prop[data-key="reviewers"] > dt');
+    const value = await box(side, '.md-prop[data-key="reviewers"] > dd');
+    expect(value.y).toBeGreaterThanOrEqual(name.y + name.height - 1);
+    const lead = await box(side, '.md-props-nested dd >> text=lead');
+    expect(lead.height).toBeLessThan(30);
+  }
+  await original.page.screenshot({ path: `${SCREENS}/markdown-diff-narrow-original.png` });
+  await modified.page.screenshot({ path: `${SCREENS}/markdown-diff-narrow-modified.png` });
+
+  // Show Online Content on one side shows the web pictures on the other too.
+  await original.page.locator('.md-online-show').click();
+  await expect(original.page.locator('img[alt="Build"]')).toHaveJSProperty('naturalWidth', 90);
+  expect(await lastSent(original.viewer, 'showOnline')).toEqual({ type: 'showOnline' });
+  await modified.viewer.post({ type: 'peerShowOnline' });
+  await expect(modified.page.locator('.md-online')).toHaveCount(0);
+  await expect(modified.page.locator('img[alt="Build"]')).toHaveJSProperty('naturalWidth', 90);
+  // Asked again (the other side's echo), nothing more happens.
+  await original.viewer.post({ type: 'peerShowOnline' });
+  await expect(original.page.locator('img[alt="Build"]')).toHaveCount(1);
+
+  expect(original.viewer.problems).toEqual([]);
+  expect(modified.viewer.problems).toEqual([]);
+});
+
 for (const theme of ['dark', 'light'] as ThemeName[]) {
   test(`compares two versions of a Markdown file in the ${theme} theme`, async ({ browser }) => {
     const pages = [await browser.newPage(), await browser.newPage()] as [Page, Page];

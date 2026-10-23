@@ -73,6 +73,8 @@ export interface RenderedDocument {
    */
   sourceLine?(): number | undefined;
   revealLine?(line: number): void;
+  /** Shows pictures from the web, as the other side of a comparison was asked to. */
+  showOnline?(): void;
   /** View state to carry over when the same file is rendered again. */
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */

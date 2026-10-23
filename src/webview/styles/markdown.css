@@ -635,8 +635,9 @@ body.vscode-high-contrast-light .md-page {
 
 .md-online {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   margin: 0 0 20px;
   padding: 6px 6px 6px 12px;
   border: 1px solid var(--md-border);
@@ -651,8 +652,9 @@ body.vscode-high-contrast-light .md-page {
   flex: none;
 }
 
+/* In a narrow pane, such as one side of a comparison, the button goes below the text. */
 .md-online-text {
-  flex: 1;
+  flex: 1 1 16em;
 }
 
 .md-online .md-online-show {
@@ -822,6 +824,42 @@ body.vscode-high-contrast-light .md-page {
 
 .md-props-nested .md-prop > dt {
   padding-left: 10px;
+}
+
+/*
+ * In a narrow pane, such as one side of a comparison, a name sits above its value instead of
+ * squeezing it to a letter per line. Each list sizes against its own width.
+ */
+.md-props-list {
+  container: md-props / inline-size;
+}
+
+@container md-props (max-width: 400px) {
+  .md-props-list:not(.md-props-nested) > .md-prop {
+    display: block;
+  }
+
+  .md-props-list:not(.md-props-nested) > .md-prop > dt {
+    padding-bottom: 0;
+  }
+
+  .md-props-list:not(.md-props-nested) > .md-prop > dd {
+    padding-left: 12px;
+  }
+}
+
+@container md-props (max-width: 200px) {
+  .md-props-nested > .md-prop {
+    display: block;
+  }
+
+  .md-props-nested > .md-prop > dt {
+    padding-bottom: 0;
+  }
+
+  .md-props-nested > .md-prop > dd {
+    padding-left: 10px;
+  }
 }
 
 .md-prop-items {

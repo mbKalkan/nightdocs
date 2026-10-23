@@ -5,6 +5,7 @@ import type {
   HostToWebviewMessage,
   PeerScrollMessage,
   PeerSelectMessage,
+  PeerShowOnlineMessage,
   PeerZoomMessage,
 } from '../shared/protocol';
 import { orderSides, type DiffCandidate } from './diffSides';
@@ -75,7 +76,7 @@ export class DiffPairs {
   /** Passes on to the other side what it follows this one in. */
   relay(
     member: DiffMember,
-    message: PeerScrollMessage | PeerZoomMessage | PeerSelectMessage,
+    message: PeerScrollMessage | PeerZoomMessage | PeerSelectMessage | PeerShowOnlineMessage,
   ): void {
     const { peer } = member;
     if (peer?.ready) void peer.post(message);
