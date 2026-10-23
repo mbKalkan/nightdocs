@@ -1,6 +1,6 @@
 import { similarity } from '../../shared/diff';
 import type { Comparison, RenderContext } from '../renderers/types';
-import { align } from './align';
+import { align, EDITED } from './align';
 import type { Blocks } from './blockCompare';
 import { clearMarks, markWords, MARK } from './marks';
 import type { OverviewMark } from './overview';
@@ -43,6 +43,8 @@ export function compareInline(
   });
   const placer = new Placer(original.root, modified.root);
   const changes: Change[] = [];
+  // Copies of list items go into the lists; the items there keep their numbers.
+  const numbered = numberItems(modified.root);
 
   for (const hunk of alignment.hunks) {
     const pairs = new Map(hunk.pairs);
@@ -54,14 +56,18 @@ export function compareInline(
       if (a !== undefined) markEdit(element, original, modified, a, b, ADDED);
     }
     // Removed blocks go before the next block of the modified version, an edited one just
-    // before its new version.
+    // before its new version. Short blocks replaced one for one (a heading for a heading)
+    // count as removed, so that what was removed stays together.
     const copies: HTMLElement[] = [];
     let next = hunk.bStart;
     for (let a = hunk.aStart; a < hunk.aEnd; a++) {
       const element = original.elements[a];
       element.classList.add(LINE, REMOVED);
-      const b = pairs.get(a);
+      let b = pairs.get(a);
       if (b !== undefined) markEdit(element, modified, original, b, a, REMOVED);
+      if (b !== undefined && similarity(original.texts[a], modified.texts[b]) < EDITED) {
+        b = undefined;
+      }
       const at = b ?? next;
       copies.push(
         at < modified.elements.length
@@ -108,6 +114,7 @@ export function compareInline(
       })),
     dispose() {
       for (const element of modified.root.querySelectorAll(`.${INSERTED}`)) element.remove();
+      for (const item of numbered) item.removeAttribute('value');
       clearMarks(original.root, CLASSES);
       clearMarks(modified.root, CLASSES);
       onChange();
@@ -129,6 +136,19 @@ function markEdit(
   for (const picture of element.querySelectorAll('img, svg, [role="img"]')) {
     picture.classList.add(MARK, className);
   }
+}
+
+/** Numbers the items of numbered lists as they are, and returns the items numbered. */
+function numberItems(root: Element): HTMLLIElement[] {
+  const items: HTMLLIElement[] = [];
+  for (const list of root.querySelectorAll('ol')) {
+    [...list.children].forEach((item, i) => {
+      if (!(item instanceof HTMLLIElement) || item.hasAttribute('value')) return;
+      item.value = list.start + i;
+      items.push(item);
+    });
+  }
+  return items;
 }
 
 const inReadingOrder = (a: Node, b: Node) =>
@@ -168,12 +188,13 @@ class Placer {
   place(block: HTMLElement, anchor: HTMLElement | undefined, after: boolean): HTMLElement {
     const sources = chain(block, this.originalRoot);
     const targets = anchor ? chain(anchor, this.modifiedRoot) : [];
-    // Go into the same containers, but not into a list item: an item of its own reads better.
+    // Go into the same containers, but not into the list item a paragraph is the text of: an
+    // item of its own reads better.
     let depth = 0;
     while (
       depth < sources.length - 1 &&
       depth < targets.length - 1 &&
-      sources[depth].tagName !== 'LI' &&
+      !(sources[depth].tagName === 'LI' && depth === sources.length - 2) &&
       kind(sources[depth]) === kind(targets[depth])
     ) {
       depth++;

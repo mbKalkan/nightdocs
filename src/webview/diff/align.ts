@@ -18,7 +18,7 @@ export interface Alignment {
 }
 
 /** Below this share of common words, a changed item counts as removed and another as added. */
-const EDITED = 0.5;
+export const EDITED = 0.5;
 
 /** Pairing looks this far ahead for an edited item; big rewrites aren't worth pairing up. */
 const LOOKAHEAD = 20;
