@@ -28,8 +28,9 @@ const CONFIG: Config = {
     'audio',
     'track',
   ],
-  // Inline styles could restyle or cover the viewer itself.
-  FORBID_ATTR: ['style'],
+  // Inline styles could restyle or cover the viewer itself. A table's or cell's `background`
+  // is a picture from the web the user didn't choose to load (only <img> waits for that).
+  FORBID_ATTR: ['style', 'background'],
 };
 
 /**

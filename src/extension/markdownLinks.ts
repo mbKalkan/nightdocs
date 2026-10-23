@@ -60,7 +60,7 @@ function decode(text: string): string {
 
 /** `L12` or `L12-L20` (GitHub's line links), as 0-based lines, end inclusive. */
 export function lineFragment(fragment: string | undefined): [number, number] | undefined {
-  const match = fragment && /^L(\d+)(?:-L?(\d+))?$/i.exec(fragment);
+  const match = fragment && /^L([1-9]\d*)(?:-L?([1-9]\d*))?$/i.exec(fragment);
   if (!match) return undefined;
   const start = Number(match[1]) - 1;
   return [start, match[2] ? Number(match[2]) - 1 : start];

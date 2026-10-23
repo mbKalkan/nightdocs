@@ -56,6 +56,9 @@ describe('link helpers', () => {
     expect(lineFragment('L12')).toEqual([11, 11]);
     expect(lineFragment('L12-L20')).toEqual([11, 19]);
     expect(lineFragment('install')).toBeUndefined();
+    // Lines count from 1; a link to line 0 is no line.
+    expect(lineFragment('L0')).toBeUndefined();
+    expect(lineFragment('L0-L5')).toBeUndefined();
   });
 
   it('knows picture types by extension', () => {

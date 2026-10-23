@@ -193,6 +193,36 @@ test('says which pictures next to the file are missing or damaged', async ({ pag
   expect(viewer.problems).toEqual([]);
 });
 
+test('keeps raw HTML from loading pictures from the web', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark', { webPictures: true });
+  const requested = await serveWebPictures(page);
+  await viewer.load('markdown/web-html.md');
+
+  // A table's or cell's background would load as soon as it is shown; it is taken out.
+  await expect(page.locator('td', { hasText: 'Cell' })).toHaveCount(1);
+  await expect(page.locator('[background]')).toHaveCount(0);
+  await expect(page.locator('.md-web-image')).toHaveText('Raw picture');
+  await page.waitForTimeout(300);
+  expect(requested).toEqual([]);
+  expect(viewer.problems).toEqual([]);
+});
+
+test('shows front matter whose YAML aliases refer to themselves', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/anchors.md');
+
+  await expect(page.locator('h1')).toHaveText('Front matter with aliases');
+  // A value shown once, then as "…": the alias inside itself, and the one copied.
+  const props = page.locator('.md-props-list:not(.md-props-nested) > .md-prop');
+  await expect(props).toHaveCount(4);
+  await expect(page.locator('.md-prop[data-key="loop"] .md-props-nested .md-prop > dd')).toHaveText(
+    '…',
+  );
+  await expect(page.locator('.md-prop[data-key="shared"] > dd')).toContainText('Ada');
+  await expect(page.locator('.md-prop[data-key="copy"] > dd')).toHaveText('…');
+  expect(viewer.problems).toEqual([]);
+});
+
 test('shows web pictures without asking when the setting says so', async ({ page }) => {
   const viewer = await openViewer(page, 'dark', { webPictures: true });
   await serveWebPictures(page);
@@ -227,6 +257,15 @@ test('follows links: headings in place, everything else through VS Code', async 
   await expect
     .poll(async () => (await lastSent<{ href: string }>(viewer, 'openLink'))?.href)
     .toBe('https://github.com/mbKalkan/nightdocs/releases');
+
+  // A link from another file to a heading here, with this file already open.
+  await page.locator('.ov-viewport').evaluate((el) => (el.scrollTop = 0));
+  await viewer.post({ type: 'revealFragment', fragment: 'publishing' });
+  await expect
+    .poll(() =>
+      page.locator('h2[data-anchor="publishing"]').evaluate((el) => el.getBoundingClientRect().top),
+    )
+    .toBeLessThan(120);
   expect(viewer.problems).toEqual([]);
 });
 

@@ -81,8 +81,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       vscode.window.registerCustomEditorProvider(ViewerProvider.viewType, provider, options),
       // Markdown has its own view type: it is an option next to the text editor, not the default.
       vscode.window.registerCustomEditorProvider(MARKDOWN_VIEW_TYPE, provider, options),
-      vscode.commands.registerCommand('nightdocs.openMarkdown', (resource: unknown) =>
-        openInViewer(resource),
+      vscode.commands.registerCommand(
+        'nightdocs.openMarkdown',
+        (resource: unknown, selected: unknown) => openInViewer(resource, selected),
       ),
       vscode.commands.registerCommand('nightdocs.openInOffice', () =>
         provider.openActiveInOffice(),
@@ -144,7 +145,12 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       webPictures: isTextFormat(info.format),
     });
 
-    const post = (message: HostToWebviewMessage) => panel.webview.postMessage(message);
+    let disposed = false;
+    // A view closed while its file was being read (or switched to inline) takes nothing more.
+    const post = (message: HostToWebviewMessage): Thenable<boolean> =>
+      disposed
+        ? Promise.resolve(false)
+        : panel.webview.postMessage(message).then(undefined, () => false);
     const load = (reload: boolean) => this.loadInto(uri, info, reload, post, inline);
     const member: DiffMember = { uri, post, ready: false };
     this.diffs.add(member, panel.viewColumn);
@@ -179,9 +185,11 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             break;
           case 'openInOffice':
             if (inline) void editInline(inline, message.line);
-            else if (text && member.side)
-              this.showComparisonAs('text', member, panel, message.line);
-            else if (text) void editMarkdown(uri, message.line, panel.viewColumn);
+            // The text comparison opens at a line of the new version.
+            else if (text && member.side) {
+              const line = member.side === 'modified' ? message.line : undefined;
+              this.showComparisonAs('text', member, panel, line);
+            } else if (text) void editMarkdown(uri, message.line, panel.viewColumn);
             else void this.openInOffice(uri, info);
             break;
           case 'setInline':
@@ -208,11 +216,21 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
               }
               break;
             }
-            void openLink(source, message.href, panel.viewColumn, (target, fragment) => {
-              if (fragment) this.fragments.set(target.toString(), fragment);
-              return vscode.commands.executeCommand('vscode.openWith', target, MARKDOWN_VIEW_TYPE, {
+            void openLink(source, message.href, panel.viewColumn, async (target, fragment) => {
+              // Already open in this group, the file's view is shown again, not loaded again.
+              const open = [...this.panels].find(
+                (entry) =>
+                  sameFile(entry.uri, target) && entry.panel.viewColumn === panel.viewColumn,
+              );
+              if (fragment && !open) this.fragments.set(target.toString(), fragment);
+              await vscode.commands.executeCommand('vscode.openWith', target, MARKDOWN_VIEW_TYPE, {
                 viewColumn: panel.viewColumn,
               });
+              if (fragment && open) {
+                open.panel.webview
+                  .postMessage({ type: 'revealFragment', fragment } satisfies HostToWebviewMessage)
+                  .then(undefined, () => undefined);
+              }
             });
             break;
           case 'copyText':
@@ -272,6 +290,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     this.panels.add(entry);
 
     panel.onDidDispose(() => {
+      disposed = true;
       this.panels.delete(entry);
       if (this.lastActive?.panel === panel) this.lastActive = undefined;
       subscriptions.forEach((s) => s.dispose());

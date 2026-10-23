@@ -47,6 +47,17 @@ interface Change {
   added: boolean;
 }
 
+/** Blocks are equal when their text and their pictures are; how alike is up to the text. */
+export const blockKeys = (texts: readonly string[], pictures?: readonly string[]) =>
+  texts.map((text, i) => (pictures?.[i] ? `${text}\u0000${pictures[i]}` : text));
+
+/** Marks the pictures of an edited block whose pictures changed. */
+export function markPictures(element: Element, className: string): void {
+  for (const picture of element.querySelectorAll('img, svg, [role="img"]')) {
+    picture.classList.add(MARK, className);
+  }
+}
+
 /**
  * Marks blocks that only this side has, the words that changed in edited blocks, and where the
  * other side has blocks this one doesn't.
@@ -59,11 +70,8 @@ export function compareBlocks(
 ): Comparison {
   const { root, elements, texts } = blocks;
   const original = side === 'original';
-  // Blocks are equal when their text and their pictures are; how alike is up to the text.
-  const keys = (texts: string[], pictures?: string[]) =>
-    texts.map((text, i) => (pictures?.[i] ? `${text}\u0000${pictures[i]}` : text));
-  const own = keys(texts, blocks.pictures);
-  const theirs = keys(peer.blocks, peer.pictures);
+  const own = blockKeys(texts, blocks.pictures);
+  const theirs = blockKeys(peer.blocks, peer.pictures);
   const [aTexts, bTexts] = original ? [texts, peer.blocks] : [peer.blocks, texts];
   const alignment = original
     ? align(own, theirs, { score: (x, y) => similarity(aTexts[x], bTexts[y]) })
@@ -86,9 +94,7 @@ export function compareBlocks(
       if (counterpart === undefined) continue;
       markWords(elements[i], peer.blocks[counterpart], ownClass);
       if ((blocks.pictures?.[i] ?? '') !== (peer.pictures?.[counterpart] ?? '')) {
-        for (const picture of elements[i].querySelectorAll('img, svg, [role="img"]')) {
-          picture.classList.add(MARK, ownClass);
-        }
+        markPictures(elements[i], ownClass);
       }
     }
     if (start < end) {

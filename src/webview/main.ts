@@ -114,6 +114,9 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
     case 'revealLine':
       if (hasContent && !comparing) current?.revealLine?.(message.line);
       break;
+    case 'revealFragment':
+      if (hasContent) current?.revealFragment?.(message.fragment);
+      break;
     case 'peerShowOnline':
       current?.showOnline?.();
       break;

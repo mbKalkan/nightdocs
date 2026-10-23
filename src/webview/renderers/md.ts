@@ -121,6 +121,7 @@ export const mdRenderer: Renderer = {
         const line = view && lineAtTop(view.viewport, placed());
         return line === undefined ? undefined : Math.floor(line);
       },
+      revealFragment: reveal,
       revealLine(line) {
         if (view) revealLine(view.viewport, placed(), line);
       },

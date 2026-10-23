@@ -1,8 +1,8 @@
 import { similarity } from '../../shared/diff';
 import type { Comparison, RenderContext } from '../renderers/types';
 import { align, EDITED } from './align';
-import type { Blocks } from './blockCompare';
-import { clearMarks, markWords, MARK } from './marks';
+import { blockKeys, markPictures, type Blocks } from './blockCompare';
+import { clearMarks, markWords } from './marks';
 import type { OverviewMark } from './overview';
 import { revealByTops, revealTop, scrollTopOf } from './scrolling';
 
@@ -36,11 +36,13 @@ export function compareInline(
   context: RenderContext,
   onChange: () => void,
 ): Comparison {
-  const keys = ({ texts, pictures }: Blocks) =>
-    texts.map((text, i) => (pictures?.[i] ? `${text}\u0000${pictures[i]}` : text));
-  const alignment = align(keys(original), keys(modified), {
-    score: (x, y) => similarity(original.texts[x], modified.texts[y]),
-  });
+  const alignment = align(
+    blockKeys(original.texts, original.pictures),
+    blockKeys(modified.texts, modified.pictures),
+    {
+      score: (x, y) => similarity(original.texts[x], modified.texts[y]),
+    },
+  );
   const placer = new Placer(original.root, modified.root);
   const changes: Change[] = [];
   // Copies of list items go into the lists; the items there keep their numbers.
@@ -132,9 +134,8 @@ function markEdit(
   className: string,
 ): void {
   markWords(element, other.texts[otherIndex], className);
-  if ((own.pictures?.[ownIndex] ?? '') === (other.pictures?.[otherIndex] ?? '')) return;
-  for (const picture of element.querySelectorAll('img, svg, [role="img"]')) {
-    picture.classList.add(MARK, className);
+  if ((own.pictures?.[ownIndex] ?? '') !== (other.pictures?.[otherIndex] ?? '')) {
+    markPictures(element, className);
   }
 }
 
