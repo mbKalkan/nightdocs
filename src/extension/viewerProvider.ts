@@ -95,6 +95,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
         vscode.commands.registerCommand(`nightdocs.${id}`, () => provider.sendCommand('goTo')),
       ),
       vscode.commands.registerCommand('nightdocs.find', () => provider.sendCommand('find')),
+      vscode.commands.registerCommand('nightdocs.toggleInlineView', () =>
+        provider.sendCommand('toggleInline'),
+      ),
       vscode.commands.registerCommand('nightdocs.toggleNavigation', () =>
         provider.sendCommand('toggleNavigation'),
       ),

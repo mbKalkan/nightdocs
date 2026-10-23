@@ -237,6 +237,11 @@
         "category": "%category%"
       },
       {
+        "command": "nightdocs.toggleInlineView",
+        "title": "%command.toggleInlineView%",
+        "category": "%category%"
+      },
+      {
         "command": "nightdocs.find",
         "title": "%command.find%",
         "category": "%category%"
@@ -303,6 +308,10 @@
         {
           "command": "nightdocs.goToHeading",
           "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat =~ /^(docx|md)$/"
+        },
+        {
+          "command": "nightdocs.toggleInlineView",
+          "when": "activeCustomEditorId == nightdocs.markdown"
         },
         {
           "command": "nightdocs.find",

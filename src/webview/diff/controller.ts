@@ -181,6 +181,12 @@ export class DiffController {
     });
   }
 
+  /** Asks for the comparison on screen to be shown inline, or side by side when it is. */
+  toggleInline(): void {
+    if (!this.comparison || !this.target?.document.canShowInline) return;
+    vscode.postMessage({ type: 'setInline', inline: !this.inline });
+  }
+
   /** Switches between the two sides and the changes inline, as VS Code's Inline View does. */
   private layoutButton(strings: ViewerStrings): HTMLElement {
     const inline = this.inline;

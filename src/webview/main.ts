@@ -86,6 +86,7 @@ window.addEventListener('message', (event: MessageEvent<HostToWebviewMessage>) =
       if (message.command === 'toggleNavigation') toggleNavigation();
       else if (message.command === 'copyReference') copyReference(false);
       else if (message.command === 'copyReferenceWithText') copyReference(true);
+      else if (message.command === 'toggleInline') diff.toggleInline();
       else current?.command?.(message.command);
       break;
     case 'picked':

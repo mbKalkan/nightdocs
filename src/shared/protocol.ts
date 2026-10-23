@@ -244,7 +244,8 @@ export type ViewerCommand =
   | 'toggleNavigation'
   | 'copyAsMarkdown'
   | 'copyReference'
-  | 'copyReferenceWithText';
+  | 'copyReferenceWithText'
+  | 'toggleInline';
 
 export interface CommandMessage {
   type: 'command';

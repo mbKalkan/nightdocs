@@ -12,6 +12,7 @@
   "command.goToSheet": "Sayfaya Git…",
   "command.goToSlide": "Slayta Git…",
   "command.goToHeading": "Başlığa Git…",
+  "command.toggleInlineView": "Satır İçi Görünümü Aç/Kapat",
   "command.find": "Sayfada Bul",
   "command.toggleNavigation": "Gezinti Bölmesini Aç/Kapat",
   "command.copyAsMarkdown": "Markdown Tablosu Olarak Kopyala",
