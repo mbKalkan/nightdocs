@@ -258,7 +258,10 @@ async function finishPage(
 
 /** Headings in order, levels counted from the highest one used. */
 function findHeadings(article: HTMLElement): OutlineHeading[] {
-  const elements = [...article.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')];
+  // Headings an inline comparison copied from the other version aren't this file's.
+  const elements = [...article.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')].filter(
+    (element) => !element.closest('.nd-inline-inserted'),
+  );
   const levels = elements.map((element) => Number(element.tagName[1]));
   const top = Math.min(...levels);
   return elements
