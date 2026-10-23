@@ -94,5 +94,7 @@
   "Picture from the web, not shown: {0}": "Web'den resim, gösterilmiyor: {0}",
   "Pictures from the web aren't shown, so nothing goes online.": "Web'den gelen resimler gösterilmiyor, böylece hiçbir şey internete çıkmıyor.",
   "Show Online Content": "Çevrimiçi İçeriği Göster",
-  "Show this file's pictures from the web. To always show them, turn on Nightdocs › Markdown: Show Online Content.": "Bu dosyanın web'den gelen resimlerini gösterin. Her zaman göstermek için Nightdocs › Markdown: Show Online Content ayarını açın."
+  "Show this file's pictures from the web. To always show them, turn on Nightdocs › Markdown: Show Online Content.": "Bu dosyanın web'den gelen resimlerini gösterin. Her zaman göstermek için Nightdocs › Markdown: Show Online Content ayarını açın.",
+  "Inline View": "Satır İçi Görünüm",
+  "Side by Side View": "Yan Yana Görünüm"
 }

@@ -88,6 +88,8 @@ export const strings: ViewerStrings = {
   slidePosition: 'Slide {0} of {1}',
   hiddenSlide: 'Hidden slide',
   noChanges: 'No changes',
+  inlineView: 'Inline View',
+  sideBySideView: 'Side by Side View',
   oneChange: '1 change',
   changeCount: '{0} changes',
   changePosition: 'Change {0} of {1}',
@@ -220,16 +222,19 @@ export async function openViewer(
     problems,
     /** Delivers a message as if it came from the extension host. Bytes travel as base64. */
     async post(message: HostToWebviewMessage) {
-      const bytes = message.type === 'load' ? Buffer.from(message.data).toString('base64') : null;
-      const payload: Record<string, unknown> = { ...message, data: null };
+      const base64 = (data: Uint8Array | undefined) =>
+        data ? Buffer.from(data).toString('base64') : null;
+      const bytes = message.type === 'load' ? base64(message.data) : null;
+      const original = message.type === 'load' ? base64(message.original) : null;
+      const payload: Record<string, unknown> = { ...message, data: null, original: undefined };
       await page.evaluate(
-        ({ payload, bytes }) => {
-          if (bytes !== null) {
-            payload.data = Uint8Array.from(atob(bytes), (c) => c.charCodeAt(0));
-          }
+        ({ payload, bytes, original }) => {
+          const decode = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
+          if (bytes !== null) payload.data = decode(bytes);
+          if (original !== null) payload.original = decode(original);
           window.dispatchEvent(new MessageEvent('message', { data: payload }));
         },
-        { payload, bytes },
+        { payload, bytes, original },
       );
     },
     async load(

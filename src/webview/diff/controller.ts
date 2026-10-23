@@ -24,6 +24,8 @@ interface Target {
  */
 export class DiffController {
   private side: DiffSide | undefined;
+  /** The document shows the changes from another version itself, inline. */
+  private inline = false;
   private peer: DocumentSummary | undefined;
   private target: Target | undefined;
   private comparison: Comparison | undefined;
@@ -47,6 +49,13 @@ export class DiffController {
       this.zoom = undefined;
     }
     void this.publish();
+    void this.update();
+  }
+
+  /** Shows the changes inline, in a document rendered with the version it is compared with. */
+  setInline(inline: boolean): void {
+    if (inline === this.inline) return;
+    this.inline = inline;
     void this.update();
   }
 
@@ -106,9 +115,11 @@ export class DiffController {
   private async update(): Promise<void> {
     this.stop();
     const { side, peer, target } = this;
-    if (!side || !peer || !target) return;
+    if (!target || (!this.inline && (!side || !peer))) return;
     const generation = this.generation;
-    const comparison = await target.document.compare?.(peer, side, target.context);
+    const comparison = this.inline
+      ? target.document.compareInline?.(target.context)
+      : await target.document.compare?.(peer!, side!, target.context);
     if (generation !== this.generation) {
       comparison?.dispose();
       return;
@@ -119,7 +130,11 @@ export class DiffController {
     this.showOverview(target, comparison);
     this.listen(target.context.viewport);
     // Like VS Code's diff editor, open at the first change. The other side follows.
-    if (side === 'modified' && !this.revealed && target.context.viewport.scrollTop === 0) {
+    if (
+      (side === 'modified' || this.inline) &&
+      !this.revealed &&
+      target.context.viewport.scrollTop === 0
+    ) {
       this.revealed = true;
       void this.go(1, false);
     }
@@ -133,7 +148,7 @@ export class DiffController {
     this.position = -1;
   }
 
-  private showBar({ context, strings }: Target): void {
+  private showBar({ context, strings, document: shown }: Target): void {
     const bar = document.createElement('div');
     bar.className = 'ov-diff';
     bar.setAttribute('role', 'group');
@@ -155,6 +170,7 @@ export class DiffController {
       button(strings.nextChange, icons.arrowDown, 1),
       status,
     );
+    if (shown.canShowInline) bar.append(this.layoutButton(strings));
     const { footer } = context;
     footer.append(bar);
     footer.hidden = false;
@@ -163,6 +179,22 @@ export class DiffController {
       bar.remove();
       footer.hidden = footer.childElementCount === 0;
     });
+  }
+
+  /** Switches between the two sides and the changes inline, as VS Code's Inline View does. */
+  private layoutButton(strings: ViewerStrings): HTMLElement {
+    const inline = this.inline;
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.className = 'ov-icon-button ov-diff-layout';
+    element.innerHTML = inline ? icons.sideBySide : icons.inline;
+    const label = inline ? strings.sideBySideView : strings.inlineView;
+    element.title = label;
+    element.setAttribute('aria-label', label);
+    element.addEventListener('click', () =>
+      vscode.postMessage({ type: 'setInline', inline: !inline }),
+    );
+    return element;
   }
 
   /** The strip beside the scrollbar that shows where the changes are. */
@@ -204,7 +236,10 @@ export class DiffController {
           : count === 1
             ? strings.oneChange
             : strings.changeCount.replace('{0}', String(count));
-    for (const button of status.parentElement?.querySelectorAll('button') ?? []) {
+    const moves = status.parentElement?.querySelectorAll<HTMLButtonElement>(
+      'button:not(.ov-diff-layout)',
+    );
+    for (const button of moves ?? []) {
       button.disabled = count === 0;
     }
   }

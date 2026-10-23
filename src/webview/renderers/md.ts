@@ -3,6 +3,7 @@ import type { ViewerStrings } from '../../shared/protocol';
 import { quote } from '../../shared/reference';
 import { isDarkTheme } from '../darkColors';
 import { compareBlocks, type Blocks } from '../diff/blockCompare';
+import { compareInline } from '../diff/inlineCompare';
 import { textOf } from '../diff/marks';
 import { revealTop, scrollTopOf } from '../diff/scrolling';
 import { goToHeading, headingsPane, type OutlineHeading } from '../headings';
@@ -10,7 +11,7 @@ import { icons } from '../icons';
 import { markdownBlocks } from '../md/blocks';
 import { highlightCode } from '../md/code';
 import { splitFrontMatter } from '../md/frontmatter';
-import { showPictures } from '../md/images';
+import { showPictures, type Pictures } from '../md/images';
 import {
   lineAtTop,
   lineElement,
@@ -45,30 +46,14 @@ let parser: MarkdownIt | undefined;
 export const mdRenderer: Renderer = {
   async render(data, target, options) {
     const { strings } = options;
-    const text = decodeText(data).replace(/\r\n?/g, '\n');
+    const text = decodeText(data);
     const sourceLines = text.split('\n');
-    const { frontMatter, body } = splitFrontMatter(text);
-    const html = (parser ??= createParser()).render(body);
-
-    const page = document.createElement('div');
-    page.className = 'md-page';
     const previous = options.previous as MarkdownState | undefined;
-    const properties =
-      frontMatter && renderProperties(frontMatter, strings, previous?.source ?? false);
-    if (properties) page.append(properties.element);
-    const article = document.createElement('article');
-    article.className = 'md-body';
-    article.append(sanitize(html));
-    if (!text.trim()) {
-      const empty = document.createElement('p');
-      empty.className = 'md-empty';
-      empty.textContent = strings.errorEmpty;
-      article.append(empty);
-    }
-    page.append(article);
+    const { page, article, properties } = buildPage(text, strings, previous?.source ?? false);
     target.append(page);
+    // An inline comparison copies changed blocks from this version; it is never shown itself.
+    const base = options.original && buildPage(decodeText(options.original), strings, false);
 
-    decorate(article, strings);
     let view: RenderContext | undefined;
     const reveal = (anchor: string) => {
       const element = anchorTarget(article, anchor);
@@ -77,19 +62,24 @@ export const mdRenderer: Renderer = {
     };
     followLinks(page, reveal);
     let online = Boolean(options.onlineContent || previous?.online);
-    const [, pictures] = await Promise.all([
-      highlightCode(page),
-      showPictures(article, strings, isDarkTheme(), online),
+    const [pictures, basePictures] = await Promise.all([
+      finishPage(page, article, strings, online),
+      base && finishPage(base.page, base.article, strings, online),
     ]);
     let bar: HTMLElement | undefined;
     const showOnline = () => {
       if (online) return;
       online = true;
+      // The copies an inline comparison made of the other version are made again with them.
+      if (base) {
+        options.rerender?.();
+        return;
+      }
       pictures.showOnline();
       bar?.remove();
       forget();
     };
-    if (pictures.hidden > 0) {
+    if (pictures.hidden + (basePictures?.hidden ?? 0) > 0) {
       bar = onlineBar(strings, () => {
         showOnline();
         // The other side of a comparison shows its pictures too.
@@ -162,6 +152,14 @@ export const mdRenderer: Renderer = {
         const blocks: Blocks = markdownBlocks(page);
         return compareBlocks(blocks, peer, side, context);
       },
+      canShowInline: true,
+      compareInline:
+        base &&
+        ((context) => {
+          properties?.show(false);
+          base.properties?.show(false);
+          return compareInline(markdownBlocks(base.page), markdownBlocks(page), context, forget);
+        }),
     } satisfies RenderedDocument;
 
     /** The element at the top of the view, for references made from the Command Palette. */
@@ -211,13 +209,51 @@ function lineLabel({ start, end }: LineRange, strings: ViewerStrings): string {
     : strings.refLines.replace('{0}', String(start + 1)).replace('{1}', String(end));
 }
 
-/** UTF-8 by default; a byte order mark says otherwise. */
+/** The text of a file with its lines ending in `\n`: UTF-8, unless a byte order mark says otherwise. */
 function decodeText(data: Uint8Array): string {
-  if (data[0] === 0xff && data[1] === 0xfe)
-    return new TextDecoder('utf-16le').decode(data.subarray(2));
-  if (data[0] === 0xfe && data[1] === 0xff)
-    return new TextDecoder('utf-16be').decode(data.subarray(2));
-  return new TextDecoder().decode(data);
+  const text =
+    data[0] === 0xff && data[1] === 0xfe
+      ? new TextDecoder('utf-16le').decode(data.subarray(2))
+      : data[0] === 0xfe && data[1] === 0xff
+        ? new TextDecoder('utf-16be').decode(data.subarray(2))
+        : new TextDecoder().decode(data);
+  return text.replace(/\r\n?/g, '\n');
+}
+
+/** A file's front matter card and body, with what sanitizing took out put back. */
+function buildPage(text: string, strings: ViewerStrings, source: boolean) {
+  const { frontMatter, body } = splitFrontMatter(text);
+  const html = (parser ??= createParser()).render(body);
+  const page = document.createElement('div');
+  page.className = 'md-page';
+  const properties = (frontMatter && renderProperties(frontMatter, strings, source)) || undefined;
+  if (properties) page.append(properties.element);
+  const article = document.createElement('article');
+  article.className = 'md-body';
+  article.append(sanitize(html));
+  if (!text.trim()) {
+    const empty = document.createElement('p');
+    empty.className = 'md-empty';
+    empty.textContent = strings.errorEmpty;
+    article.append(empty);
+  }
+  page.append(article);
+  decorate(article, strings);
+  return { page, article, properties };
+}
+
+/** Colors the code and shows the pictures, which may wait for the host. */
+async function finishPage(
+  page: HTMLElement,
+  article: HTMLElement,
+  strings: ViewerStrings,
+  online: boolean,
+): Promise<Pictures> {
+  const [, pictures] = await Promise.all([
+    highlightCode(page),
+    showPictures(article, strings, isDarkTheme(), online),
+  ]);
+  return pictures;
 }
 
 /** Headings in order, levels counted from the highest one used. */

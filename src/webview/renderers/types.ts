@@ -30,6 +30,10 @@ export interface RenderOptions {
   line?: number;
   /** For Markdown: show pictures from the web without asking (the user's setting). */
   onlineContent?: boolean;
+  /** For Markdown: the version to show the changes from, for a comparison shown inline. */
+  original?: Uint8Array;
+  /** Renders the same file again, keeping the view (see `state`). */
+  rerender?: () => void;
 }
 
 /** Live parts of the viewer a rendered document can use once it is on screen. */
@@ -79,6 +83,13 @@ export interface RenderedDocument {
   state?(): unknown;
   /** What the other side of a comparison needs to find the differences. */
   summary?(): DocumentSummary | Promise<DocumentSummary>;
+  /** A comparison of this kind of document can be shown inline as well as side by side. */
+  canShowInline?: boolean;
+  /**
+   * For a document rendered with an `original`: shows the changes from it inline, once the
+   * document is on screen.
+   */
+  compareInline?(context: RenderContext): Comparison | undefined;
   /** Marks where this document differs from the other side's, once it is on screen. */
   compare?(
     peer: DocumentSummary,

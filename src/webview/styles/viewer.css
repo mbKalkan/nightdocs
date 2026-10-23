@@ -1384,6 +1384,11 @@ body.vscode-high-contrast-light .ov-shell .ov-content .pptx-slide {
   padding: 0 4px;
 }
 
+/* Inline / side by side, set apart from moving between changes. */
+.ov-diff .ov-diff-layout {
+  margin-left: 6px;
+}
+
 /* Where the changes are in the whole document, beside the scrollbar, as in VS Code's diff
    editor: removed content in the left lane, added in the right. */
 .ov-overview {

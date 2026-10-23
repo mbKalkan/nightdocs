@@ -83,6 +83,8 @@ export interface ViewerStrings {
   hiddenSlide: string;
   /** Status bar text when comparing two versions; `{0}` is a number. */
   noChanges: string;
+  inlineView: string;
+  sideBySideView: string;
   oneChange: string;
   changeCount: string;
   /** `Change {0} of {1}` */
@@ -205,6 +207,11 @@ export interface LoadMessage {
   line?: number;
   /** For Markdown: the user's setting to show pictures from the web without asking. */
   onlineContent?: boolean;
+  /**
+   * For a Markdown comparison shown inline: the version `data` is compared with. `fileName` is
+   * then the comparison's title.
+   */
+  original?: Uint8Array;
   /** The user's locale, for dates and numbers shown the way their Office would. */
   locale: string;
   strings: ViewerStrings;
@@ -349,6 +356,8 @@ export type WebviewToHostMessage =
   | { type: 'zoomed'; zoom: number | null }
   /** The user chose to show a Markdown file's pictures from the web; the other side follows. */
   | { type: 'showOnline' }
+  /** Shows the comparison inline, or side by side; the choice holds for the next ones. */
+  | { type: 'setInline'; inline: boolean }
   /** Asks VS Code to list items to pick one from; the answer is a `picked` message. */
   | { type: 'pick'; placeholder: string; items: PickItem[] }
   /** Puts text on the clipboard; `rows` says how much, for the confirmation. */
