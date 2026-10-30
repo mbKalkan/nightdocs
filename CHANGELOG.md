@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Word comparisons:** a paragraph that one version breaks across two pages and the other keeps
+  on one page no longer shows as changed. Word saves where it broke the pages, so after an edit
+  the same paragraph can run onto the next page in only one version; it was counted as one
+  paragraph removed and two added, and the change count and the change map showed a change where
+  nothing had changed. Words edited in such a paragraph are marked where they are, on either page.
+
 ## [1.4.2] - 2026-10-30
 
 ### Fixed

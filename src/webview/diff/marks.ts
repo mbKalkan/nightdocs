@@ -136,9 +136,18 @@ export function clearMarks(root: Element, classes: readonly string[]): void {
   }
 }
 
-/** Marks the words of `element` that aren't in `other`, its counterpart on the other side. */
-export function markWords(element: Element, other: string, className: string): void {
-  const mine = tokenize(textOf(element));
+/**
+ * Marks the words of `element` that aren't in `other`, its counterpart on the other side. A block
+ * shown in several elements (a paragraph split by a page break) is compared as their joined text.
+ */
+export function markWords(
+  element: Element | readonly Element[],
+  other: string,
+  className: string,
+): void {
+  const parts = element instanceof Element ? [element] : element;
+  const texts = parts.map(textOf);
+  const mine = tokenize(texts.join(''));
   const theirs = tokenize(other);
   const ranges: [number, number][] = [];
   const blank = (index: number) => /^\s+$/.test(mine[index].text);
@@ -153,5 +162,14 @@ export function markWords(element: Element, other: string, className: string): v
       ranges.push([mine[from].start, last.start + last.text.length]);
     }
   }
-  markRanges(element, ranges, className);
+  let offset = 0;
+  parts.forEach((part, i) => {
+    const at = offset;
+    markRanges(
+      part,
+      ranges.map(([from, to]) => [from - at, to - at]),
+      className,
+    );
+    offset += texts[i].length;
+  });
 }

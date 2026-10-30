@@ -387,8 +387,12 @@ function reviewDocument() {
   });
 }
 
-/** Numbered clauses with the page breaks Word saves where it last laid out a page. */
-function clausesDocument() {
+/**
+ * Numbered clauses with the page breaks Word saves where it last laid out a page. `revised` is a
+ * later save that breaks its pages elsewhere: inside a paragraph the original has on one page,
+ * not inside the one the original splits, and with a word edited in each of two paragraphs.
+ */
+function clausesDocument({ revised = false } = {}) {
   const clause = (text) =>
     new Paragraph({
       text,
@@ -426,15 +430,19 @@ function clausesDocument() {
         children: [
           clause('Business name and seat'),
           section('Business name'),
-          body('The business name of the company is Example Ltd.'),
+          body(`The business name of the company ${revised ? 'BREAK_HERE ' : ''}is Example Ltd.`),
           clause('Share capital'),
           section('Amount'),
-          body('The share capital of the company is fixed by the shareholders.'),
+          body(
+            `The share capital of the company is fixed by the ${revised ? 'board' : 'shareholders'}.`,
+          ),
           clause('Pre-emptive right'),
           section('Right to subscribe'),
           // Word broke the page inside this one on its last save.
           section(
-            'Shareholders may subscribe for new shares in proportion to their holdings. BREAK_HERE The rest of the section goes on on the next page.',
+            revised
+              ? 'Shareholders may subscribe for new shares in proportion to their holdings. The rest of the section goes on on the following page.'
+              : 'Shareholders may subscribe for new shares in proportion to their holdings. BREAK_HERE The rest of the section goes on on the next page.',
           ),
           clause('Transfer of shares'),
           section('Approval'),
@@ -520,6 +528,8 @@ if (!LARGE_ONLY) {
   await write('review.docx', reviewDocument());
   await write('clauses.docx', clausesDocument());
   await addSavedPageBreaks('clauses.docx');
+  await write('clauses-revised.docx', clausesDocument({ revised: true }));
+  await addSavedPageBreaks('clauses-revised.docx');
 }
 
 if (!LARGE_ONLY) {

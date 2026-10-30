@@ -143,6 +143,32 @@ test('shows no changes between identical files', async ({ context }) => {
   }
 });
 
+test('compares a paragraph split by a page break as one paragraph', async ({ context }) => {
+  const [original, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['clauses.docx', 'clauses-revised.docx'],
+  );
+
+  // Each save breaks the pages where Word laid them out then. A paragraph split on one side only
+  // was a removed paragraph and two added ones; only the edited words are changes.
+  for (const { page } of [original, modified]) {
+    await expect(page.locator('.ov-diff-status')).toHaveText('2 changes');
+    await expect(page.locator('p.ng-continued')).toHaveCount(1);
+  }
+  expect(await marked(original.page, 'span.nd-diff-word')).toEqual(['shareholders', 'next']);
+  expect(await marked(modified.page, 'span.nd-diff-word')).toEqual(['board', 'following']);
+  // The edited word after the break is marked where it is, and both halves as a changed line.
+  expect(await marked(original.page, 'p.ng-continued span.nd-diff-word')).toEqual(['next']);
+  await expect(original.page.locator('p.nd-diff-line')).toHaveCount(3);
+  // Split only on the right and not edited: not a change.
+  await expect(modified.page.locator('p.ng-continued')).toContainText('is Example Ltd.');
+  await expect(modified.page.locator('p.nd-diff-line')).toHaveCount(2);
+  await expect(modified.page.locator('.ov-overview-added')).toHaveCount(2);
+  expect(original.viewer.problems).toEqual([]);
+  expect(modified.viewer.problems).toEqual([]);
+});
+
 test('stops comparing when the other side closes', async ({ context }) => {
   const [original] = await openComparison(
     [await context.newPage(), await context.newPage()],
