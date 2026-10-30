@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-10-30
+
 ### Fixed
 
 - **Comparisons:** the change map beside the scrollbar no longer stays where the changes were
@@ -306,7 +308,8 @@ First preview release.
   are drawn (100,000 rows open in about two seconds).
 - English and Turkish user interface.
 
-[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/mbKalkan/nightdocs/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/mbKalkan/nightdocs/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/mbKalkan/nightdocs/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/mbKalkan/nightdocs/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/mbKalkan/nightdocs/compare/v1.2.1...v1.3.0
