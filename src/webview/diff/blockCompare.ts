@@ -10,7 +10,13 @@ import { revealByTops, revealTop, scrollAnchor, scrollToAnchor, scrollTopOf } fr
 export interface Blocks {
   /** The element holding the whole document, for clearing marks. */
   root: HTMLElement;
+  /** Where each block starts. */
   elements: HTMLElement[];
+  /**
+   * Every element of each block, for blocks shown in more than one (a paragraph a page break
+   * splits); otherwise just its `elements` entry.
+   */
+  parts?: HTMLElement[][];
   texts: string[];
   /** For each block, what identifies its pictures, so replacing one counts as a change. */
   pictures?: string[];
@@ -69,6 +75,7 @@ export function compareBlocks(
   context: RenderContext,
 ): Comparison {
   const { root, elements, texts } = blocks;
+  const partsOf = (index: number) => blocks.parts?.[index] ?? [elements[index]];
   const original = side === 'original';
   const own = blockKeys(texts, blocks.pictures);
   const theirs = blockKeys(peer.blocks, peer.pictures);
@@ -89,21 +96,23 @@ export function compareBlocks(
       : { removed: peerHas, added: start < end };
     const edited = new Map(hunk.pairs.map(([a, b]) => (original ? [a, b] : [b, a])));
     for (let i = start; i < end; i++) {
-      elements[i].classList.add(LINE, ownClass);
+      const parts = partsOf(i);
+      for (const part of parts) part.classList.add(LINE, ownClass);
       const counterpart = edited.get(i);
       if (counterpart === undefined) continue;
-      markWords(elements[i], peer.blocks[counterpart], ownClass);
+      markWords(parts, peer.blocks[counterpart], ownClass);
       if ((blocks.pictures?.[i] ?? '') !== (peer.pictures?.[counterpart] ?? '')) {
-        markPictures(elements[i], ownClass);
+        for (const part of parts) markPictures(part, ownClass);
       }
     }
     if (start < end) {
-      changes.push({ element: elements[start], last: elements[end - 1], after: false, ...lanes });
+      const last = partsOf(end - 1).at(-1)!;
+      changes.push({ element: elements[start], last, after: false, ...lanes });
     } else if (start < elements.length) {
       elements[start].classList.add(GAP_BEFORE, gap);
       changes.push({ element: elements[start], after: false, ...lanes });
     } else if (elements.length > 0) {
-      const last = elements[elements.length - 1];
+      const last = partsOf(elements.length - 1).at(-1)!;
       last.classList.add(GAP_AFTER, gap);
       changes.push({ element: last, after: true, ...lanes });
     }
