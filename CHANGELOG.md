@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Comparisons:** the change map beside the scrollbar no longer stays where the changes were
+  after the view is resized. Resizing a comparison (or the window, or hiding the side bar) zooms
+  both sides to fit and scrolls them together, and the map kept its old layout until it was
+  redrawn for something else. It now always follows the changes.
+
 ## [1.4.1] - 2026-10-30
 
 ### Fixed
