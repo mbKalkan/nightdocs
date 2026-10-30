@@ -89,6 +89,47 @@ test('moves between changes and scrolls both sides together', async ({ context }
   await expect.poll(() => scrollTop(modified.page)).toBe(0);
 });
 
+test('keeps the change map on the changes when the content moves as it scrolls', async ({
+  context,
+}) => {
+  const [, modified] = await openComparison(
+    [await context.newPage(), await context.newPage()],
+    'dark',
+    ['sample.docx', 'sample-revised.docx'],
+  );
+  const { page } = modified;
+
+  // In VS Code both panes of a comparison resize together: a new zoom moves the content, and the
+  // other side's scroll position scrolls this one in the same frame. The map then drew only its
+  // slider and kept the marks where the changes had been.
+  await page.locator('.ov-viewport').evaluate((viewport) => {
+    const content = viewport.querySelector('.ov-content')!;
+    new ResizeObserver(() => viewport.dispatchEvent(new Event('scroll'))).observe(content);
+    const moved = document.createElement('div');
+    moved.style.height = '600px';
+    content.prepend(moved);
+  });
+
+  // Where each change starts on the ruler, and where its mark is drawn.
+  const offsets = () =>
+    page.evaluate(() => {
+      const viewport = document.querySelector<HTMLElement>('.ov-viewport')!;
+      const ruler = document.querySelector<HTMLElement>('.ov-overview')!;
+      const scale = ruler.clientHeight / viewport.scrollHeight;
+      const top = viewport.getBoundingClientRect().top;
+      const starts = [
+        ...document.querySelectorAll('.nd-diff-line, .nd-diff-gap-before, .nd-diff-gap-after'),
+      ].map((el) => (el.getBoundingClientRect().top - top + viewport.scrollTop) * scale);
+      const marks = [...document.querySelectorAll<HTMLElement>('.ov-overview-added')].map((mark) =>
+        parseFloat(mark.style.top),
+      );
+      return marks.map((mark) => Math.min(...starts.map((start) => Math.abs(start - mark))));
+    });
+  // Right after the layout settles, not once something else happens to draw the map again.
+  await expect.poll(async () => Math.max(...(await offsets())), { timeout: 1500 }).toBeLessThan(3);
+  expect(modified.viewer.problems).toEqual([]);
+});
+
 test('shows no changes between identical files', async ({ context }) => {
   const [original, modified] = await openComparison(
     [await context.newPage(), await context.newPage()],

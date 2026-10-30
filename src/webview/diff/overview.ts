@@ -25,6 +25,8 @@ export class OverviewRuler {
   private readonly slider: HTMLElement;
   private marks: OverviewMark[] = [];
   private frame = 0;
+  /** The next frame lays the marks out again, not only the slider. */
+  private drawAll = false;
   private readonly cleanup: (() => void)[] = [];
 
   constructor(
@@ -42,14 +44,19 @@ export class OverviewRuler {
     this.slider.className = 'ov-overview-slider';
     this.element.append(this.lanes, this.slider);
 
-    const schedule = () => {
-      cancelAnimationFrame(this.frame);
-      this.frame = requestAnimationFrame(() => this.draw());
+    // One frame draws what was asked since the last one. A scroll must not drop a full draw asked
+    // for in the same frame: a new zoom moves the content and scrolls it at once.
+    const request = (all: boolean) => {
+      this.drawAll ||= all;
+      if (this.frame) return;
+      this.frame = requestAnimationFrame(() => {
+        this.frame = 0;
+        if (this.drawAll) this.draw();
+        else this.drawSlider();
+      });
     };
-    const onScroll = () => {
-      cancelAnimationFrame(this.frame);
-      this.frame = requestAnimationFrame(() => this.drawSlider());
-    };
+    const schedule = () => request(true);
+    const onScroll = () => request(false);
     // Content changes height as pictures load and the zoom or window size changes.
     const resize = new ResizeObserver(schedule);
     resize.observe(viewport);
@@ -73,6 +80,7 @@ export class OverviewRuler {
 
   /** Lays the marks out again, for when the content moved. */
   draw(): void {
+    this.drawAll = false;
     this.marks = this.measure();
     const scale = this.scale();
     const pieces: HTMLElement[] = [];
