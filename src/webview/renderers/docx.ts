@@ -1,7 +1,8 @@
-import { renderAsync } from 'docx-preview';
+import { parseAsync, renderDocument, type Options } from 'docx-preview';
 import { adaptDocumentColors } from '../darkColors';
 import { compareWord, wordBlocks, type WordBlocks } from '../diff/wordCompare';
 import { findHeadings, headingClasses, type Heading } from '../docx/outline';
+import { splitAtPageBreaks } from '../docx/pageBreaks';
 import { WordReview } from '../docx/review';
 import { PageNavigator } from '../pageNavigator';
 import { paginate } from '../paginate';
@@ -20,7 +21,7 @@ export const docxRenderer: Renderer = {
     target: HTMLElement,
     options: RenderOptions,
   ): Promise<RenderedDocument> {
-    const parsed: unknown = await renderAsync(data, target, undefined, {
+    const docxOptions: Partial<Options> = {
       className: 'docx',
       inWrapper: true,
       breakPages: true,
@@ -37,7 +38,10 @@ export const docxRenderer: Renderer = {
       renderAltChunks: false,
       useBase64URL: false,
       experimental: true,
-    });
+    };
+    const parsed: unknown = await parseAsync(data, docxOptions);
+    splitAtPageBreaks(parsed);
+    target.replaceChildren(...(await renderDocument(parsed, docxOptions)));
 
     const wrapper = target.querySelector<HTMLElement>('.docx-wrapper');
     const previous = options.previous as { markup?: boolean } | undefined;

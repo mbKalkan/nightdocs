@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Word:** numbered headings and lists no longer skip a number where Word broke the page on its
+  last save. A clause that started a page took two numbers, so it and every clause after it showed
+  one too many (3 became 4). The rest of a numbered paragraph that goes on onto the next page no
+  longer gets a number of its own either.
+
 ## [1.4.0] - 2026-10-23
 
 Markdown, read and compared the way Office files are.

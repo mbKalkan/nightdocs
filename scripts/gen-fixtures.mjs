@@ -1,5 +1,5 @@
 // Generates the sample documents in test/fixtures. Run with `npm run fixtures`.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { crc32, deflateSync } from 'node:zlib';
 import {
   AlignmentType,
@@ -387,6 +387,82 @@ function reviewDocument() {
   });
 }
 
+/** Numbered clauses with the page breaks Word saves where it last laid out a page. */
+function clausesDocument() {
+  const clause = (text) =>
+    new Paragraph({
+      text,
+      heading: HeadingLevel.HEADING_1,
+      numbering: { reference: 'clauses', level: 0 },
+    });
+  const section = (text) =>
+    new Paragraph({
+      text,
+      heading: HeadingLevel.HEADING_2,
+      numbering: { reference: 'clauses', level: 1 },
+    });
+  const body = (text) => new Paragraph({ text, indent: { left: 709 } });
+  return new Document({
+    creator: 'Nightdocs',
+    title: 'Clauses',
+    numbering: {
+      config: [
+        {
+          reference: 'clauses',
+          levels: [
+            { level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.START },
+            {
+              level: 1,
+              format: LevelFormat.DECIMAL,
+              text: '%1.%2',
+              alignment: AlignmentType.START,
+            },
+          ],
+        },
+      ],
+    },
+    sections: [
+      {
+        children: [
+          clause('Business name and seat'),
+          section('Business name'),
+          body('The business name of the company is Example Ltd.'),
+          clause('Share capital'),
+          section('Amount'),
+          body('The share capital of the company is fixed by the shareholders.'),
+          clause('Pre-emptive right'),
+          section('Right to subscribe'),
+          // Word broke the page inside this one on its last save.
+          section(
+            'Shareholders may subscribe for new shares in proportion to their holdings. BREAK_HERE The rest of the section goes on on the next page.',
+          ),
+          clause('Transfer of shares'),
+          section('Approval'),
+        ],
+      },
+    ],
+  });
+}
+
+/** Adds the breaks Word saves at its last layout, which the docx library can't write. */
+async function addSavedPageBreaks(name) {
+  const path = `${OUT}/${name}`;
+  const zip = await JSZip.loadAsync(readFileSync(path));
+  let xml = await zip.file('word/document.xml').async('string');
+  const replace = (from, to) => {
+    if (!xml.includes(from)) throw new Error(`${name}: no "${from}"`);
+    xml = xml.replace(from, to);
+  };
+  const saved = '<w:lastRenderedPageBreak/>';
+  replace(
+    '<w:t xml:space="preserve">Pre-emptive right</w:t>',
+    `${saved}<w:t xml:space="preserve">Pre-emptive right</w:t>`,
+  );
+  replace(' BREAK_HERE ', ` </w:t>${saved}<w:t xml:space="preserve">`);
+  zip.file('word/document.xml', xml);
+  writeFileSync(path, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+}
+
 function longDocument() {
   const random = makeRandom(42);
   const children = [];
@@ -442,6 +518,8 @@ if (!LARGE_ONLY) {
   await write('sample-revised.docx', sampleDocument({ revised: true }));
   await write('long.docx', longDocument());
   await write('review.docx', reviewDocument());
+  await write('clauses.docx', clausesDocument());
+  await addSavedPageBreaks('clauses.docx');
 }
 
 if (!LARGE_ONLY) {

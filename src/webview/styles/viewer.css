@@ -529,6 +529,18 @@ body.vscode-light .ov-viewport {
   margin-bottom: 0;
 }
 
+/* The rest of a paragraph after a page break: its number and first-line indent stay on the
+   page before (see docx/pageBreaks.ts). */
+.ov-content .docx-wrapper p.ng-continued {
+  text-indent: 0 !important;
+  list-style-type: none !important;
+}
+
+.ov-content .docx-wrapper p.ng-continued::before {
+  content: none !important;
+  counter-increment: none !important;
+}
+
 body.vscode-high-contrast .ov-shell .ov-content .docx-wrapper > section.docx,
 body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.docx,
 body.vscode-high-contrast .ov-shell .ov-content .pptx-slide,
