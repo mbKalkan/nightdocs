@@ -40,6 +40,57 @@ test('shows the page in view and goes to a heading of a Word document', async ({
   expect(viewer.problems).toEqual([]);
 });
 
+test('numbers each clause once where Word saved its page breaks', async ({ page }) => {
+  const viewer = await openViewer(page, 'light');
+  await viewer.load('clauses.docx');
+  const pages = page.locator('section.docx');
+  await expect(pages).toHaveCount(3);
+
+  // Every numbered paragraph has text: an empty one took a number, so later clauses were off by one.
+  const numbered = await page.$$eval('section.docx article p[class*="-num-"]', (list) =>
+    list.map((p) => ({
+      text: p.textContent ?? '',
+      number: getComputedStyle(p, '::before').content,
+      continued: p.classList.contains('ng-continued'),
+    })),
+  );
+  expect(numbered.map((p) => p.text.slice(0, 20))).toEqual([
+    'Business name and se',
+    'Business name',
+    'Share capital',
+    'Amount',
+    'Pre-emptive right',
+    'Right to subscribe',
+    'Shareholders may sub',
+    'The rest of the sect',
+    'Transfer of shares',
+    'Approval',
+  ]);
+  // The rest of a paragraph on the next page has no number of its own.
+  expect(numbered.filter((p) => p.number === 'none').map((p) => p.text)).toEqual([
+    'The rest of the section goes on on the next page.',
+  ]);
+  expect(numbered.filter((p) => p.continued)).toHaveLength(1);
+
+  // The clause Word laid out at the top of a page starts one here too.
+  await expect(pages.nth(1).locator('article p').first()).toHaveText('Pre-emptive right');
+
+  await viewer.post({ type: 'command', command: 'goTo' });
+  const request = await lastPick(viewer);
+  expect(request.items.map((item) => item.label.trim())).toEqual([
+    'Business name and seat',
+    'Business name',
+    'Share capital',
+    'Amount',
+    'Pre-emptive right',
+    'Right to subscribe',
+    'Shareholders may subscribe for new shares in proportion to their holdings.',
+    'Transfer of shares',
+    'Approval',
+  ]);
+  expect(viewer.problems).toEqual([]);
+});
+
 test('steps through the pages of a long Word document', async ({ page }) => {
   const viewer = await openViewer(page, 'dark');
   await viewer.load('long.docx');

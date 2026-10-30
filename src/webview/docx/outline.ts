@@ -1,4 +1,5 @@
 import { OBJECT, textOf } from '../diff/marks';
+import { CONTINUED } from './pageBreaks';
 
 /** The parts of docx-preview's parsed document this reads. */
 interface ParsedDocument {
@@ -62,7 +63,9 @@ export function findHeadings(
   const headings: Heading[] = [];
   if (classes.size === 0) return headings;
   pages.forEach((page, index) => {
-    for (const element of page.querySelectorAll<HTMLElement>(':scope > article p')) {
+    // The rest of a heading split by a page break is not a heading of its own.
+    const selector = `:scope > article p:not(.${CONTINUED})`;
+    for (const element of page.querySelectorAll<HTMLElement>(selector)) {
       const level = [...element.classList].map((name) => classes.get(name)).find(Boolean);
       if (level === undefined) continue;
       const text = textOf(element).replaceAll(OBJECT, '').replace(/\s+/g, ' ').trim();
