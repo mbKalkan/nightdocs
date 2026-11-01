@@ -541,6 +541,12 @@ body.vscode-light .ov-viewport {
   counter-increment: none !important;
 }
 
+/* A Word list number in the dark theme, in its adapted color (see darkColors.ts): docx-preview
+   gives numbers a color of their own, often black. */
+.ov-content [data-nd-marker-color]::before {
+  color: var(--nd-marker-color) !important;
+}
+
 /* A numbered paragraph the Inline View copies in from the other version keeps the number it had
    there, and doesn't count in this one (see docx/numbering.ts). */
 .ov-content .docx-wrapper p[data-nd-number] {

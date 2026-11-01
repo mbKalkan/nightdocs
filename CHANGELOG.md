@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Markdown and holds for the next comparisons, including the ones Source Control opens.
   **Open in Word** opens the new version.
 
+### Fixed
+
+- **Word, dark theme:** clause and list numbers that a document gives a color of their own (often
+  black, as in many legal templates) were drawn in that color on the dark page and could barely be
+  seen. They now take on the dark theme's colors like the text does.
+
 ## [1.4.3] - 2026-10-30
 
 ### Fixed
