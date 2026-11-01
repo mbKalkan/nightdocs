@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
 /**
- * The scheme of a tab showing a Markdown comparison inline: one view of the modified version
- * with the changes from the original in it. Its path is the modified file's, so the tab is named
- * after it and the Markdown viewer opens it; the query says what is compared.
+ * The scheme of a tab showing a comparison inline: one view of the modified version with the
+ * changes from the original in it. Its path is the modified file's, so the tab is named after it
+ * and the viewer for its format opens it; the query says what is compared.
  */
 export const INLINE_SCHEME = 'nightdocs-compare';
 
@@ -55,8 +55,9 @@ export function keepLayoutIn(state: vscode.Memento): void {
 }
 
 /**
- * Whether Markdown comparisons are shown inline: as the user last chose in the viewer, or else
- * as VS Code's own diff editor is set to (Diff Editor: Render Side By Side).
+ * Whether comparisons (of Markdown files and Word documents) are shown inline: as the user last
+ * chose in the viewer, for either, or else as VS Code's own diff editor is set to (Diff Editor:
+ * Render Side By Side). The key is from when only Markdown had the choice.
  */
 export const prefersInline = () =>
   memento?.get<boolean>(INLINE_KEY) ??

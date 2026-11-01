@@ -137,12 +137,14 @@ READMEs.
   added and removed slides are tinted, with an empty stand-in on the other side so both decks line
   up
 - Markdown: edited, added and removed paragraphs, list items, table rows, lines of code and front
-  matter properties are marked, down to the changed words. **Inline View** in the status bar (or
-  **Nightdocs: Toggle Inline View**) shows one rendered file instead, as VS Code's inline diff
-  does: what was removed or edited just above what replaced it, inside the same list, table or
-  code block. The choice holds for the next comparisons; until you make one, Nightdocs follows
-  VS Code's **Diff Editor: Render Side By Side**. Comparisons that open in Nightdocs directly
-  (with `"workbench.diffEditorAssociations": { "*.md": "nightdocs.markdown" }`) follow it too
+  matter properties are marked, down to the changed words
+- Word and Markdown: **Inline View** in the status bar (or **Nightdocs: Toggle Inline View**)
+  shows one document instead, as VS Code's inline diff does: what was removed or edited just above
+  what replaced it, inside the same list, table cell or code block. A removed numbered clause
+  keeps the number it had. The choice holds for the next comparisons; until you make one,
+  Nightdocs follows VS Code's **Diff Editor: Render Side By Side**. Comparisons that open in
+  Nightdocs directly (Word documents from Source Control, Markdown files with
+  `"workbench.diffEditorAssociations": { "*.md": "nightdocs.markdown" }`) follow it too
 - Both sides scroll and zoom together; <kbd>F7</kbd> and <kbd>Shift</kbd>+<kbd>F7</kbd> or the arrows in the
   status bar move between changes
 - Beside the scrollbar, an overview shows where the changes are in the whole file, as in VS Code's
@@ -234,7 +236,8 @@ the last line opens Markdown in Nightdocs too, for those who mostly read it:
   formula that changed but gives the same value isn't marked; in PowerPoint slides compare by
   their text, pictures and chart data, and a moved slide shows as removed in one place and added in
   another. Files in Git LFS compare only when their content is on this machine: Nightdocs doesn't
-  download it.
+  download it. In Word's Inline View, a page holding old paragraphs grows longer to fit them; the
+  pages aren't laid out again.
 - PowerPoint animations and transitions aren't shown. Embedded audio and video play only in
   formats VS Code can decode, which usually leaves out MP4 video. Some pasted vector pictures
   (EMF/WMF) appear as placeholders.

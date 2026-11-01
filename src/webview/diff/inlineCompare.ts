@@ -34,7 +34,7 @@ export function compareInline(
   original: Blocks,
   modified: Blocks,
   context: RenderContext,
-  onChange: () => void,
+  onChange?: () => void,
 ): Comparison {
   const alignment = align(
     blockKeys(original.texts, original.pictures),
@@ -47,40 +47,45 @@ export function compareInline(
   const changes: Change[] = [];
   // Copies of list items go into the lists; the items there keep their numbers.
   const numbered = numberItems(modified.root);
+  const lastPart = modified.elements.length > 0 ? partsOf(modified, -1).at(-1) : undefined;
 
   for (const hunk of alignment.hunks) {
     const pairs = new Map(hunk.pairs);
     const pairedWith = new Map(hunk.pairs.map(([a, b]) => [b, a]));
+    const shown: HTMLElement[] = [];
     for (let b = hunk.bStart; b < hunk.bEnd; b++) {
-      const element = modified.elements[b];
-      element.classList.add(LINE, ADDED);
+      const parts = partsOf(modified, b);
+      for (const part of parts) part.classList.add(LINE, ADDED);
       const a = pairedWith.get(b);
-      if (a !== undefined) markEdit(element, original, modified, a, b, ADDED);
+      if (a !== undefined) markEdit(parts, original, modified, a, b, ADDED);
+      shown.push(...parts);
     }
     // Removed blocks go before the next block of the modified version, an edited one just
     // before its new version. Short blocks replaced one for one (a heading for a heading)
-    // count as removed, so that what was removed stays together.
-    const copies: HTMLElement[] = [];
+    // count as removed, so that what was removed stays together; in a table each cell keeps
+    // its old text.
     let next = hunk.bStart;
     for (let a = hunk.aStart; a < hunk.aEnd; a++) {
-      const element = original.elements[a];
-      element.classList.add(LINE, REMOVED);
+      const parts = partsOf(original, a);
+      for (const part of parts) part.classList.add(LINE, REMOVED);
       let b = pairs.get(a);
-      if (b !== undefined) markEdit(element, modified, original, b, a, REMOVED);
-      if (b !== undefined && similarity(original.texts[a], modified.texts[b]) < EDITED) {
+      if (b !== undefined) markEdit(parts, modified, original, b, a, REMOVED);
+      if (
+        b !== undefined &&
+        similarity(original.texts[a], modified.texts[b]) < EDITED &&
+        !parts[0].closest('td, th')
+      ) {
         b = undefined;
       }
       const at = b ?? next;
-      copies.push(
+      shown.push(
         at < modified.elements.length
-          ? placer.place(element, modified.elements[at], false)
-          : placer.place(element, modified.elements[modified.elements.length - 1], true),
+          ? placer.place(parts, modified.elements[at], false, b !== undefined)
+          : placer.place(parts, lastPart, true, false),
       );
       if (b !== undefined) next = b + 1;
     }
-    const shown = [...copies, ...modified.elements.slice(hunk.bStart, hunk.bEnd)].sort(
-      inReadingOrder,
-    );
+    shown.sort(inReadingOrder);
     if (shown.length === 0) continue;
     changes.push({
       first: shown[0],
@@ -89,7 +94,7 @@ export function compareInline(
       added: hunk.bEnd > hunk.bStart,
     });
   }
-  onChange();
+  onChange?.();
 
   const { viewport } = context;
   const top = (element: HTMLElement) => scrollTopOf(viewport, element.getBoundingClientRect().top);
@@ -119,23 +124,27 @@ export function compareInline(
       for (const item of numbered) item.removeAttribute('value');
       clearMarks(original.root, CLASSES);
       clearMarks(modified.root, CLASSES);
-      onChange();
+      onChange?.();
     },
   };
 }
 
+/** The elements a block is shown in: more than one for a paragraph a page break splits. */
+const partsOf = (blocks: Blocks, index: number): HTMLElement[] =>
+  blocks.parts?.at(index) ?? [blocks.elements.at(index)!];
+
 /** Marks the words of an edited block that its other version doesn't have, and its pictures. */
 function markEdit(
-  element: HTMLElement,
+  parts: HTMLElement[],
   other: Blocks,
   own: Blocks,
   otherIndex: number,
   ownIndex: number,
   className: string,
 ): void {
-  markWords(element, other.texts[otherIndex], className);
+  markWords(parts, other.texts[otherIndex], className);
   if ((own.pictures?.[ownIndex] ?? '') !== (other.pictures?.[otherIndex] ?? '')) {
-    markPictures(element, className);
+    for (const part of parts) markPictures(part, className);
   }
 }
 
@@ -171,8 +180,8 @@ const kind = (element: Element) =>
 /**
  * Copies blocks of the original version into the modified one, inside the same kind of
  * containers: a removed list item into the list (or a list of its own), a row into the table,
- * a line of code into the code block. Blocks copied one after another to the same place share
- * their containers.
+ * a line of code into the code block, an old paragraph of a table cell into its cell. Blocks
+ * copied one after another to the same place share their containers.
  */
 class Placer {
   /** The last copy put in: its outermost element, and the containers made for it by original. */
@@ -185,17 +194,28 @@ class Placer {
     private readonly modifiedRoot: Element,
   ) {}
 
-  /** Puts a copy of the original `block` before (or `after`) the modified `anchor`. */
-  place(block: HTMLElement, anchor: HTMLElement | undefined, after: boolean): HTMLElement {
+  /**
+   * Puts a copy of the original block shown in `parts` before (or `after`) the modified
+   * `anchor`, which is its new version when it was `edited`.
+   */
+  place(
+    parts: HTMLElement[],
+    anchor: HTMLElement | undefined,
+    after: boolean,
+    edited: boolean,
+  ): HTMLElement {
+    const block = parts[0];
     const sources = chain(block, this.originalRoot);
     const targets = anchor ? chain(anchor, this.modifiedRoot) : [];
     // Go into the same containers, but not into the list item a paragraph is the text of: an
-    // item of its own reads better.
+    // item of its own reads better. Only an edited paragraph of a table goes into the row of
+    // its new version; a removed one is in a row of its own.
     let depth = 0;
     while (
       depth < sources.length - 1 &&
       depth < targets.length - 1 &&
       !(sources[depth].tagName === 'LI' && depth === sources.length - 2) &&
+      !(sources[depth].tagName === 'TR' && !edited) &&
       kind(sources[depth]) === kind(targets[depth])
     ) {
       depth++;
@@ -212,7 +232,7 @@ class Placer {
     if (after && reference) place = (this.after.get(reference) ?? reference).nextSibling;
 
     const wrappers = sources.slice(depth, -1);
-    const copy = copyOf(block, true);
+    const copy = copyOf(block, true, parts.slice(1));
     // Share the containers of the copy just before this place.
     const last = this.last;
     if (last && last.top.parentNode === parent && last.top.nextSibling === place) {
@@ -233,27 +253,53 @@ class Placer {
     return copy;
   }
 
-  /** Puts `copy` inside copies of `wrappers` (outermost first) and returns the outermost. */
+  /**
+   * Puts `copy` inside copies of `wrappers` (outermost first) and returns the outermost. A copy
+   * of a table row gets all the row's cells, empty, so that what goes into them stays in its
+   * column.
+   */
   private wrap(
     copy: HTMLElement,
     wrappers: HTMLElement[],
     copies: Map<HTMLElement, HTMLElement>,
   ): HTMLElement {
-    let inner = copy;
-    for (let i = wrappers.length - 1; i >= 0; i--) {
-      const wrapper = copyOf(wrappers[i], false);
-      wrapper.append(inner);
-      copies.set(wrappers[i], wrapper);
-      inner = wrapper;
+    let top: HTMLElement | undefined;
+    let into: HTMLElement | undefined;
+    for (const source of wrappers) {
+      let wrapper = copies.get(source);
+      if (!wrapper) {
+        wrapper = copyOf(source, false);
+        copies.set(source, wrapper);
+        into?.append(wrapper);
+        if (source instanceof HTMLTableRowElement) {
+          for (const cell of source.cells) {
+            const empty = copyOf(cell, false);
+            copies.set(cell, empty);
+            wrapper.append(empty);
+          }
+        }
+      }
+      top ??= wrapper;
+      into = wrapper;
     }
-    if (copy === inner) copy.classList.add(INSERTED);
-    return inner;
+    if (!into) {
+      copy.classList.add(INSERTED);
+      return copy;
+    }
+    into.append(copy);
+    return top!;
   }
 }
 
-/** A copy of an element of the original version, fit to sit in the modified one. */
-function copyOf(element: HTMLElement, deep: boolean): HTMLElement {
+/**
+ * A copy of an element of the original version, fit to sit in the modified one; with the
+ * content of the elements a page break split it into (`rest`) put back in it.
+ */
+function copyOf(element: HTMLElement, deep: boolean, rest: HTMLElement[] = []): HTMLElement {
   const copy = element.cloneNode(deep) as HTMLElement;
+  for (const part of rest) {
+    copy.append(...[...part.childNodes].map((node) => node.cloneNode(true)));
+  }
   for (const node of [copy, ...copy.querySelectorAll<HTMLElement>('*')]) {
     for (const name of OWN_ATTRIBUTES) node.removeAttribute(name);
   }

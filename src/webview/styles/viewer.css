@@ -541,6 +541,18 @@ body.vscode-light .ov-viewport {
   counter-increment: none !important;
 }
 
+/* A numbered paragraph the Inline View copies in from the other version keeps the number it had
+   there, and doesn't count in this one (see docx/numbering.ts). */
+.ov-content .docx-wrapper p[data-nd-number] {
+  counter-set: none !important;
+}
+
+.ov-content .docx-wrapper p[data-nd-number]::before {
+  content: var(--nd-number) !important;
+  counter-increment: none !important;
+  counter-reset: var(--nd-counters) !important;
+}
+
 body.vscode-high-contrast .ov-shell .ov-content .docx-wrapper > section.docx,
 body.vscode-high-contrast-light .ov-shell .ov-content .docx-wrapper > section.docx,
 body.vscode-high-contrast .ov-shell .ov-content .pptx-slide,
