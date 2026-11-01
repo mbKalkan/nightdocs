@@ -311,7 +311,7 @@
         },
         {
           "command": "nightdocs.toggleInlineView",
-          "when": "activeCustomEditorId == nightdocs.markdown"
+          "when": "activeCustomEditorId =~ /^nightdocs\\./ && nightdocs.activeFormat =~ /^(docx|md)$/"
         },
         {
           "command": "nightdocs.find",

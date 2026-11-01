@@ -1,6 +1,8 @@
 import { parseAsync, renderDocument, type Options } from 'docx-preview';
 import { adaptDocumentColors } from '../darkColors';
+import { compareInline } from '../diff/inlineCompare';
 import { compareWord, wordBlocks, type WordBlocks } from '../diff/wordCompare';
+import { keepNumbers, type NumberingLevel } from '../docx/numbering';
 import { findHeadings, headingClasses, type Heading } from '../docx/outline';
 import { splitAtPageBreaks } from '../docx/pageBreaks';
 import { WordReview } from '../docx/review';
@@ -39,6 +41,9 @@ export const docxRenderer: Renderer = {
       useBase64URL: false,
       experimental: true,
     };
+    // An inline comparison copies changed paragraphs from this version; it is never shown itself.
+    const base =
+      options.original && (await renderBase(options.original, target, docxOptions, options));
     const parsed: unknown = await parseAsync(data, docxOptions);
     splitAtPageBreaks(parsed);
     target.replaceChildren(...(await renderDocument(parsed, docxOptions)));
@@ -133,6 +138,23 @@ export const docxRenderer: Renderer = {
           },
         };
       },
+      canShowInline: true,
+      compareInline:
+        base &&
+        ((context) => {
+          // Headings are this version's; the copies of the other's aren't places to go to.
+          outline();
+          const shown = review.shown;
+          review.setShown(false);
+          const comparison = compareInline(wordBlocks(base), paragraphs(), context);
+          return {
+            ...comparison,
+            dispose: () => {
+              comparison.dispose();
+              review.setShown(shown);
+            },
+          };
+        }),
       dispose() {
         navigator?.dispose();
         review.dispose();
@@ -140,6 +162,37 @@ export const docxRenderer: Renderer = {
     };
   },
 };
+
+/**
+ * Renders the version an inline comparison is made with, for its changed paragraphs to be copied
+ * into the version shown. Its numbers are written on its numbered paragraphs, as they count
+ * only in it. In the dark theme it is on screen just long enough to take on dark colors with
+ * its own styles, which would clash with the shown version's.
+ */
+async function renderBase(
+  data: Uint8Array,
+  target: HTMLElement,
+  docxOptions: Partial<Options>,
+  options: RenderOptions,
+): Promise<HTMLElement | undefined> {
+  const parsed: unknown = await parseAsync(data, docxOptions);
+  splitAtPageBreaks(parsed);
+  const holder = document.createElement('div');
+  holder.append(...(await renderDocument(parsed, docxOptions)));
+  const wrapper = holder.querySelector<HTMLElement>('.docx-wrapper');
+  if (!wrapper) return undefined;
+  // Its markup set aside as in the version shown: the text reads with all changes accepted.
+  new WordReview(wrapper, options.strings, options.locale, false);
+  const levels = (parsed as { numberingPart?: { domNumberings?: NumberingLevel[] } }).numberingPart
+    ?.domNumberings;
+  keepNumbers(wrapper, levels ?? []);
+  if (options.palette) {
+    target.append(holder);
+    adaptDocumentColors(holder, options.palette);
+    holder.remove();
+  }
+  return wrapper;
+}
 
 /**
  * The heading a place is under: the last one at or before `element`, or without an element the

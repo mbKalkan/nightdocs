@@ -24,6 +24,7 @@ import {
   editMarkdown,
   isSideBySideTab,
   MARKDOWN_VIEW_TYPE,
+  OFFICE_VIEW_TYPE,
   openInViewer,
   openLink,
   readPicture,
@@ -52,7 +53,7 @@ const showOnlineContent = () =>
   vscode.workspace.getConfiguration().get<boolean>(ONLINE_CONTENT_SETTING, false);
 
 export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
-  static readonly viewType = 'nightdocs.viewer';
+  static readonly viewType = OFFICE_VIEW_TYPE;
 
   /** Remembers the last color choice across documents and sessions. */
   private static readonly colorModeKey = 'nightdocs.colorMode';
@@ -126,7 +127,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
 
   resolveCustomEditor(document: vscode.CustomDocument, panel: vscode.WebviewPanel): void {
     const { uri } = document;
-    // A Markdown comparison shown inline is a view of the modified version.
+    // A comparison shown inline is a view of the modified version.
     const inline = parseInlineUri(uri);
     const source = inline?.modified ?? uri;
     const info = formatForPath(source.path);
@@ -155,9 +156,10 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     const member: DiffMember = { uri, post, ready: false };
     this.diffs.add(member, panel.viewColumn);
     const text = isTextFormat(info.format);
-    // A Markdown comparison VS Code opened side by side (from Source Control, when Markdown
-    // comparisons are associated with the viewer) is shown inline when that was the choice.
-    if (text && member.peer && prefersInline()) {
+    // A comparison VS Code opened side by side (Word documents from Source Control, Markdown
+    // files when their comparisons are associated with the viewer) is shown inline when that
+    // was the choice.
+    if ((text || info.format === 'docx') && member.peer && prefersInline()) {
       setTimeout(() => this.showComparisonAs('inline', member, panel));
     }
 
@@ -184,7 +186,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
             this.diffs.relay(member, { type: 'peerShowOnline' });
             break;
           case 'openInOffice':
-            if (inline) void editInline(inline, message.line);
+            if (inline && text) void editInline(inline, message.line);
             // The text comparison opens at a line of the new version.
             else if (text && member.side) {
               const line = member.side === 'modified' ? message.line : undefined;
@@ -387,7 +389,7 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
       fileName: inline?.label || name,
       format: info.format,
       // Markdown's text editor is always there to switch to, even on the web.
-      canOpenInOffice: text || this.canOpenInOffice(uri),
+      canOpenInOffice: text || this.canOpenInOffice(source),
       strings: viewerStrings(info),
     };
     let data: Uint8Array;
@@ -438,7 +440,9 @@ export class ViewerProvider implements vscode.CustomReadonlyEditorProvider {
     );
   }
 
-  private async openInOffice(uri: vscode.Uri, info: FormatInfo): Promise<void> {
+  /** Opens a file, or the new version of a comparison shown inline, in its desktop app. */
+  private async openInOffice(shown: vscode.Uri, info: FormatInfo): Promise<void> {
+    const uri = parseInlineUri(shown)?.modified ?? shown;
     if (!this.canOpenInOffice(uri)) {
       void vscode.window.showInformationMessage(
         vscode.l10n.t('Opening in {0} is only available for local files.', info.appName),

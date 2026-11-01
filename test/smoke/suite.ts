@@ -420,6 +420,37 @@ const tests: Record<string, () => Promise<void>> = {
     }
   },
 
+  async 'shows a Word comparison inline, and side by side again'() {
+    const original = vscode.Uri.file(`${FIXTURES}/sample.docx`);
+    const modified = vscode.Uri.file(`${FIXTURES}/sample-revised.docx`);
+    const compare = () => vscode.commands.executeCommand('vscode.diff', original, modified);
+    // VS Code titles it "sample.docx ↔ sample-revised.docx" itself.
+    const wordSideBySide = find(
+      (tab) => tab.input === undefined && tab.label.endsWith(' ↔ sample-revised.docx'),
+    );
+    try {
+      await compare();
+      await waitFor(wordSideBySide);
+      const shown = await toggleUntil(inline);
+      const input = shown.input as vscode.TabInputCustom;
+      assert.equal(input.viewType, VIEW_TYPE);
+      assert.ok(input.uri.path.endsWith('/sample-revised.docx'));
+      assert.equal(tabs().length, 1, describeEditors());
+
+      // The choice holds: the next comparison VS Code opens side by side is shown inline.
+      await vscode.window.tabGroups.close(tabs(), true);
+      await compare();
+      await waitFor(inline);
+      await waitFor(() => (tabs().length === 1 ? true : undefined));
+
+      // Back to side by side, which is then the choice.
+      await toggleUntil(wordSideBySide);
+      assert.equal(tabs().length, 1, describeEditors());
+    } finally {
+      await vscode.window.tabGroups.close(tabs(), true);
+    }
+  },
+
   async 'hands pictures next to a Markdown file to the view as bytes of their own'() {
     const document = vscode.Uri.file(`${FIXTURES}/markdown/sample.md`);
     const picture = await readPicture(document, 'images/flow.svg');

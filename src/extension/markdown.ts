@@ -6,11 +6,17 @@ import { hasScheme, isExternalLink, lineFragment, pictureType, resolveHref } fro
 /** The viewer for Markdown; VS Code's text editor stays the default for these files. */
 export const MARKDOWN_VIEW_TYPE = 'nightdocs.markdown';
 
+/** The viewer for Office documents, the default editor for their files. */
+export const OFFICE_VIEW_TYPE = 'nightdocs.viewer';
+
 /** Pictures bigger than this aren't read into the view. */
 const MAX_PICTURE_BYTES = 25 * 1024 * 1024;
 
 export const isMarkdown = (uri: vscode.Uri) =>
   MARKDOWN_EXTENSIONS.some((extension) => uri.path.toLowerCase().endsWith(extension));
+
+/** The viewer a comparison of `file` with another version shows in. */
+const viewerOf = (file: vscode.Uri) => (isMarkdown(file) ? MARKDOWN_VIEW_TYPE : OFFICE_VIEW_TYPE);
 
 const sameFile = (a: vscode.Uri, b: vscode.Uri) => a.toString() === b.toString();
 
@@ -66,7 +72,7 @@ export async function showInline(comparison: InlineComparison, replaced: TabMatc
   await vscode.commands.executeCommand(
     'vscode.openWith',
     inlineUri(comparison),
-    MARKDOWN_VIEW_TYPE,
+    viewerOf(comparison.modified),
     { viewColumn: column, preview } satisfies vscode.TextDocumentShowOptions,
   );
   await close(replaced);
@@ -122,7 +128,7 @@ export async function showSideBySide(
   comparison: InlineComparison,
   replaced: TabMatch,
 ): Promise<void> {
-  await openComparison(comparison, MARKDOWN_VIEW_TYPE, placeOf(replaced));
+  await openComparison(comparison, viewerOf(comparison.modified), placeOf(replaced));
   await close(replaced);
 }
 

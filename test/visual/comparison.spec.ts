@@ -1,6 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import type { CellSelection, ScrollAnchor } from '../../src/shared/protocol';
 import { lastSent, openComparison, relayScroll } from './comparison';
+import { openViewer } from './harness';
 import type { ThemeName } from './themes';
 
 const SCREENS = 'test-results/screens';
@@ -167,6 +169,97 @@ test('compares a paragraph split by a page break as one paragraph', async ({ con
   await expect(modified.page.locator('.ov-overview-added')).toHaveCount(2);
   expect(original.viewer.problems).toEqual([]);
   expect(modified.viewer.problems).toEqual([]);
+});
+
+/** The number a copy of a numbered paragraph keeps: the counts it starts its counters at. */
+const keptNumber = (paragraph: Locator) =>
+  paragraph.evaluate((p: HTMLElement) => p.style.getPropertyValue('--nd-counters'));
+
+for (const theme of ['dark', 'light'] as ThemeName[]) {
+  test(`shows the changes of a Word document inline in the ${theme} theme`, async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 760 });
+    const viewer = await openViewer(page, theme);
+    await viewer.load('sample-revised.docx', false, 'dark', {
+      original: readFileSync('test/fixtures/sample.docx'),
+      fileName: 'sample-revised.docx (Working Tree)',
+    });
+
+    // The same changes as side by side, and it opens at the first one.
+    await expect(page.locator('.ov-diff-status')).toHaveText('5 changes');
+    await expect(page.locator('.ov-overview')).toBeVisible();
+    await expect(page.locator('.ov-file-name')).toHaveText('sample-revised.docx (Working Tree)');
+    expect(await scrollTop(page)).toBeGreaterThan(0);
+    // An edited paragraph: the old version just above the new one, each with its words marked.
+    const prepared = page.locator('p', { hasText: /^Prepared for the/ });
+    await expect(prepared).toHaveCount(2);
+    await expect(prepared.nth(0)).toHaveClass(/nd-diff-removed/);
+    await expect(prepared.nth(0).locator('.nd-diff-word')).toHaveText('leadership team');
+    await expect(prepared.nth(1)).toHaveClass(/nd-diff-added/);
+    await expect(prepared.nth(1).locator('.nd-diff-word')).toHaveText('board');
+    // A removed item of a bulleted list, and one of a numbered list keeping its number (2).
+    await expect(page.locator('p.nd-diff-removed.nd-inline-inserted')).toHaveText([
+      'Prepared for the leadership team. Confidential',
+      'Onboarding time dropped by two days.',
+      'Self-service answers most common questions.',
+      '1,060',
+      '-4.1%',
+      'Hire two support engineers.',
+    ]);
+    const hire = page.locator('p.nd-diff-removed', { hasText: 'Hire two support engineers.' });
+    expect(await keptNumber(hire)).toBe('nd-num-0 2');
+    // Edited table cells keep their old text in their cell.
+    for (const [before, after] of [
+      ['1,060', '1,095'],
+      ['4.1', '0.9'],
+    ]) {
+      const cell = page.locator('td', { hasText: before });
+      await expect(cell).toHaveCount(1);
+      await expect(cell.locator('p.nd-diff-removed')).toHaveText(new RegExp(before));
+      await expect(cell.locator('p.nd-diff-added')).toHaveText(new RegExp(after));
+    }
+    await expect(page.locator('.nd-inline-inserted [id], [id].nd-inline-inserted')).toHaveCount(0);
+
+    await page.screenshot({ path: `${SCREENS}/compare-docx-inline-${theme}.png` });
+    await page.locator('p.nd-diff-removed', { hasText: 'Hire two' }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SCREENS}/compare-docx-inline-numbers-${theme}.png` });
+
+    // Moving between changes, and back to side by side.
+    await page.locator('.ov-diff button[aria-label="Next Change"]').click();
+    await expect(page.locator('.ov-diff-status')).toHaveText(/Change \d of 5/);
+    const layout = page.locator('.ov-diff-layout');
+    await expect(layout).toHaveAttribute('title', 'Side by Side View');
+    await layout.click();
+    expect(await lastSent(viewer, 'setInline')).toEqual({ type: 'setInline', inline: false });
+
+    // Saved again, it shows the changes again, once.
+    await viewer.load('sample-revised.docx', true, 'dark', {
+      original: readFileSync('test/fixtures/sample.docx'),
+    });
+    await expect(prepared).toHaveCount(2);
+    await expect(page.locator('.ov-diff-status')).toHaveText(/5 changes|Change \d of 5/);
+    expect(viewer.problems).toEqual([]);
+  });
+}
+
+test('shows a paragraph split by a page break inline as one, with its number', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('clauses-revised.docx', false, 'dark', {
+    original: readFileSync('test/fixtures/clauses.docx'),
+  });
+
+  await expect(page.locator('.ov-diff-status')).toHaveText('2 changes');
+  // Both halves of the old section, in one copy, numbered 3.2 as it was.
+  const copy = page.locator('p.nd-inline-inserted', { hasText: 'Shareholders may subscribe' });
+  await expect(copy).toHaveCount(1);
+  await expect(copy).toContainText('The rest of the section goes on on the next page.');
+  await expect(copy.locator('.nd-diff-word')).toHaveText('next');
+  expect(await keptNumber(copy)).toBe('nd-num-0 3 nd-num-1 2');
+  // Markers copied with the paragraph: none of its own number's styles carry over.
+  await expect(page.locator('.nd-inline-inserted.ng-continued')).toHaveCount(0);
+  await expect(page.locator('p.nd-inline-inserted')).toHaveCount(2);
+  await copy.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${SCREENS}/compare-docx-inline-clauses.png` });
+  expect(viewer.problems).toEqual([]);
 });
 
 test('stops comparing when the other side closes', async ({ context }) => {

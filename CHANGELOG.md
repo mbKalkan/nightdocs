@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Inline View for Word comparisons.** As for Markdown, **Inline View** in the status bar (or
+  **Nightdocs: Toggle Inline View**) shows the new version of the document with the changes in
+  it: each removed or edited paragraph of the old version just above what replaced it, marked
+  down to the changed words. An old table cell value sits above the new one in its cell, a removed
+  row is a row of its own, and a removed numbered clause keeps the number it had without
+  renumbering the clauses around it. The choice between inline and side by side is shared with
+  Markdown and holds for the next comparisons, including the ones Source Control opens.
+  **Open in Word** opens the new version.
+
 ## [1.4.3] - 2026-10-30
 
 ### Fixed
