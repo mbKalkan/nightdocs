@@ -413,13 +413,22 @@ function clausesDocument({ revised = false } = {}) {
       config: [
         {
           reference: 'clauses',
+          // Numbers in a color of their own, as legal templates often have: black, which the
+          // dark theme has to adapt as it does text.
           levels: [
-            { level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.START },
+            {
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: '%1.',
+              alignment: AlignmentType.START,
+              style: { run: { color: '000000' } },
+            },
             {
               level: 1,
               format: LevelFormat.DECIMAL,
               text: '%1.%2',
               alignment: AlignmentType.START,
+              style: { run: { color: '000000' } },
             },
           ],
         },

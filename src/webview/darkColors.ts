@@ -47,12 +47,27 @@ export function readPalette(): DarkPalette | undefined {
     : undefined;
 }
 
+/**
+ * Set on a paragraph whose number (drawn by its `::before`, as docx-preview draws Word's list
+ * numbers) has its own color; viewer.css draws the number in `--nd-marker-color`.
+ */
+const MARKER_ATTRIBUTE = 'data-nd-marker-color';
+
 interface ColorRead {
   color: string;
   background: string;
   borders: string[];
   fill: string;
   stroke: string;
+  /** The color of a paragraph's number, if it has one. */
+  marker: string;
+}
+
+/** The color of what a paragraph's `::before` draws, its number in a Word list. */
+function markerColor(el: Element): string {
+  if (el.tagName !== 'P') return '';
+  const before = getComputedStyle(el, '::before');
+  return before.content === 'none' || before.content === 'normal' ? '' : before.color;
 }
 
 /**
@@ -84,6 +99,7 @@ export function adaptDocumentColors(
       ),
       fill: el instanceof SVGElement ? style.fill : '',
       stroke: el instanceof SVGElement ? style.stroke : '',
+      marker: markerColor(el),
     };
   });
 
@@ -107,6 +123,13 @@ export function adaptDocumentColors(
     if (color && color.a > 0) {
       const adapted = adaptForeground(color, surface, palette);
       el.style.setProperty('color', formatCssColor(adapted), 'important');
+    }
+
+    const marker = read.marker ? parseCssColor(read.marker) : undefined;
+    if (marker && marker.a > 0) {
+      const adapted = adaptForeground(marker, surface, palette);
+      el.style.setProperty('--nd-marker-color', formatCssColor(adapted));
+      el.setAttribute(MARKER_ATTRIBUTE, '');
     }
 
     read.borders.forEach((value, side) => {

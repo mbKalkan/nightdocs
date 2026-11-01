@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { contrastRatio, parseCssColor } from '../../src/shared/color';
 import { lowestTextContrast } from './contrast';
 import { openViewer } from './harness';
 import type { ThemeName } from './themes';
@@ -51,6 +52,27 @@ test('shows documents with dark colors in dark themes', async ({ page }) => {
   expect(await page.locator('img').evaluate((el) => getComputedStyle(el).filter)).toBe(
     'brightness(0.8)',
   );
+});
+
+test('draws Word list numbers in dark colors too', async ({ page }) => {
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('clauses.docx');
+
+  // The numbers have a color of their own, black, as in many legal templates.
+  const numbers = await page
+    .locator('.docx-wrapper p[class*="docx-num-"]')
+    .evaluateAll((paragraphs) =>
+      paragraphs
+        .map((p) => getComputedStyle(p, '::before'))
+        .filter((before) => before.content !== 'none')
+        .map((before) => before.color),
+    );
+  expect(numbers.length).toBeGreaterThan(0);
+  const background = parseCssColor(await pageBackground(page))!;
+  for (const number of numbers) {
+    expect(contrastRatio(parseCssColor(number)!, background)).toBeGreaterThanOrEqual(4.5);
+  }
+  expect(viewer.problems).toEqual([]);
 });
 
 test('asks for AAA text contrast in the dark high-contrast theme', async ({ page }) => {
