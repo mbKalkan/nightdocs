@@ -6,6 +6,7 @@ import { compareBlocks, type Blocks } from '../diff/blockCompare';
 import { compareInline } from '../diff/inlineCompare';
 import { textOf } from '../diff/marks';
 import { revealTop, scrollTopOf } from '../diff/scrolling';
+import { screenRect } from '../screenRect';
 import { goToHeading, headingsPane, type OutlineHeading } from '../headings';
 import { icons } from '../icons';
 import { markdownBlocks } from '../md/blocks';
@@ -58,7 +59,7 @@ export const mdRenderer: Renderer = {
     const reveal = (anchor: string) => {
       const element = anchorTarget(article, anchor);
       if (!element || !view) return;
-      revealTop(view.viewport, scrollTopOf(view.viewport, element.getBoundingClientRect().top));
+      revealTop(view.viewport, scrollTopOf(view.viewport, screenRect(element).top));
     };
     followLinks(page, reveal);
     let online = Boolean(options.onlineContent || previous?.online);
@@ -167,7 +168,7 @@ export const mdRenderer: Renderer = {
     function topElement(): HTMLElement | undefined {
       if (!view) return undefined;
       const top = view.viewport.getBoundingClientRect().top;
-      return placed().find((element) => element.getBoundingClientRect().bottom > top);
+      return placed().find((element) => screenRect(element).bottom > top);
     }
 
     /** The lines of a range without the blank ones it ends with. */

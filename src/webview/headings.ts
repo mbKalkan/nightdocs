@@ -2,6 +2,7 @@ import type { PickItem, ViewerStrings } from '../shared/protocol';
 import { scrollTopOf } from './diff/scrolling';
 import { NavList } from './navList';
 import { pick } from './picker';
+import { screenRect } from './screenRect';
 import type { NavigationContent, RenderContext } from './renderers/types';
 
 /** A heading of a Word or Markdown document, for the navigation pane and Go to Heading. */
@@ -64,7 +65,7 @@ export function headingsPane(
 }
 
 const headingTop = (viewport: HTMLElement, heading: OutlineHeading) =>
-  scrollTopOf(viewport, heading.element.getBoundingClientRect().top);
+  scrollTopOf(viewport, screenRect(heading.element).top);
 
 /** The heading the view is under: the last one at or above its top, or -1 before the first. */
 export function currentHeading(viewport: HTMLElement, headings: readonly OutlineHeading[]): number {

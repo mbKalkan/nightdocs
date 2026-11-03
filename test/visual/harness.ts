@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { basename, dirname, extname, join, resolve } from 'node:path';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { buildWebviewHtml } from '../../src/extension/webviewHtml';
 import { formatForPath } from '../../src/shared/formats';
 import type {
@@ -18,6 +18,24 @@ interface Theme {
 }
 
 const ORIGIN = 'http://webview.test';
+
+declare global {
+  interface Window {
+    /**
+     * Where an element is on screen. The tests measure CSS `zoom` as VS Code's desktop app does
+     * (playwright.config.ts), where `getBoundingClientRect()` inside the zoomed content, and so
+     * Playwright's `boundingBox()`, is divided by the zoom.
+     */
+    screenRect(element: Element): DOMRect;
+  }
+}
+
+/** `boundingBox()`, on screen also inside the zoomed content. */
+export const screenBox = (locator: Locator) =>
+  locator.evaluate((element) => {
+    const { x, y, width, height } = window.screenRect(element);
+    return { x, y, width, height };
+  });
 
 const CONTENT_TYPES: Record<string, string> = {
   '.js': 'text/javascript',
@@ -212,6 +230,22 @@ export async function openViewer(
     // Init scripts run before the document exists, so theme it once parsing is done.
     document.addEventListener('DOMContentLoaded', () => applyTheme(theme));
   }, themes[theme] as Theme);
+  await page.addInitScript(() => {
+    // As the viewer measures: where an element is on screen, also inside the zoomed content.
+    window.screenRect = (element) => {
+      const rect = element.getBoundingClientRect();
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position: fixed; width: 10px; height: 10px; zoom: 2';
+      document.body.append(probe);
+      const standard = probe.getBoundingClientRect().width > 15;
+      probe.remove();
+      let zoom = 1;
+      for (let at: Element | null = element; at && !standard; at = at.parentElement) {
+        if (at instanceof HTMLElement && at.style.zoom) zoom *= parseFloat(at.style.zoom) || 1;
+      }
+      return new DOMRect(rect.x * zoom, rect.y * zoom, rect.width * zoom, rect.height * zoom);
+    };
+  });
 
   await page.goto(`${ORIGIN}/index.html`);
   await page.waitForFunction(() =>

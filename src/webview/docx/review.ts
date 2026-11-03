@@ -3,6 +3,7 @@ import { NOT_TEXT } from '../diff/marks';
 import { icons } from '../icons';
 import { describe, pick } from '../picker';
 import type { RenderContext } from '../renderers/types';
+import { screenRect } from '../screenRect';
 
 interface WordComment {
   author: string;
@@ -214,7 +215,7 @@ export class WordReview {
     const comment = this.comments[index];
     this.setShown(true);
     const { viewport } = this.context;
-    const top = comment.button.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+    const top = screenRect(comment.button).top - viewport.getBoundingClientRect().top;
     viewport.scrollTop += top - viewport.clientHeight / 3;
     this.show(comment, true);
   }
@@ -277,7 +278,7 @@ export class WordReview {
     if (!popup || !context) return;
     const overlay = context.overlay.getBoundingClientRect();
     const viewport = context.viewport.getBoundingClientRect();
-    const anchor = comment.button.getBoundingClientRect();
+    const anchor = screenRect(comment.button);
     const left = Math.min(anchor.left, overlay.right - popup.offsetWidth - 8);
     const below = anchor.bottom + GAP + popup.offsetHeight <= viewport.bottom;
     const top = below ? anchor.bottom + GAP : anchor.top - GAP - popup.offsetHeight;

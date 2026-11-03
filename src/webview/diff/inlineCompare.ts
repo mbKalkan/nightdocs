@@ -1,5 +1,6 @@
 import { similarity } from '../../shared/diff';
 import type { Comparison, RenderContext } from '../renderers/types';
+import { screenRect } from '../screenRect';
 import { align, EDITED } from './align';
 import { blockKeys, markPictures, type Blocks } from './blockCompare';
 import { clearMarks, markWords } from './marks';
@@ -97,9 +98,8 @@ export function compareInline(
   onChange?.();
 
   const { viewport } = context;
-  const top = (element: HTMLElement) => scrollTopOf(viewport, element.getBoundingClientRect().top);
-  const bottom = (element: HTMLElement) =>
-    scrollTopOf(viewport, element.getBoundingClientRect().bottom);
+  const top = (element: HTMLElement) => scrollTopOf(viewport, screenRect(element).top);
+  const bottom = (element: HTMLElement) => scrollTopOf(viewport, screenRect(element).bottom);
   return {
     count: changes.length,
     go: (direction) =>

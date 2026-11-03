@@ -1,6 +1,7 @@
 // Elements of a rendered Markdown file and the source lines they came from.
 
 import { scrollTopOf } from '../diff/scrolling';
+import { screenRect } from '../screenRect';
 
 /** Source lines (0-based), end exclusive. */
 export interface LineRange {
@@ -49,9 +50,9 @@ export function lineAtTop(
   leaves: readonly HTMLElement[],
 ): number | undefined {
   const top = viewport.getBoundingClientRect().top;
-  const leaf = leaves.find((element) => element.getBoundingClientRect().bottom > top);
+  const leaf = leaves.find((element) => screenRect(element).bottom > top);
   if (!leaf) return leaves.length ? linesOf(leaves[leaves.length - 1]).start : undefined;
-  const rect = leaf.getBoundingClientRect();
+  const rect = screenRect(leaf);
   const { start, end } = linesOf(leaf);
   const fraction = rect.height > 0 ? Math.max(0, (top - rect.top) / rect.height) : 0;
   return start + fraction * (end - start);
@@ -77,7 +78,7 @@ export function revealLine(
   }
   const leaf = leaves[index];
   const { start, end } = linesOf(leaf);
-  const rect = leaf.getBoundingClientRect();
+  const rect = screenRect(leaf);
   let y: number;
   if (line < end) {
     y = rect.top + ((line - start) / (end - start)) * rect.height;
@@ -87,7 +88,7 @@ export function revealLine(
       y = rect.bottom;
     } else {
       const gapStart = rect.bottom;
-      const gapEnd = next.getBoundingClientRect().top;
+      const gapEnd = screenRect(next).top;
       const span = linesOf(next).start - end;
       y = gapStart + (span > 0 ? ((line - end) / span) * (gapEnd - gapStart) : 0);
     }

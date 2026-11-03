@@ -121,7 +121,7 @@ test('keeps the change map on the changes when the content moves as it scrolls',
       const top = viewport.getBoundingClientRect().top;
       const starts = [
         ...document.querySelectorAll('.nd-diff-line, .nd-diff-gap-before, .nd-diff-gap-after'),
-      ].map((el) => (el.getBoundingClientRect().top - top + viewport.scrollTop) * scale);
+      ].map((el) => (window.screenRect(el).top - top + viewport.scrollTop) * scale);
       const marks = [...document.querySelectorAll<HTMLElement>('.ov-overview-added')].map((mark) =>
         parseFloat(mark.style.top),
       );

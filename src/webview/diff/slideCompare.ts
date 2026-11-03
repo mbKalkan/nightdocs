@@ -1,5 +1,6 @@
 import type { DiffSide, SlideSummary } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
+import { screenRect } from '../screenRect';
 import { align } from './align';
 import { clearMarks, MARK, markWords, otherChange, ownChange, textOf } from './marks';
 import { revealByTops, revealTop, scrollAnchor, scrollToAnchor, scrollTopOf } from './scrolling';
@@ -169,15 +170,14 @@ export function compareSlides(
   }
 
   const identity = elements.map((_, index) => index);
-  const tops = () =>
-    stops.map((stop) => scrollTopOf(context.viewport, stop.getBoundingClientRect().top));
+  const tops = () => stops.map((stop) => scrollTopOf(context.viewport, screenRect(stop).top));
   return {
     count: stops.length,
     go: (direction) => revealByTops(context.viewport, tops(), direction),
     goTo: (index) => revealTop(context.viewport, tops()[index]),
     overview: () =>
       stops.map((stop, index) => {
-        const rect = stop.getBoundingClientRect();
+        const rect = screenRect(stop);
         return {
           top: scrollTopOf(context.viewport, rect.top),
           bottom: scrollTopOf(context.viewport, rect.bottom),
