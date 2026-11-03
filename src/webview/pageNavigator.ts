@@ -1,4 +1,5 @@
 import type { RenderContext } from './renderers/types';
+import { screenRect } from './screenRect';
 
 /** Canvas left visible above a page that Page Up/Down brings to the top. */
 const MARGIN = 12;
@@ -68,7 +69,7 @@ export class PageNavigator {
   private tops(): number[] {
     const { viewport } = this.context;
     const origin = viewport.getBoundingClientRect().top - viewport.scrollTop;
-    return this.frames.map((frame) => frame.getBoundingClientRect().top - origin);
+    return this.frames.map((frame) => screenRect(frame).top - origin);
   }
 
   /**
@@ -94,7 +95,7 @@ export class PageNavigator {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.target instanceof HTMLInputElement || event.defaultPrevented) return;
     const { viewport } = this.context;
-    const pageHeight = this.frames[0]?.getBoundingClientRect().height ?? 0;
+    const pageHeight = this.frames[0] ? screenRect(this.frames[0]).height : 0;
     // Zoomed in past the window height, paging scrolls by screens as usual.
     if (pageHeight + MARGIN > viewport.clientHeight) return;
 

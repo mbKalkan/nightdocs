@@ -1,6 +1,7 @@
 import { similarity } from '../../shared/diff';
 import type { DiffSide } from '../../shared/protocol';
 import type { Comparison, RenderContext } from '../renderers/types';
+import { screenRect } from '../screenRect';
 import { align } from './align';
 import { clearMarks, markWords, MARK, otherChange, ownChange } from './marks';
 import type { OverviewMark } from './overview';
@@ -120,7 +121,7 @@ export function compareBlocks(
 
   const { viewport } = context;
   const top = ({ element, after }: Change) => {
-    const rect = element.getBoundingClientRect();
+    const rect = screenRect(element);
     return scrollTopOf(viewport, after ? rect.bottom : rect.top);
   };
   return {
@@ -132,9 +133,7 @@ export function compareBlocks(
     overview: () =>
       changes.map((change): OverviewMark => {
         const from = top(change);
-        const to = change.last
-          ? scrollTopOf(viewport, change.last.getBoundingClientRect().bottom)
-          : from;
+        const to = change.last ? scrollTopOf(viewport, screenRect(change.last).bottom) : from;
         return { top: from, bottom: to, removed: change.removed, added: change.added };
       }),
     dispose: () => clearMarks(root, CLASSES),

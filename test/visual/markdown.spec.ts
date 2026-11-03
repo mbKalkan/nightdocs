@@ -548,3 +548,60 @@ for (const theme of ['dark', 'light'] as ThemeName[]) {
     expect(modified.viewer.problems).toEqual([]);
   });
 }
+
+/** How far each mark on the change map is from the start of a change, in ruler pixels. */
+const mapOffsets = (page: Page) =>
+  page.evaluate(() => {
+    const viewport = document.querySelector<HTMLElement>('.ov-viewport')!;
+    const ruler = document.querySelector<HTMLElement>('.ov-overview')!;
+    const scale = ruler.clientHeight / viewport.scrollHeight;
+    const top = viewport.getBoundingClientRect().top;
+    const starts = [...document.querySelectorAll('.nd-diff-line')].map(
+      (el) => (window.screenRect(el).top - top + viewport.scrollTop) * scale,
+    );
+    return [...document.querySelectorAll<HTMLElement>('.ov-overview-mark')].map((mark) =>
+      Math.min(...starts.map((start) => Math.abs(start - parseFloat(mark.style.top)))),
+    );
+  });
+
+async function keepsTheMapOnTheChangesWhenZoomed(page: Page) {
+  await page.setViewportSize({ width: 820, height: 760 });
+  const viewer = await openViewer(page, 'dark');
+  await viewer.load('markdown/sample-revised.md', false, 'dark', {
+    original: readFileSync('test/fixtures/markdown/sample.md'),
+    fileName: 'sample-revised.md (Working Tree)',
+  });
+  await expect(page.locator('.ov-diff-status')).toHaveText('10 changes');
+
+  const steps = [
+    ['Zoom Out', '90%'],
+    ['Zoom Out', '80%'],
+    ['Zoom In', '90%'],
+    ['Zoom In', '100%'],
+    ['Zoom In', '110%'],
+    ['Zoom In', '125%'],
+  ];
+  for (const [button, zoom] of steps) {
+    await page.locator('.ov-toolbar').getByRole('button', { name: button }).click();
+    await expect(page.locator('.ov-zoom-label')).toHaveText(zoom);
+    await expect.poll(async () => Math.max(...(await mapOffsets(page)))).toBeLessThan(2);
+  }
+  expect(viewer.problems).toEqual([]);
+}
+
+test('keeps the change map on the changes when zoomed in or out', async ({
+  page,
+  playwright,
+  channel,
+}) => {
+  // VS Code's desktop app measures CSS zoom its own way (see playwright.config.ts): a zoomed view
+  // stretched the map there.
+  await keepsTheMapOnTheChangesWhenZoomed(page);
+  // Browsers, where VS Code for the Web runs, measure it to the standard.
+  const browser = await playwright.chromium.launch({ channel });
+  try {
+    await keepsTheMapOnTheChangesWhenZoomed(await browser.newPage());
+  } finally {
+    await browser.close();
+  }
+});

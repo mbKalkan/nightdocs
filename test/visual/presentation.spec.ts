@@ -20,7 +20,7 @@ const slideOffset = (page: Page, index: number) =>
     .nth(index)
     .evaluate((frame) => {
       const viewport = document.querySelector('.ov-viewport') as HTMLElement;
-      return frame.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      return window.screenRect(frame).top - viewport.getBoundingClientRect().top;
     });
 
 /** Light themes show slides as authored, so text contrast is only checked in dark ones. */

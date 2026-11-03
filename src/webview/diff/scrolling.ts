@@ -1,6 +1,7 @@
 // Scroll positions in terms of document items, so two versions can scroll together.
 
 import type { ScrollAnchor } from '../../shared/protocol';
+import { screenRect } from '../screenRect';
 
 /** `ScrollAnchor.index` values both sides take as they are, whatever the content. */
 export const TOP = -1;
@@ -30,10 +31,10 @@ export function scrollAnchor(
   let high = items.length - 1;
   while (low < high) {
     const middle = (low + high) >> 1;
-    if (items[middle].getBoundingClientRect().bottom <= top) low = middle + 1;
+    if (screenRect(items[middle]).bottom <= top) low = middle + 1;
     else high = middle;
   }
-  const rect = items[low].getBoundingClientRect();
+  const rect = screenRect(items[low]);
   const fraction = rect.height > 0 ? (top - rect.top) / rect.height : 0;
   return { index: toPeer[low], fraction };
 }
@@ -49,7 +50,7 @@ export function scrollToAnchor(
   }
   const item = items[Math.min(anchor.index, items.length - 1)];
   if (!item) return;
-  const rect = item.getBoundingClientRect();
+  const rect = screenRect(item);
   viewport.scrollTop = scrollTopOf(viewport, rect.top + anchor.fraction * rect.height);
 }
 

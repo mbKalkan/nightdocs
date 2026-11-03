@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Zoomed views in VS Code's desktop app.** At any zoom but 100%, positions inside the document
+  were measured off by the zoom, so the change map beside a comparison's scrollbar was stretched:
+  its marks drifted away from the changes, and the last ones piled up at the bottom of the map.
+  This showed most in Markdown comparisons when zooming in or out, but Word comparisons, which fit
+  the page to the window, had it too. The same measurement also moved **Next Change** (F7) to
+  the wrong place in Word and PowerPoint comparisons, and could count the wrong page or slide in
+  the status bar, scroll a heading or a link target to the wrong place, and keep the two sides of
+  a comparison out of step. VS Code's desktop app measures CSS zoom differently from browsers;
+  Nightdocs now measures the same either way.
+
 ## [1.5.0] - 2026-11-01
 
 ### Added

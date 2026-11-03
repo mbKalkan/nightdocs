@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { lastSent } from './comparison';
-import { openViewer } from './harness';
+import { openViewer, screenBox } from './harness';
 import { answerPick, lastPick } from './picks';
 
 const SCREENS = 'test-results/screens';
@@ -13,14 +13,12 @@ const SCREENS = 'test-results/screens';
 async function cellCenter(page: Page, column: string, row: number) {
   let center: { x: number; y: number } | undefined;
   await expect(async () => {
-    const col = await page
-      .locator('.ng-hc', { hasText: new RegExp(`^${column}$`) })
-      .first()
-      .boundingBox();
-    const header = await page
-      .locator('.ng-hr', { hasText: new RegExp(`^${row}$`) })
-      .first()
-      .boundingBox();
+    const col = await screenBox(
+      page.locator('.ng-hc', { hasText: new RegExp(`^${column}$`) }).first(),
+    );
+    const header = await screenBox(
+      page.locator('.ng-hr', { hasText: new RegExp(`^${row}$`) }).first(),
+    );
     if (!col || !header) throw new Error(`Cell ${column}${row} is not on screen`);
     center = { x: col.x + col.width / 2, y: header.y + header.height / 2 };
   }).toPass({ timeout: 2000 });
